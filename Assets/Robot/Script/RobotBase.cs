@@ -1,77 +1,46 @@
 using UnityEngine;
 
-public class RobotBase : MonoBehaviour, ITakeDamage
+public class RobotBase : UnitBase
 {
-    // [상태 값]
-    [Header("Current Status")]
-    public int currentHP;
+    [Header("Robot Exclusive")]
     public int currentEnergy;
-    public int currentHeat;   // 과열도 (0~100)
-
-    // [기본 능력치]
-    [Header("Base Stats")]
-    public int maxHP = 100;
-    public int attack = 10;
     public int maxEnergy = 50;
-    public int Chritial = 10;
-    public int Avoid = 10; // 회피 확률
-
-    // [수리 및 관리]
-    [Header("Maintenance")]
-    public int currentFixCount;
-    public int maxFixCount = 3;
     public bool isrockdown = false;
-    void Awake()
-    {
-        InitializeRobot();
-    }
+    public int neverdie = 10;
 
-    // 초기화 함수 (필요시 외부에서도 호출 가능)
-    public void InitializeRobot()
+    public override void InitializeUnit()
     {
-        currentHP = maxHP;
+        base.InitializeUnit();
         currentEnergy = maxEnergy;
-        currentHeat = 0;
-        currentFixCount = maxFixCount;
         isrockdown = false;
     }
-    public void TakeDamage(int damage, int accuracy, int ignoreDefense, int EnergyDamage)
+
+    public override void TakeDamage(int damage, int accuracy, int ignoreDefense, int EnergyDamage)
     {
-        int accuracys = Random.Range(0, 100);
-        int realaccuracy = accuracy - Avoid;
-        if (realaccuracy > accuracys)
+        base.TakeDamage(damage, accuracy, ignoreDefense, EnergyDamage);
+
+        // 로봇 전용 로직: 전력 감소 및 고장 판정
+        currentEnergy -= EnergyDamage;
+
+        if (currentEnergy < 0 && !isrockdown)
+            isrockdown = true;
+        else if (currentEnergy > 0 && isrockdown && Random.Range(1, 3) == 1)
         {
-            Debug.Log($"<color=yellow>{gameObject.name}</color>이(가) 공격을 회피했습니다! (회피 확률: {realaccuracy}%, 랜덤 값: {accuracys})");
+            // 고장에서 회복할 확률 (50%)
+        }
+    }
+    protected override void OnUnitDestroyed()
+    {
+        // 로봇 전용: 죽기 전에 'neverdie' 확률 체크
+        int percent = Random.Range(1, 101);
+        if (percent <= neverdie)
+        {
+            Debug.Log($"<color=cyan>경고! {gameObject.name}의 백업 회로가 작동하여 파괴를 면했습니다!</color>");
+            currentHP = 1; // 기적적으로 체력 1로 생존
             return;
         }
-        int finalDamage = damage;
 
-        currentHP -= finalDamage;
-        currentEnergy -= EnergyDamage;
-        if (currentHP < 0) currentHP = 0;
-        if (currentEnergy < 0 && isrockdown == false) energydown();
-        else if (currentEnergy > 0 && isrockdown)
-        {
-            int g = Random.Range(1, 3);
-            if (g == 1)
-            {
-                OnRobotDestroyed();
-            }
-        }
-        Debug.Log($"<color=red>{gameObject.name}</color>이(가) {finalDamage}의 데미지를 입었습니다. 남은 체력: {currentHP}/{maxHP}");
-
-        if (currentHP <= 0)
-        {
-            OnRobotDestroyed();
-        }
+        // 확률 체크 실패 시 부모의 파괴 로직 수행
+        base.OnUnitDestroyed();
     }
-    private void OnRobotDestroyed()
-    {
-        Debug.Log($"{gameObject.name}이(가) 완전히 파괴되었습니다. 회수 불가능 상태.");
-        Destroy(gameObject, 2f);
-    }
-    private void energydown()
-    {
-        int ran = Random.Range(1, 4);
-    }
-}   
+}
