@@ -1,5 +1,16 @@
+using System.Collections.Generic;
 using UnityEngine;
-
+public enum SkillType
+{
+    // 커터
+    Cut, Divide, Overclock, Friction, Ready, PointAttack,
+    // 스나이퍼
+    WeakPointShot, AimShot, FlareShot, DataCorruption, PiercingShot, LockOn,
+    // 수리기사 (Support)
+    EmergencyWelding, WrenchThrow, MultiWelding, CommRepair, Recycle, WrenchSwing,
+    // 벙커 (Tank)
+    Taunt, DefenseStance, PowerBarrier, ForceFix, Charge, EnergyConvert
+}
 public class UnitBase : MonoBehaviour, ITakeDamage
 {
     [Header("Core Stats")]
@@ -39,7 +50,9 @@ public class UnitBase : MonoBehaviour, ITakeDamage
     public float emergencySurvivalChance;
     public float hitpoisondamage;
     public bool isPoison;
-    public void TakeDamage(float damage, float accure, float poison, float poisondamage)
+    public ITargetingStrategy targetingStrategy;
+    public List<GameObject> enemyList; // 현재 전투 중인 적 리스트
+    public virtual void TakeDamage(float damage, float accure, float poison, float poisondamage)
     {
         hitpoisondamage = poisondamage;
         int hitRoll = Random.Range(1, 101);
@@ -57,6 +70,6 @@ public class UnitBase : MonoBehaviour, ITakeDamage
     }
     public void Die()
     {
-
+        Destroy(gameObject);
     }
 }
