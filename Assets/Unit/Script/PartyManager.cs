@@ -1,44 +1,25 @@
-using NUnit.Framework;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class PartyManager : MonoBehaviour
 {
-    List<GameObject> partyMembers = new List<GameObject>();
-    void Start()
-    {
-        
-    }
+    public List<UnitBase> partyMembers = new List<UnitBase>();
+    public GameObject[] unitPrefabs; // 인스펙터에서 할당
 
-    // Update is called once per frame
-    void Update()
+    public void AddMember(int index)
     {
-        
-    }
-    public void addParty()
-    {
-        if(partyMembers.Count < 4)
+        if (partyMembers.Count < 4)
         {
-            GameObject newMember = new GameObject("PartyMember" + (partyMembers.Count + 1));
-            partyMembers.Add(newMember);
-            Debug.Log("Added: " + newMember.name);
-        }
-        else
-        {
-            Debug.Log("Party is full!");
+            GameObject obj = Instantiate(unitPrefabs[index]);
+            partyMembers.Add(obj.GetComponent<UnitBase>());
         }
     }
-    public void removeParty()
+    public void RemoveMember(UnitBase member)
     {
-        if(partyMembers.Count > 0)
+        if (partyMembers.Contains(member))
         {
-            GameObject removedMember = partyMembers[partyMembers.Count - 1];
-            partyMembers.RemoveAt(partyMembers.Count - 1);
-            Debug.Log("Removed: " + removedMember.name);
-        }
-        else
-        {
-            Debug.Log("No members to remove!");
+            partyMembers.Remove(member);
+            Destroy(member.gameObject);
         }
     }
 }
