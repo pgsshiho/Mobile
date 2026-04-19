@@ -14,10 +14,17 @@ public class Cutter : UnitBase
     // 공격 실행 (전략 패턴 사용)
     public void ExecuteTurn()
     {
-        GameObject targetObj = targetingStrategy.SelectTarget(enemyList);
-        if (targetObj != null) AttackStart(targetObj);
+        GameObject target = targetingStrategy.SelectTarget(enemyList);
+        if (target != null)
+        {
+            ITakeDamage targetInt = target.GetComponent<ITakeDamage>();
+            switch (selectedSkill)
+            {
+                case SkillType.Cut: targetInt.TakeDamage(damage * 1.5f, accuracy, 0, 0); break;
+                case SkillType.Overclock: damage *= 2.0f; break;
+            }
+        }
     }
-
     public void AttackStart(GameObject targetObject)
     {
         ITakeDamage target = targetObject.GetComponent<ITakeDamage>();
