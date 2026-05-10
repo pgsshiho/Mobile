@@ -1,25 +1,15 @@
 using UnityEngine;
 
-public class GameStart : MonoBehaviour
-{
-    void Start()
-    {
-    }
+public class GameStart : MonoBehaviour 
+{ 
 
     // Update is called once per frame
     void Update()
     {
-        if(Input.touchPressureSupported)
+        if (Input.GetMouseButtonDown(0))
         {
-            if(Input.touchCount > 0)
-            {
-                Touch touch = Input.GetTouch(0);
-                if(touch.phase == TouchPhase.Began)
-                {
-                    SceneChanger.BG("Factory");
-                    Debug.Log("게임이 시작되었습니다!");
-                }
-            }
+            SceneChanger.BG("Factory");
+            Debug.Log("게임이 시작되었습니다!");
         }
     }
 }
