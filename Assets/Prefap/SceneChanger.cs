@@ -32,7 +32,7 @@ public class SceneChanger : MonoBehaviour
         image.DOColor(Color.black, 0.7f).OnComplete(() =>
         {
             isFading = false;
-            SceneManager.LoadScene(sceneName);
+            
         });
     }
     public static IEnumerator wait(float waitTime, Action action)
