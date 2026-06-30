@@ -1,0 +1,26 @@
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "SkillLogic/Overcharge")]
+public class Overcharge : SkillBase
+{
+    public BuffData overchargeBuff;
+
+    [Range(0, 100)]
+    public int overheatChance = 30;
+
+    public override void Use(
+    Unit user,
+    Unit target,
+    SkillData skill
+)
+    {
+        user.AddBuff(overchargeBuff);
+
+        if (Random.Range(0, 100) < overheatChance)
+        {
+            user.fireCount += 1;    
+
+            Debug.Log("과열 발생!");
+        }
+    }
+}
