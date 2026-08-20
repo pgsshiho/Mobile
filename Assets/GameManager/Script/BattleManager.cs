@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class BattleManager : MonoBehaviour
@@ -17,35 +18,36 @@ public class BattleManager : MonoBehaviour
     [Header("Skill Buttons")]
     public GameObject[] skillButtons;
 
+    [Header("Audio")]
+    public AudioSource sfxSource;
+    public AudioSource bgmSource;
+    public AudioClip battleBgm;
     private void Awake()
     {
         instance = this;
     }
 
-    // 전투 시작
     public void StartBattle(Room room)
     {
-
         isBattle = true;
 
         battleUI.SetActive(true);
+
+        AudioManager.instance.PlayBattleBgm();
 
         TurnManager.instance.RegisterRoom(room);
 
         Debug.Log("전투 시작");
     }
 
-    // 턴 시작
     public void StartTurn(Unit unit)
     {
         if (unit == null)
             return;
 
-        // 턴 텍스트
         turnText.text =
             unit.Unitname + " TURN";
 
-        // 플레이어 턴
         if (unit.gameObject.layer ==
             LayerMask.NameToLayer("Player"))
         {
@@ -60,14 +62,15 @@ public class BattleManager : MonoBehaviour
                     .waitingForTarget = true;
             }
         }
-        // 적 턴
         else
         {
             HidePlayerUI();
+
+            TurnManager.instance
+                .waitingForTarget = false;
         }
     }
 
-    // 플레이어 UI 표시
     public void ShowPlayerUI(PlayerUnit player)
     {
         HidePlayerUI();
@@ -76,7 +79,6 @@ public class BattleManager : MonoBehaviour
             i < skillButtons.Length;
             i++)
         {
-            // 스킬 없으면 버튼 숨김
             if (i >= player.skills.Count)
             {
                 skillButtons[i]
@@ -85,21 +87,37 @@ public class BattleManager : MonoBehaviour
                 continue;
             }
 
+            SkillData skill =
+                player.skills[i];
 
             skillButtons[i]
                 .SetActive(true);
-            
-            // 버튼 이름 변경
+
             TMP_Text text =
                 skillButtons[i]
                 .GetComponentInChildren<TMP_Text>();
 
-            text.text =
-                player.skills[i].skillName;
+            if (text != null)
+            {
+                text.text =
+                    skill.skillName;
+            }
+
+            Image buttonImage =
+                skillButtons[i]
+                .GetComponent<Image>();
+
+            if (buttonImage != null)
+            {
+                buttonImage.sprite =
+                    skill.icon;
+
+                buttonImage.enabled =
+                    skill.icon != null;
+            }
         }
     }
 
-    // 플레이어 UI 숨김
     public void HidePlayerUI()
     {
         foreach (GameObject button
@@ -109,7 +127,6 @@ public class BattleManager : MonoBehaviour
         }
     }
 
-    // 스킬 선택
     public void SelectSkill(int index)
     {
         PlayerUnit player =
@@ -119,22 +136,41 @@ public class BattleManager : MonoBehaviour
         if (player == null)
             return;
 
-        // 범위 초과 방지
         if (index < 0 ||
             index >= player.skills.Count)
             return;
 
-        // 스킬 선택
         player.selectedSkill =
             player.skills[index];
 
         Debug.Log(
-            player.selectedSkill.skillName
-            + " 선택"
+            player.selectedSkill.skillName +
+            " 선택"
+        );
+
+        if (player.selectedSkill.targetType ==
+            TargetType.Self)
+        {
+            player.SelectTarget(player);
+        }
+    }
+
+    public void PlaySkillSound(SkillData skill)
+    {
+        if (skill == null)
+            return;
+
+        if (skill.soundEffect == null)
+            return;
+
+        if (sfxSource == null)
+            return;
+
+        sfxSource.PlayOneShot(
+            skill.soundEffect
         );
     }
 
-    // 행동 종료
     public void EndPlayerAction()
     {
         HidePlayerUI();
@@ -153,8 +189,14 @@ public class BattleManager : MonoBehaviour
 
         HidePlayerUI();
 
+        TurnManager.instance
+            .waitingForTarget = false;
+
         if (win)
         {
+            RoomManager.instance
+                .ClearCurrentRoom();
+
             Debug.Log("승리!");
         }
         else

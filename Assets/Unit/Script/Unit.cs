@@ -611,7 +611,7 @@ public class Unit : MonoBehaviour
 
         TurnManager.instance
             .RemoveUnit(this);
-
+        PartyManager.instance.Remove(this);
         if (myturnUI != null)
         {
             myturnUI.SetActive(false);

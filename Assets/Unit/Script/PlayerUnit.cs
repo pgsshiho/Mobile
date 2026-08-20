@@ -39,7 +39,7 @@ public class PlayerUnit :
         {
             // 단일 적
             case TargetType.SingleEnemy:
-
+                AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
                 selectedSkill.skillLogic.Use(
                     this,
                     target,
@@ -50,7 +50,7 @@ public class PlayerUnit :
 
             // 아군 대상
             case TargetType.Ally:
-
+                AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
                 selectedSkill.skillLogic.Use(
                     this,
                     target,
@@ -61,28 +61,28 @@ public class PlayerUnit :
 
             // 2인 공격
             case TargetType.TwoEnemy:
-
+                AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
                 AttackMultipleEnemies(2);
                 Debug.Log("Using Skills");
                 break;
 
             // 3인 공격
             case TargetType.ThreeEnemy:
-
+                AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
                 AttackMultipleEnemies(3);
                 Debug.Log("Using Skills");
                 break;
 
             // 전체 공격
             case TargetType.AllEnemy:
-
+                AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
                 AttackAllEnemies();
                 Debug.Log("Using Skills");
                 break;
 
             // 자기 자신
             case TargetType.Self:
-
+                AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
                 selectedSkill.skillLogic.Use(
                     this,
                     this,
@@ -98,6 +98,7 @@ public class PlayerUnit :
                         LayerMask.NameToLayer(
                             "Player"))
                     {
+                        AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
                         selectedSkill.skillLogic.Use(
                             this,
                             unit,
@@ -116,6 +117,7 @@ public class PlayerUnit :
                             "Player") &&
                         unit.health <= 0)
                     {
+                        AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
                         selectedSkill.skillLogic.Use(
                             this,
                             unit,
@@ -136,7 +138,6 @@ public class PlayerUnit :
         TurnManager.instance
             .EndTurn();
     }
-
     // 다인 공격
     void AttackMultipleEnemies(
         int count

@@ -17,10 +17,10 @@ public class DialogueManager : MonoBehaviour
     Coroutine typingCoroutine;
 
     // 현재 대화들
-    string[] currentDialogueKeys;
+    public string[] currentDialogueKeys;
 
     // 현재 페이지
-    int currentPage;
+    public int currentPage;
 
     // 타이핑 끝났는지
     bool isTyping;
@@ -33,7 +33,7 @@ public class DialogueManager : MonoBehaviour
     private void Update()
     {
         if (dialoguePanel.activeSelf &&
-           Input.GetKeyDown(KeyCode.Space))
+           Input.GetMouseButtonDown(0))
         {
             NextDialogue();
         }

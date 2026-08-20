@@ -10,67 +10,62 @@ public class Save : MonoBehaviour
         instance = this;
     }
 
-    // 저장
     public void SaveGame()
     {
-        // 현재 방 저장
-        PlayerPrefs.SetString(
-            "CurrentRoom",
-            RoomManager.instance.currentRoom.roomName
-        );
-
-        // 언어 저장
         PlayerPrefs.SetInt(
             "Language",
-            (int)LocalizationManager()
+            GetCurrentLanguageIndex()
         );
-        // 저장 실행
+
+        if (RoomManager.instance != null)
+        {
+            PlayerPrefs.SetInt(
+                "CurrentNodeId",
+                RoomManager.instance.GetCurrentNodeId()
+            );
+        }
+
         PlayerPrefs.Save();
 
         Debug.Log("게임 저장 완료");
     }
 
-    // 불러오기
     public void LoadGame()
     {
-        // 저장된 방 이름
-        string roomName =
-            PlayerPrefs.GetString("CurrentRoom", "");
-
-        // 저장된 언어
         int language =
             PlayerPrefs.GetInt("Language", 0);
 
-        // 언어 적용
         ChangeLanguage(language);
 
-        // 방 찾기
-        Room[] rooms = FindObjectsOfType<Room>(true);
+        int nodeId =
+            PlayerPrefs.GetInt("CurrentNodeId", -1);
 
-        foreach (Room room in rooms)
+        if (RoomManager.instance != null &&
+            nodeId >= 0)
         {
-            if (room.roomName == roomName)
-            {
-                RoomManager.instance.ChangeRoom(room);
-                break;
-            }
+            RoomManager.instance.LoadNode(nodeId);
         }
 
         Debug.Log("게임 불러오기 완료");
     }
 
-    // 언어 가져오기
-    int LocalizationManager()
+    int GetCurrentLanguageIndex()
     {
         return LocalizationSettings.SelectedLocale ==
             LocalizationSettings.AvailableLocales.Locales[0]
-            ? 0 : 1;
+            ? 0
+            : 1;
     }
 
-    // 언어 변경
     void ChangeLanguage(int index)
     {
+        if (index < 0 ||
+            index >= LocalizationSettings
+                .AvailableLocales.Locales.Count)
+            return;
+
         LocalizationSettings.SelectedLocale =
-            LocalizationSettings.AvailableLocales.Locales[index];
+            LocalizationSettings
+            .AvailableLocales.Locales[index];
     }
 }

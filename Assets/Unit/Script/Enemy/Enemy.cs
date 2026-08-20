@@ -1,42 +1,69 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+
+public enum EnemyTargetMode
+{
+    Random,
+    LowestHp,
+    HighestHp,
+    Fastest,
+    WeakestDefense
+}
 
 public class Enemy :
     Unit,
     IPointerClickHandler
 {
+    [Header("AI")]
+    public EnemyTargetMode targetMode =
+        EnemyTargetMode.Random;
+
+    [Header("AI Delay")]
+    public float attackDelay = 1.5f;
+    public float endTurnDelay = 1.5f;
+
     public override void MyTurn()
     {
         base.MyTurn();
 
-        // 랜덤 스킬 선택
+        StartCoroutine(EnemyTurnRoutine());
+    }
+
+    IEnumerator EnemyTurnRoutine()
+    {
+        yield return new WaitForSeconds(attackDelay);
+
+        if (skills == null ||
+            skills.Count <= 0)
+        {
+            yield return new WaitForSeconds(endTurnDelay);
+
+            TurnManager.instance.EndTurn();
+            yield break;
+        }
+
         selectedSkill =
-            skills[
-                Random.Range(
-                    0,
-                    skills.Count
-                )
-            ];
+            ChooseSkill();
 
         Unit target =
-            GetRandomPlayer();
+            GetTarget();
 
-        if (target != null)
+        if (target != null &&
+            selectedSkill != null)
         {
-            switch (
-                selectedSkill.targetType
-            )
+            PlaySkillSound();
+
+            switch (selectedSkill.targetType)
             {
                 case TargetType.SingleEnemy:
 
-                    selectedSkill
-                        .skillLogic
-                        .Use(
-                            this,
-                            target,
-                            selectedSkill
-                        );
+                    selectedSkill.skillLogic.Use(
+                        this,
+                        target,
+                        selectedSkill
+                    );
 
                     break;
 
@@ -60,28 +87,275 @@ public class Enemy :
 
                 case TargetType.Self:
 
-                    selectedSkill
-                        .skillLogic
-                        .Use(
-                            this,
-                            this,
-                            selectedSkill
-                        );
+                    selectedSkill.skillLogic.Use(
+                        this,
+                        this,
+                        selectedSkill
+                    );
 
                     break;
             }
         }
 
-        StartCoroutine(EndTurnDelay());
-    }
-    IEnumerator EndTurnDelay()
-    {
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(endTurnDelay);
 
         TurnManager.instance.EndTurn();
     }
 
-    // 적 클릭
+    SkillData ChooseSkill()
+    {
+        if (health <= maxHealth * 0.3f)
+        {
+            SkillData selfSkill =
+                FindSkill(TargetType.Self);
+
+            if (selfSkill != null)
+                return selfSkill;
+        }
+
+        int alivePlayerCount =
+            CountAlivePlayers();
+
+        if (alivePlayerCount >= 3)
+        {
+            SkillData allSkill =
+                FindSkill(TargetType.AllEnemy);
+
+            if (allSkill != null)
+                return allSkill;
+        }
+
+        return skills[
+            Random.Range(0, skills.Count)
+        ];
+    }
+
+    SkillData FindSkill(TargetType type)
+    {
+        foreach (SkillData skill in skills)
+        {
+            if (skill != null &&
+                skill.targetType == type)
+            {
+                return skill;
+            }
+        }
+
+        return null;
+    }
+
+    Unit GetTarget()
+    {
+        switch (targetMode)
+        {
+            case EnemyTargetMode.LowestHp:
+                return GetLowestHpPlayer();
+
+            case EnemyTargetMode.HighestHp:
+                return GetHighestHpPlayer();
+
+            case EnemyTargetMode.Fastest:
+                return GetFastestPlayer();
+
+            case EnemyTargetMode.WeakestDefense:
+                return GetWeakestDefensePlayer();
+
+            default:
+                return GetRandomPlayer();
+        }
+    }
+
+    Unit GetRandomPlayer()
+    {
+        List<Unit> alivePlayers =
+            GetAlivePlayers();
+
+        if (alivePlayers.Count <= 0)
+            return null;
+
+        return alivePlayers[
+            Random.Range(0, alivePlayers.Count)
+        ];
+    }
+
+    Unit GetLowestHpPlayer()
+    {
+        Unit result = null;
+
+        foreach (Unit party
+            in PartyManager.instance.partySlots)
+        {
+            if (party == null ||
+                party.health <= 0)
+                continue;
+
+            if (result == null ||
+                party.health < result.health)
+            {
+                result = party;
+            }
+        }
+
+        return result;
+    }
+
+    Unit GetHighestHpPlayer()
+    {
+        Unit result = null;
+
+        foreach (Unit party
+            in PartyManager.instance.partySlots)
+        {
+            if (party == null ||
+                party.health <= 0)
+                continue;
+
+            if (result == null ||
+                party.health > result.health)
+            {
+                result = party;
+            }
+        }
+
+        return result;
+    }
+
+    Unit GetFastestPlayer()
+    {
+        Unit result = null;
+
+        foreach (Unit party
+            in PartyManager.instance.partySlots)
+        {
+            if (party == null ||
+                party.health <= 0)
+                continue;
+
+            if (result == null ||
+                party.GetSpeed() >
+                result.GetSpeed())
+            {
+                result = party;
+            }
+        }
+
+        return result;
+    }
+
+    Unit GetWeakestDefensePlayer()
+    {
+        Unit result = null;
+
+        foreach (Unit party
+            in PartyManager.instance.partySlots)
+        {
+            if (party == null ||
+                party.health <= 0)
+                continue;
+
+            if (result == null ||
+                party.GetDefensePower() <
+                result.GetDefensePower())
+            {
+                result = party;
+            }
+        }
+
+        return result;
+    }
+
+    List<Unit> GetAlivePlayers()
+    {
+        List<Unit> alivePlayers =
+            new List<Unit>();
+
+        foreach (Unit party
+            in PartyManager.instance.partySlots)
+        {
+            if (party != null &&
+                party.health > 0)
+            {
+                alivePlayers.Add(party);
+            }
+        }
+
+        return alivePlayers;
+    }
+
+    int CountAlivePlayers()
+    {
+        int count = 0;
+
+        foreach (Unit party
+            in PartyManager.instance.partySlots)
+        {
+            if (party != null &&
+                party.health > 0)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    void AttackAllPlayers()
+    {
+        foreach (Unit unit
+            in PartyManager.instance.partySlots)
+        {
+            if (unit != null &&
+                unit.health > 0)
+            {
+                selectedSkill.skillLogic.Use(
+                    this,
+                    unit,
+                    selectedSkill
+                );
+            }
+        }
+    }
+
+    void AttackMultiplePlayers(int count)
+    {
+        int attacked = 0;
+
+        List<Unit> alivePlayers =
+            GetAlivePlayers();
+
+        while (alivePlayers.Count > 0 &&
+            attacked < count)
+        {
+            int index =
+                Random.Range(0, alivePlayers.Count);
+
+            Unit target =
+                alivePlayers[index];
+
+            selectedSkill.skillLogic.Use(
+                this,
+                target,
+                selectedSkill
+            );
+
+            alivePlayers.RemoveAt(index);
+
+            attacked++;
+        }
+    }
+
+    void PlaySkillSound()
+    {
+        if (AudioManager.instance == null)
+            return;
+
+        if (selectedSkill == null)
+            return;
+
+        AudioManager.instance
+            .PlaySfx(selectedSkill.soundEffect);
+    }
+
     public void OnPointerClick(
         PointerEventData eventData
     )
@@ -91,8 +365,7 @@ public class Enemy :
             return;
 
         Unit current =
-            TurnManager.instance
-            .currentUnit;
+            TurnManager.instance.currentUnit;
 
         if (current == null)
             return;
@@ -103,7 +376,6 @@ public class Enemy :
         if (skill == null)
             return;
 
-        // 적 대상 스킬만 허용
         if (
             skill.targetType ==
             TargetType.SingleEnemy
@@ -119,76 +391,6 @@ public class Enemy :
         )
         {
             current.SelectTarget(this);
-        }
-    }
-
-    // 랜덤 플레이어
-    Unit GetRandomPlayer()
-    {
-        foreach (Unit party
-            in PartyManager.instance
-            .partySlots)
-        {
-            if (
-                party != null &&
-                party.health > 0
-            )
-            {
-                return party;
-            }
-        }
-
-        return null;
-    }
-
-    // 전체 공격
-    void AttackAllPlayers()
-    {
-        foreach (Unit unit
-            in PartyManager.instance
-            .partySlots)
-        {
-            if (
-                unit != null &&
-                unit.health > 0
-            )
-            {
-                selectedSkill.skillLogic.Use(
-                    this,
-                    unit,
-                    selectedSkill
-                );
-            }
-        }
-    }
-
-    // 다인 공격
-    void AttackMultiplePlayers(
-        int count
-    )
-    {
-        int attacked = 0;
-
-        foreach (Unit unit
-            in PartyManager.instance
-            .partySlots)
-        {
-            if (
-                unit != null &&
-                unit.health > 0
-            )
-            {
-                selectedSkill.skillLogic.Use(
-                    this,
-                    unit,
-                    selectedSkill
-                );
-
-                attacked++;
-
-                if (attacked >= count)
-                    break;
-            }
         }
     }
 }
