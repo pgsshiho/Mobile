@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4148de06aa3f6fc4fb8b87538ee7aabc, type: 3}
+  m_Name: BayonetThrust
+  m_EditorClassIdentifier: Assembly-CSharp::SkillData
+  skillName: "\uCD1D\uAC80\uC220"
+  icon: {fileID: 0}
+  description: "\uB2E8\uC77C \uC801\uC744 \uCD1D\uAC80\uC73C\uB85C \uCC14\uB7EC \uD53C\uD574\uB97C
+    \uC785\uD788\uACE0 \uCD9C\uD608\uC744 \uC720\uBC1C\uD569\uB2C8\uB2E4. (1\uC5F4)"
+  targetType: 0
+  power: 16
+  hitBonus: 5
+  soundEffect: {fileID: 0}
+  skillLogic: {fileID: 11400000, guid: f32f428a7ed468e418f7f002f825c4c0, type: 2}

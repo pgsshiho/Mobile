@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4148de06aa3f6fc4fb8b87538ee7aabc, type: 3}
+  m_Name: PowerBarrier
+  m_EditorClassIdentifier: Assembly-CSharp::SkillData
+  skillName: "\uC804\uB825 \uBC29\uBCBD"
+  icon: {fileID: 0}
+  description: "\uC9C0\uC815 \uC544\uAD70\uC5D0\uAC8C \uBC29\uBCBD\uC744 \uBD80\uC5EC\uD558\uC5EC
+    \uBC29\uC5B4\uB825\uC744 20% \uC0C1\uC2B9\uC2DC\uD0B5\uB2C8\uB2E4."
+  targetType: 5
+  power: 0
+  hitBonus: 0
+  soundEffect: {fileID: 0}
+  skillLogic: {fileID: 11400000, guid: 97a7f711485a542488de3c224bdb0bcf, type: 2}

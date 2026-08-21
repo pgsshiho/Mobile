@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4148de06aa3f6fc4fb8b87538ee7aabc, type: 3}
+  m_Name: LightMaintenance
+  m_EditorClassIdentifier: Assembly-CSharp::SkillData
+  skillName: "\uACBD\uC815\uBE44"
+  icon: {fileID: 0}
+  description: "\uB2E8\uC77C \uC544\uAD70\uC758 \uC7A5\uBE44\uB97C \uC810\uAC80\uD558\uC5EC
+    \uC18C\uD3ED \uC218\uB9AC\uD569\uB2C8\uB2E4. (3~4\uC5F4)"
+  targetType: 5
+  power: 0
+  hitBonus: 0
+  soundEffect: {fileID: 0}
+  skillLogic: {fileID: 11400000, guid: 8167b33c25212784d9a9a4905aca1b6b, type: 2}

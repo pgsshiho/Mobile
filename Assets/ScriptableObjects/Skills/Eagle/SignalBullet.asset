@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4148de06aa3f6fc4fb8b87538ee7aabc, type: 3}
+  m_Name: SignalBullet
+  m_EditorClassIdentifier: Assembly-CSharp::SkillData
+  skillName: "\uC2E0\uD638 \uD0C4\uD658"
+  icon: {fileID: 0}
+  description: "\uC801\uC758 \uD68C\uD53C\uC728\uACFC \uBC29\uC5B4\uB825\uC744 \uD134
+    \uC885\uB8CC\uAE4C\uC9C0 \uBB34\uB825\uD654\uD569\uB2C8\uB2E4."
+  targetType: 0
+  power: 10
+  hitBonus: 5
+  soundEffect: {fileID: 0}
+  skillLogic: {fileID: 11400000, guid: d2df93ba450de0742b8bf435455aa672, type: 2}
