@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4148de06aa3f6fc4fb8b87538ee7aabc, type: 3}
+  m_Name: Bombardment
+  m_EditorClassIdentifier: Assembly-CSharp::SkillData
+  skillName: "\uD3EC\uACA9"
+  icon: {fileID: 0}
+  description: "\uB2E8\uC77C \uB300\uC0C1\uC5D0\uAC8C \uCD08\uACE0\uD654\uB825 \uD3EC\uD0C4\uC744
+    \uBC1C\uC0AC\uD558\uC5EC \uB9C9\uB300\uD55C \uD53C\uD574\uB97C \uC785\uD799\uB2C8\uB2E4.
+    (4\uC5F4 \uAD8C\uC7A5)"
+  targetType: 0
+  power: 28
+  hitBonus: 5
+  soundEffect: {fileID: 0}
+  skillLogic: {fileID: 11400000, guid: 6b15122bf85a8a24ab312331548081c3, type: 2}

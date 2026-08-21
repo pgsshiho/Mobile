@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 152c57aac8623e64098870eb93598453, type: 3}
+  m_Name: GuardAllyLogic
+  m_EditorClassIdentifier: Assembly-CSharp::GuardAlly
+  allyDefenseBuff: {fileID: 11400000, guid: 1c637c59861305246b6ffacc4255eb11, type: 2}
+  selfDefensePenaltyBuff: {fileID: 11400000, guid: cdf5ebb1327ff604e9954cbfe77a3701, type: 2}

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4148de06aa3f6fc4fb8b87538ee7aabc, type: 3}
+  m_Name: DistortionField
+  m_EditorClassIdentifier: Assembly-CSharp::SkillData
+  skillName: "\uC65C\uACE1\uC7A5"
+  icon: {fileID: 0}
+  description: "\uC790\uC2E0 \uB4A4\uC758 \uC544\uAD70\uB4E4\uC5D0\uAC8C \uD68C\uD53C\uC728
+    \uC99D\uAC00 \uC65C\uACE1\uC7A5\uC744 \uC804\uAC1C\uD569\uB2C8\uB2E4. (1~2\uC5F4)"
+  targetType: 6
+  power: 0
+  hitBonus: 0
+  soundEffect: {fileID: 0}
+  skillLogic: {fileID: 11400000, guid: ac932c150d26eb449a38f923f44e61e9, type: 2}
