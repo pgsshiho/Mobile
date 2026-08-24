@@ -467,9 +467,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Room
   roomType: 0
-  nextRoom: {fileID: 156557550}
-  prevRoom: {fileID: 2064028799}
+  zoneType: 0
   roomName: A
+  enemySpawnPoints: []
   enemies:
   - {fileID: 953302879}
 --- !u!1 &181508519
@@ -578,7 +578,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95d9a229b77316a409e8ad38c6206b72, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomManager
+  enemyPools: []
   currentRoom: {fileID: 2064028799}
+  currentZone: 0
+  roomPools: []
+  roomParent: {fileID: 0}
+  roomsPerZone: 8
 --- !u!82 &181508525
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1094,6 +1099,13 @@ MonoBehaviour:
   defensePower: 3
   criticalChance: 0
   accuracy: 90
+  energyMax: 100
+  energyCurrent: 100
+  specialArmor: 0
+  emergencyPower: 0
+  oxidationResist: 0
+  oxidationDamagePercent: 3
+  dodgeChance: 0
   skills:
   - {fileID: 11400000, guid: 26b4e2fcfdf7b4f4daa3e7d2f6424ee6, type: 2}
   - {fileID: 11400000, guid: 3d5fdd70ffec6c641bfbd6cb237c92c5, type: 2}
@@ -1104,11 +1116,6 @@ MonoBehaviour:
   selectedSkill: {fileID: 0}
   buffs: []
   debuffs: []
-  isBleeding: 0
-  bleedingCount: 0
-  isStunned: 0
-  fireCount: 0
-  isFires: 0
   myturnUI: {fileID: 146889652}
   damageTextPrefab: {fileID: 3432776059765830471, guid: 7d3631656ebbd604aa80f9e945222ebc, type: 3}
   damageTextSpawnPoint: {fileID: 535973444}
@@ -1118,6 +1125,9 @@ MonoBehaviour:
   maxDefenseLevel: 10
   accuracyupgrade: 0
   Unitname: Enemy
+  statusIconParent: {fileID: 0}
+  statusIconPrefab: {fileID: 0}
+  statusIconDatas: []
   targetMode: 0
   attackDelay: 1.5
   endTurnDelay: 1.5
@@ -1299,6 +1309,13 @@ MonoBehaviour:
   defensePower: 5
   criticalChance: 0
   accuracy: 90
+  energyMax: 100
+  energyCurrent: 100
+  specialArmor: 0
+  emergencyPower: 0.1
+  oxidationResist: 0
+  oxidationDamagePercent: 3
+  dodgeChance: 0
   skills:
   - {fileID: 11400000, guid: 26b4e2fcfdf7b4f4daa3e7d2f6424ee6, type: 2}
   - {fileID: 11400000, guid: 3d5fdd70ffec6c641bfbd6cb237c92c5, type: 2}
@@ -1309,11 +1326,6 @@ MonoBehaviour:
   selectedSkill: {fileID: 0}
   buffs: []
   debuffs: []
-  isBleeding: 0
-  bleedingCount: 0
-  isStunned: 0
-  fireCount: 0
-  isFires: 0
   myturnUI: {fileID: 1768995498}
   damageTextPrefab: {fileID: 0}
   damageTextSpawnPoint: {fileID: 0}
@@ -1323,6 +1335,9 @@ MonoBehaviour:
   maxDefenseLevel: 100
   accuracyupgrade: 0
   Unitname: 
+  statusIconParent: {fileID: 0}
+  statusIconPrefab: {fileID: 0}
+  statusIconDatas: []
 --- !u!212 &542442345
 SpriteRenderer:
   serializedVersion: 2
@@ -2337,6 +2352,13 @@ MonoBehaviour:
   defensePower: 3
   criticalChance: 0
   accuracy: 90
+  energyMax: 100
+  energyCurrent: 100
+  specialArmor: 0
+  emergencyPower: 0.1
+  oxidationResist: 0
+  oxidationDamagePercent: 3
+  dodgeChance: 0
   skills:
   - {fileID: 11400000, guid: 26b4e2fcfdf7b4f4daa3e7d2f6424ee6, type: 2}
   - {fileID: 11400000, guid: 3d5fdd70ffec6c641bfbd6cb237c92c5, type: 2}
@@ -2347,11 +2369,6 @@ MonoBehaviour:
   selectedSkill: {fileID: 0}
   buffs: []
   debuffs: []
-  isBleeding: 0
-  bleedingCount: 0
-  isStunned: 0
-  fireCount: 0
-  isFires: 0
   myturnUI: {fileID: 2105393266}
   damageTextPrefab: {fileID: 0}
   damageTextSpawnPoint: {fileID: 0}
@@ -2361,6 +2378,9 @@ MonoBehaviour:
   maxDefenseLevel: 10
   accuracyupgrade: 0
   Unitname: 
+  statusIconParent: {fileID: 0}
+  statusIconPrefab: {fileID: 0}
+  statusIconDatas: []
   targetMode: 0
   attackDelay: 1.5
   endTurnDelay: 1.5
@@ -4377,9 +4397,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Room
   roomType: 0
-  nextRoom: {fileID: 2064028799}
-  prevRoom: {fileID: 156557550}
+  zoneType: 0
   roomName: A
+  enemySpawnPoints: []
   enemies:
   - {fileID: 483704183}
 --- !u!1001 &2097168291
@@ -4476,7 +4496,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6726294956233924360, guid: 7b4dc49aea0b85f4db6768cab8cee3b2, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

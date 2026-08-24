@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bc3d4f7e0174f74e9d60d3329f22ee6, type: 3}
+  m_Name: Lab_FloodedRoom
+  m_EditorClassIdentifier: Assembly-CSharp::RoomPoolData
+  zoneType: 4
+  roomType: 14
+  roomPrefabs:
+  - {fileID: 1140000000000001, guid: 8b7f59721cae4611b402b70100e8fb57, type: 3}

@@ -3,12 +3,8 @@ using UnityEngine;
 public enum ZoneType
 {
     Forest,
-    Cliff,
-    Village,
-    Underwater,
     Coast,
-    Sea,
-    Cave,
+    Underwater,
     Basement,
     Lab,
     City
@@ -19,10 +15,27 @@ public enum RoomType
     Start,
     Enemy,
     Boss,
-    Event,
-    Shop,
-    GGangGGang,
-    Reward
+
+    // ── 보상방 ─────────────────────────────────────────────
+    Fountain,       // 분수 → 확정 버프 획득
+    SageStone,      // 현자의 석판 → 경험치 획득
+    TrainingRoom,   // 훈련 교관 → 돈 지불로 능력치 업
+
+    // ── 마을방 ─────────────────────────────────────────────
+    ItemShop,       // 철물점 (아이템 상점)
+    RepairShop,     // 수리점 (여관 - 체력 회복)
+    Blacksmith,     // 대장간 (장비 강화)
+
+    // ── 기타 ───────────────────────────────────────────────
+    Altar,          // 제단 (버프 혹은 디버프 획득)
+    GamblingRoom,   // 도박방 (돈 도박)
+    Archive,        // 기록 보관소 (스토리/로어)
+
+    // ── 적 환경방 ───────────────────────────────────────────
+    GrassRoom,      // 풀이 가득한 방
+    FloodedRoom,    // 물이 차있는 방
+    CloudRoom,      // 구름 방
+    PollutedRoom,   // 오염된 방
 }
 public class RoomManager : MonoBehaviour
 {
@@ -185,7 +198,7 @@ public class RoomManager : MonoBehaviour
         return null;
     }
     [Header("Run Setting")]
-    public int roomsPerZone = 8;
+    public int roomsPerZone = 13;
 
     private void Start()
     {
@@ -208,7 +221,7 @@ public class RoomManager : MonoBehaviour
         nodeId = 0;
 
         List<RoomType> roomTypes =
-            CreateZoneRoomTypes();
+            CreateZoneRoomTypes(zone);
 
         RoomNode previousNode = null;
 
@@ -235,33 +248,91 @@ public class RoomManager : MonoBehaviour
         }
     }
 
-    List<RoomType> CreateZoneRoomTypes()
+    // 각 지역마다 총 13개 방 생성 (시작 1 + 중간 11 + 보스 1 = 13개)
+    // 조건: 적방 최소 4개, 기타방 최소 2개, 마을방 최소 2개, 보상방 최소 2개
+    List<RoomType> CreateZoneRoomTypes(ZoneType zone)
     {
-        List<RoomType> middleRooms =
-            new List<RoomType>();
+        List<RoomType> middleRooms = new List<RoomType>();
 
-        middleRooms.Add(RoomType.Enemy);
-        middleRooms.Add(RoomType.Event);
-        middleRooms.Add(RoomType.Reward);
-        middleRooms.Add(RoomType.Shop);
-        middleRooms.Add(RoomType.GGangGGang);
-        middleRooms.Add(RoomType.Enemy);
-
-        Shuffle(middleRooms);
-
-        List<RoomType> result =
-            new List<RoomType>();
-
-        result.Add(RoomType.Start);
-
-        foreach (RoomType type in middleRooms)
+        // 1. 적방 카테고리 (최소 4개)
+        for (int i = 0; i < 4; i++)
         {
-            result.Add(type);
+            middleRooms.Add(GetRandomEnemyRoomType(zone));
         }
 
+        // 2. 기타방 카테고리 (최소 2개)
+        RoomType[] etcRooms = new RoomType[] { RoomType.Altar, RoomType.GamblingRoom, RoomType.Archive };
+        for (int i = 0; i < 2; i++)
+        {
+            middleRooms.Add(etcRooms[Random.Range(0, etcRooms.Length)]);
+        }
+
+        // 3. 마을방 카테고리 (최소 2개)
+        RoomType[] townRooms = new RoomType[] { RoomType.ItemShop, RoomType.RepairShop, RoomType.Blacksmith };
+        for (int i = 0; i < 2; i++)
+        {
+            middleRooms.Add(townRooms[Random.Range(0, townRooms.Length)]);
+        }
+
+        // 4. 보상방 카테고리 (최소 2개)
+        RoomType[] rewardRooms = new RoomType[] { RoomType.Fountain, RoomType.SageStone, RoomType.TrainingRoom };
+        for (int i = 0; i < 2; i++)
+        {
+            middleRooms.Add(rewardRooms[Random.Range(0, rewardRooms.Length)]);
+        }
+
+        // 5. 남은 1개 중간 방 (총 11개 맞춤: 4+2+2+2 = 10개 -> +1개 추가)
+        List<RoomType> allCandidates = new List<RoomType>();
+        allCandidates.Add(GetRandomEnemyRoomType(zone));
+        allCandidates.Add(etcRooms[Random.Range(0, etcRooms.Length)]);
+        allCandidates.Add(townRooms[Random.Range(0, townRooms.Length)]);
+        allCandidates.Add(rewardRooms[Random.Range(0, rewardRooms.Length)]);
+        middleRooms.Add(allCandidates[Random.Range(0, allCandidates.Count)]);
+
+        // 6. 중간 방들 무작위 셔플
+        Shuffle(middleRooms);
+
+        // 7. 결과 구성: Start(1개) + 중간방(11개) + Boss(1개) = 총 13개
+        List<RoomType> result = new List<RoomType>();
+        result.Add(RoomType.Start);
+        result.AddRange(middleRooms);
         result.Add(RoomType.Boss);
 
         return result;
+    }
+
+    // Zone에 적합한 적방/환경적방 반환
+    RoomType GetRandomEnemyRoomType(ZoneType zone)
+    {
+        List<RoomType> enemyPool = new List<RoomType> { RoomType.Enemy };
+
+        switch (zone)
+        {
+            case ZoneType.Forest:
+                enemyPool.Add(RoomType.GrassRoom);
+                enemyPool.Add(RoomType.PollutedRoom);
+                break;
+            case ZoneType.Coast:
+                enemyPool.Add(RoomType.FloodedRoom);
+                enemyPool.Add(RoomType.CloudRoom);
+                break;
+            case ZoneType.Underwater:
+                enemyPool.Add(RoomType.FloodedRoom);
+                break;
+            case ZoneType.Basement:
+                enemyPool.Add(RoomType.PollutedRoom);
+                enemyPool.Add(RoomType.CloudRoom);
+                break;
+            case ZoneType.Lab:
+                enemyPool.Add(RoomType.PollutedRoom);
+                break;
+            case ZoneType.City:
+                enemyPool.Add(RoomType.CloudRoom);
+                enemyPool.Add(RoomType.PollutedRoom);
+                break;
+        }
+
+        return enemyPool[Random.Range(0, enemyPool.Count)];
     }
 
     void Shuffle<T>(List<T> list)

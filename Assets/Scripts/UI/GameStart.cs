@@ -8,7 +8,7 @@ public class GameStart : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
-            string sceneToLoad = PlayerPrefs.GetString("SavedScene", "Factory");
+            string sceneToLoad = Save.GetSavedScene("Factory");
             SceneChanger.BG(sceneToLoad);
             Debug.Log("게임이 시작되었습니다!");
         }

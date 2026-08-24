@@ -264,8 +264,107 @@ public class UnitStatusHandler
 
     public void TickTurn()
     {
+        OxidationTick();
+        OverheatTick();
+        ShortCircuitTick();
+        OilLeakTick();
+        OilEmptyTick();
         Bleeding();
         Fire();
         MarkTurn();
+    }
+
+    // ── 산화 I/II ─────────────────────────────────────────────────
+    // 산화 I: 속도 감소만 (데미지 없음 - 스탯 패널티는 CombatCalculator에서 처리)
+    // 산화 II: 속도 감소 + 지속 데미지 (maxHp * oxidationDamagePercent%)
+    private void OxidationTick()
+    {
+        if (isOxidationII)
+        {
+            float pct = owner.oxidationDamagePercent / 100f;
+            int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * pct));
+            // 특수 장갑으로 경감
+            dmg = Mathf.Max(1, dmg - owner.specialArmor);
+            owner.TakeDamage(dmg, Unit.DamageType.Bleed);
+            Debug.Log($"{owner.Unitname} 산화II 틱 -{dmg}");
+        }
+        // 산화 I은 속도 패널티만 (CombatCalculator.GetSpeed에서 반영)
+    }
+
+    // ── 과열 I ────────────────────────────────────────────────────
+    // 지속 데미지 (maxHp 4%), 확률적 합선/화재 전이
+    private void OverheatTick()
+    {
+        if (!isOverheat) return;
+
+        int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.04f));
+        dmg = Mathf.Max(1, dmg - owner.specialArmor);
+        owner.TakeDamage(dmg, Unit.DamageType.Fire);
+        Debug.Log($"{owner.Unitname} 과열 틱 -{dmg}");
+
+        // 10% 확률로 합선 전이
+        if (UnityEngine.Random.Range(0, 100) < 10 && !isShortCircuit)
+        {
+            owner.AddStatus(StatusType.ShortCircuit);
+            Debug.Log($"{owner.Unitname} 과열 → 합선 발생!");
+        }
+
+        // 5% 확률로 화재 전이
+        if (UnityEngine.Random.Range(0, 100) < 5 && !isFire)
+        {
+            owner.AddStatus(StatusType.Fire);
+            owner.RemoveStatus(StatusType.Overheat);
+            Debug.Log($"{owner.Unitname} 과열 → 화재 발전!");
+        }
+    }
+
+    // ── 합선 ──────────────────────────────────────────────────────
+    // 지속 데미지 (maxHp 3%) + 확률적 발열 유발
+    private void ShortCircuitTick()
+    {
+        if (!isShortCircuit) return;
+
+        int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.03f));
+        dmg = Mathf.Max(1, dmg - owner.specialArmor);
+        owner.TakeDamage(dmg, Unit.DamageType.Fire);
+        Debug.Log($"{owner.Unitname} 합선 틱 -{dmg}");
+
+        // 15% 확률로 과열 유발
+        if (UnityEngine.Random.Range(0, 100) < 15 && !isOverheat && !isFire)
+        {
+            owner.AddStatus(StatusType.Overheat);
+            Debug.Log($"{owner.Unitname} 합선 → 과열 발생!");
+        }
+    }
+
+    // ── 윤활유 누유 ───────────────────────────────────────────────
+    // 속도 감소 + 지속 데미지 (maxHp 3%) + 확률적 발열
+    private void OilLeakTick()
+    {
+        if (!isOilLeak) return;
+
+        int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.03f));
+        dmg = Mathf.Max(1, dmg - owner.specialArmor);
+        owner.TakeDamage(dmg, Unit.DamageType.Bleed);
+        Debug.Log($"{owner.Unitname} 윤활유 누유 틱 -{dmg}");
+
+        // 10% 확률로 발열
+        if (UnityEngine.Random.Range(0, 100) < 10 && !isOverheat && !isFire)
+        {
+            owner.AddStatus(StatusType.Overheat);
+            Debug.Log($"{owner.Unitname} 누유 → 과열 발생!");
+        }
+    }
+
+    // ── 윤활유 고갈 ───────────────────────────────────────────────
+    // 속도 감소 + 지속 데미지 지속 (누유보다 약한 데미지)
+    private void OilEmptyTick()
+    {
+        if (!isOilEmpty) return;
+
+        int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.02f));
+        dmg = Mathf.Max(1, dmg - owner.specialArmor);
+        owner.TakeDamage(dmg, Unit.DamageType.Bleed);
+        Debug.Log($"{owner.Unitname} 윤활유 고갈 틱 -{dmg}");
     }
 }

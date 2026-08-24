@@ -37,6 +37,24 @@ public class Unit : MonoBehaviour
     [Header("Accuracy")]
     public int accuracy = 90;
 
+    [Header("Extended Stats - OverCharge")]
+    [Rename("최대 HP")]
+    public int energyMax = 100;            // 최대 에너지
+    [Rename("현재 HP")]
+    public int energyCurrent = 100;        // 현재 에너지
+    [Rename("상태이상 데미지 경감")]
+    public int specialArmor = 0;           // 특수 장갑 (상태이상 피해 경감)
+    [Range(0f, 1f)]
+    [Rename("죽음의 일격 방어")]
+    public float emergencyPower = 0.1f;    // 비상전력: 체력 0에서 생존 확률
+    [Rename("녹 방어확률")]
+    public int oxidationResist = 0;        // 녹 방어 확률 (%)
+    [Rename("산화 2 지속 데미지 %")]
+    public int oxidationDamagePercent = 3; // 산화II 지속 데미지 (%)
+    [Range(0f, 1f)]
+    [Rename("회피율")]
+    public float dodgeChance = 0f;         // 회피율
+
     [Header("Skill")]
     public List<SkillData> skills = new List<SkillData>();
     public SkillData selectedSkill;
@@ -188,7 +206,16 @@ public class Unit : MonoBehaviour
 
         if (health <= 0)
         {
-            Die();
+            // 비상전력: 확률로 1HP 생존
+            if (emergencyPower > 0f && UnityEngine.Random.value < emergencyPower)
+            {
+                health = 1;
+                Debug.Log($"{Unitname} 비상전력 발동! 1HP 생존!");
+            }
+            else
+            {
+                Die();
+            }
         }
     }
 

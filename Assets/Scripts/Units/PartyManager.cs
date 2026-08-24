@@ -16,29 +16,15 @@ public class PartyManager : MonoBehaviour
     }
     public void SaveParty()
     {
-        for (int i = 0; i < partySlots.Length; i++)
-        {
-            if (partySlots[i] != null)
-            {
-                // Unit 프리팹/ScriptableObject의 name을 저장
-                PlayerPrefs.SetString($"PartySlot{i}", partySlots[i].name);
-            }
-            else
-            {
-                // 빈 슬롯이면 기존 저장 데이터 삭제
-                PlayerPrefs.DeleteKey($"PartySlot{i}");
-            }
-        }
-        PlayerPrefs.Save();
+        Save.SaveParty(partySlots);
     }
     public void LoadParty()
     {
-        bool hasAnyData = false; // 저장된 데이터가 하나라도 있는지 체크
+        bool hasAnyData = Save.HasPartySaveData(partySlots.Length);
 
         for (int i = 0; i < partySlots.Length; i++)
         {
-            // 기본값을 ""(빈 문자열)로 설정하는 것이 안전합니다.
-            string unitName = PlayerPrefs.GetString($"PartySlot{i}", "");
+            string unitName = Save.GetPartySlotUnitName(i);
 
             if (!string.IsNullOrEmpty(unitName))
             {
@@ -46,7 +32,6 @@ public class PartyManager : MonoBehaviour
                 if (unit != null)
                 {
                     partySlots[i] = unit;
-                    hasAnyData = true; // 유효한 데이터가 존재함
                 }
                 else
                 {

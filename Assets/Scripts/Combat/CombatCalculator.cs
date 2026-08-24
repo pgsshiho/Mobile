@@ -222,6 +222,16 @@ public static class CombatCalculator
     {
         if (attacker == null || skill == null) return false;
 
+        // 대상 회피 체크
+        if (target != null && target.dodgeChance > 0f)
+        {
+            if (Random.value < target.dodgeChance)
+            {
+                Debug.Log($"{target.Unitname} 회피!");
+                return false;
+            }
+        }
+
         int finalHit = attacker.GetAccuracy() + skill.hitBonus;
         finalHit = Mathf.Clamp(finalHit, 0, 100);
 
