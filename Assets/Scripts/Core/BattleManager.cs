@@ -6,6 +6,9 @@ public class BattleManager : MonoBehaviour
 {
     public static BattleManager instance;
 
+    [Header("Positions")]
+    public Transform[] Party;
+    public Transform[] Enemy;
     [Header("Battle")]
     public bool isBattle = false;
 
@@ -73,6 +76,14 @@ public class BattleManager : MonoBehaviour
     {
         isBattle = true;
 
+        if (RoomNavigationUI.instance != null)
+        {
+            RoomNavigationUI.instance.HideAll();
+        }
+
+        // 1. 유닛 위치 정렬 (파티 및 에너미 둘 다 지정된 위치로 배치)
+        SetupBattlePositions(room);
+
         if (battleUI != null)
             battleUI.SetActive(true);
 
@@ -83,6 +94,49 @@ public class BattleManager : MonoBehaviour
             TurnManager.instance.RegisterRoom(room);
 
         Debug.Log("전투 시작");
+    }
+
+    /// <summary>
+    /// 배틀 시작 시 Party와 Enemy 유닛들을 인스펙터에 지정된 위치(Party, Enemy)로 배치합니다.
+    /// </summary>
+    public void SetupBattlePositions(Room room)
+    {
+        // 1. 파티 유닛들을 지정된 Party 위치들로 배치
+        if (PartyManager.instance != null && Party != null && Party.Length > 0)
+        {
+            PartyManager.instance.PlacePartyAtPositions(Party);
+        }
+
+        // 2. 적 유닛들을 지정된 Enemy 위치들로 배치
+        if (room != null && room.enemies != null && room.enemies.Length > 0)
+        {
+            for (int i = 0; i < room.enemies.Length; i++)
+            {
+                Enemy enemy = room.enemies[i];
+                if (enemy == null) continue;
+
+                Transform targetPoint = null;
+
+                // BattleManager의 Enemy Transform 배열을 최우선으로 적용
+                if (Enemy != null && i < Enemy.Length && Enemy[i] != null)
+                {
+                    targetPoint = Enemy[i];
+                }
+                // 없으면 방의 기본 스폰 포인트 적용
+                else if (room.enemySpawnPoints != null && i < room.enemySpawnPoints.Length && room.enemySpawnPoints[i] != null)
+                {
+                    targetPoint = room.enemySpawnPoints[i];
+                }
+
+                if (targetPoint != null)
+                {
+                    enemy.transform.position = targetPoint.position;
+                    enemy.transform.rotation = targetPoint.rotation;
+                }
+
+                enemy.gameObject.SetActive(true);
+            }
+        }
     }
 
     public void StartTurn(Unit unit)
@@ -222,7 +276,22 @@ public class BattleManager : MonoBehaviour
         if (win)
         {
             if (RoomManager.instance != null)
+            {
                 RoomManager.instance.ClearCurrentRoom();
+
+                if (RoomManager.instance.currentRoom != null)
+                {
+                    RoomManager.instance.currentRoom.GenerateAndOpenReward();
+                }
+                else if (Reward.Instance != null)
+                {
+                    Reward.Instance.RewardOpen();
+                }
+            }
+            else if (Reward.Instance != null)
+            {
+                Reward.Instance.RewardOpen();
+            }
 
             Debug.Log("승리!");
         }

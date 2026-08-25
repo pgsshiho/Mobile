@@ -54,6 +54,7 @@ public class Enemy :
             selectedSkill != null)
         {
             PlaySkillSound();
+            OnSkillUsed(selectedSkill);
 
             switch (selectedSkill.targetType)
             {
