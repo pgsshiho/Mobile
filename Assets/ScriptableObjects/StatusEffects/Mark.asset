@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c288123f4dee4fb41847a79364f145cc, type: 3}
   m_Name: Mark
   m_EditorClassIdentifier: Assembly-CSharp::StatusIconData
-  statusType: 0
+  statusType: 10
   icon: {fileID: 0}

@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 아이템 인벤토리만 관리합니다. 재화(골드·재료)는 CurrencyManager에서 담당합니다.
+/// </summary>
 public class ItemManager : MonoBehaviour
 {
     public static ItemManager Instance;
-
-    [Header("Currency")]
-    public int money;
 
     [Header("Inventory")]
     public List<ItemRuntime> inventory = new List<ItemRuntime>();
@@ -16,31 +16,92 @@ public class ItemManager : MonoBehaviour
         Instance = this;
     }
 
-    // ============================================================
-    // 인벤토리 관리
-    // ============================================================
+    private void Start()
+    {
+        LoadFromSave();
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  저장 / 로드
+    // ════════════════════════════════════════════════════════════════════
+
+    public void LoadFromSave()
+    {
+        SaveData data = Save.GetSaveData();
+        if (data == null) return;
+
+        if (data.inventory != null && data.inventory.Count > 0)
+        {
+            inventory.Clear();
+            foreach (var savedItem in data.inventory)
+            {
+                ItemData itemData = Resources.Load<ItemData>($"Items/{savedItem.itemName}");
+                if (itemData != null)
+                {
+                    inventory.Add(new ItemRuntime
+                    {
+                        data      = itemData,
+                        count     = savedItem.count,
+                        usedCount = savedItem.usedCount
+                    });
+                }
+            }
+        }
+    }
+
+    public void SaveToData()
+    {
+        SaveData data = Save.GetSaveData();
+        if (data == null) return;
+
+        data.inventory.Clear();
+        foreach (var runtime in inventory)
+        {
+            if (runtime?.data != null)
+            {
+                data.inventory.Add(new SavedItemEntry
+                {
+                    itemName  = runtime.data.name,
+                    count     = runtime.count,
+                    usedCount = runtime.usedCount
+                });
+            }
+        }
+        Save.CommitSave();
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  인벤토리 관리
+    // ════════════════════════════════════════════════════════════════════
 
     /// <summary>아이템 획득 (수량 +1)</summary>
-    public void AddItem(ItemData item)
+    public bool AddItem(ItemData item)
     {
-        if (item == null) return;
+        if (item == null) return false;
 
         ItemRuntime runtime = inventory.Find(r => r.data == item);
         if (runtime != null)
         {
+            if (runtime.count >= item.maxStackCount)
+            {
+                Debug.Log($"{item.itemName}의 최대 소지 개수({item.maxStackCount}개)에 도달했습니다.");
+                return false;
+            }
             runtime.count++;
         }
         else
         {
             inventory.Add(new ItemRuntime
             {
-                data = item,
-                count = 1,
+                data      = item,
+                count     = 1,
                 usedCount = 0
             });
         }
 
+        SaveToData();
         Debug.Log($"아이템 획득: {item.itemName}");
+        return true;
     }
 
     /// <summary>아이템 보유 수량 조회</summary>
@@ -50,11 +111,11 @@ public class ItemManager : MonoBehaviour
         return runtime?.count ?? 0;
     }
 
-    // ============================================================
-    // 아이템 사용 (전투 중)
-    // ============================================================
+    // ════════════════════════════════════════════════════════════════════
+    //  아이템 사용 (전투 중)
+    // ════════════════════════════════════════════════════════════════════
 
-    /// <summary>전투 중 아이템 사용. 턴을 소모하므로 호출 후 EndTurn() 처리 필요.</summary>
+    /// <summary>전투 중 아이템 사용. 성공하면 수량 차감·저장 처리.</summary>
     public bool UseItem(ItemData item, Unit target)
     {
         if (item == null || target == null) return false;
@@ -66,10 +127,9 @@ public class ItemManager : MonoBehaviour
             return false;
         }
 
-        // 사용 한도 체크
         if (item.maxUseCount > 0 && runtime.usedCount >= item.maxUseCount)
         {
-            Debug.Log($"{item.itemName}: 사용 한도({item.maxUseCount}회) 초과! 연료 고갈");
+            Debug.Log($"{item.itemName}: 사용 한도({item.maxUseCount}회) 초과");
             return false;
         }
 
@@ -78,6 +138,7 @@ public class ItemManager : MonoBehaviour
         {
             runtime.count--;
             runtime.usedCount++;
+            SaveToData();
             Debug.Log($"{item.itemName} 사용 완료 → {target.Unitname}");
         }
 
@@ -88,29 +149,21 @@ public class ItemManager : MonoBehaviour
     {
         switch (item.effectType)
         {
-            // ── 고철덩어리: HP 회복 ──────────────────────────────
             case ItemEffectType.HealHp:
                 int healed = Mathf.RoundToInt(item.healAmount * target.GetHealMultiplier());
                 target.Heal(healed);
                 Debug.Log($"{target.Unitname} HP +{healed}");
                 return true;
 
-            // ── 비상배터리: 에너지 회복 ─────────────────────────
             case ItemEffectType.RecoverEnergy:
-                target.energyCurrent = Mathf.Min(
-                    target.energyCurrent + item.energyAmount,
-                    target.energyMax
-                );
+                target.energyCurrent = Mathf.Min(target.energyCurrent + item.energyAmount, target.energyMax);
                 Debug.Log($"{target.Unitname} 에너지 +{item.energyAmount}");
                 return true;
 
-            // ── 안테나: 통신기 복구 (미래 확장용) ───────────────
             case ItemEffectType.RecoverAntenna:
                 Debug.Log($"{target.Unitname} 통신기 복구 완료");
-                // TODO: 통신기 상태 시스템 구현 시 연동
                 return true;
 
-            // ── 퓨즈: 퓨즈 파손 해제 ────────────────────────────
             case ItemEffectType.RecoverFuse:
                 if (!target.isFuseBroken)
                 {
@@ -121,7 +174,6 @@ public class ItemManager : MonoBehaviour
                 Debug.Log($"{target.Unitname} 퓨즈 복구 완료");
                 return true;
 
-            // ── 사포: 산화 해제 + HP 2 감소 ─────────────────────
             case ItemEffectType.SandpaperOxidation:
                 if (!target.isOxidationI && !target.isOxidationII)
                 {
@@ -134,7 +186,6 @@ public class ItemManager : MonoBehaviour
                 Debug.Log($"{target.Unitname} 산화 제거 (사포) - HP -{item.sandpaperHpPenalty}");
                 return true;
 
-            // ── 녹 제거제: 산화 해제 ─────────────────────────────
             case ItemEffectType.RemoveOxidation:
                 if (!target.isOxidationI && !target.isOxidationII)
                 {
@@ -146,7 +197,6 @@ public class ItemManager : MonoBehaviour
                 Debug.Log($"{target.Unitname} 산화 제거 (녹 제거제)");
                 return true;
 
-            // ── 냉각제: 과열 해제 ────────────────────────────────
             case ItemEffectType.CoolDown:
                 if (!target.isOverheat)
                 {
@@ -157,7 +207,6 @@ public class ItemManager : MonoBehaviour
                 Debug.Log($"{target.Unitname} 과열 해제 (냉각제)");
                 return true;
 
-            // ── 소화기: 화재 → 과열 전환 ────────────────────────
             case ItemEffectType.ExtinguishFire:
                 if (!target.isFire)
                 {
@@ -165,7 +214,6 @@ public class ItemManager : MonoBehaviour
                     return false;
                 }
                 target.RemoveStatus(StatusType.Fire);
-                // 합선이 없을 때만 스프링쿨러 효과 (과열로 전환)
                 if (!target.isShortCircuit)
                 {
                     target.AddStatus(StatusType.Overheat);
@@ -177,7 +225,6 @@ public class ItemManager : MonoBehaviour
                 }
                 return true;
 
-            // ── 솔: 무장 오염 해제 ───────────────────────────────
             case ItemEffectType.RemovePollution:
                 if (!target.isWeaponPollution)
                 {
@@ -188,7 +235,6 @@ public class ItemManager : MonoBehaviour
                 Debug.Log($"{target.Unitname} 무장 오염 제거 (솔)");
                 return true;
 
-            // ── 절연 테이프: 합선 해제 ───────────────────────────
             case ItemEffectType.RemoveShortCircuit:
                 if (!target.isShortCircuit)
                 {
@@ -199,7 +245,6 @@ public class ItemManager : MonoBehaviour
                 Debug.Log($"{target.Unitname} 합선 해제 (절연 테이프)");
                 return true;
 
-            // ── 방수 테이프: 윤활유 누유 해제 ───────────────────
             case ItemEffectType.RemoveOilLeak:
                 if (!target.isOilLeak)
                 {
@@ -216,72 +261,29 @@ public class ItemManager : MonoBehaviour
         }
     }
 
-    // ============================================================
-    // 상점 강화 (기존 유지)
-    // ============================================================
+    // ════════════════════════════════════════════════════════════════════
+    //  상점 강화 구매 → CurrencyManager에 위임
+    //  (기존 UI 버튼에서 ItemManager.Instance.BuyXxx()를 호출하던 코드 호환 유지)
+    // ════════════════════════════════════════════════════════════════════
 
-    /// <summary>방어 강화 구매</summary>
+    /// <summary>방어 강화 구매 — 재화 처리는 CurrencyManager에서 수행합니다.</summary>
     public void BuyDefenseUpgrade(Unit user)
     {
-        if (user.defenseLevel >= user.maxDefenseLevel)
-        {
-            Debug.Log("최대 레벨");
-            return;
-        }
-
-        int price = 50 * (user.defenseLevel + 1);
-        if (money < price)
-        {
-            Debug.Log("돈 부족");
-            return;
-        }
-
-        money -= price;
-        user.defenseLevel++;
-        user.defensePower += 3;
-        Debug.Log(user.name + " 방어 강화 Lv." + user.defenseLevel);
+        if (CurrencyManager.instance != null)
+            CurrencyManager.instance.BuyDefenseUpgrade(user);
     }
 
-    /// <summary>공격 강화 구매</summary>
+    /// <summary>공격 강화 구매 — 재화 처리는 CurrencyManager에서 수행합니다.</summary>
     public void BuyAttackUpgrade(Unit user)
     {
-        if (user.attackLevel >= user.maxAttackLevel)
-        {
-            Debug.Log("최대 레벨");
-            return;
-        }
-
-        int price = 100 * (user.attackLevel + 1);
-        if (money < price)
-        {
-            Debug.Log("돈 부족");
-            return;
-        }
-
-        money -= price;
-        user.attackLevel++;
-        user.attackPower += 5;
-        Debug.Log(user.name + " 공격 강화 Lv." + user.attackLevel);
+        if (CurrencyManager.instance != null)
+            CurrencyManager.instance.BuyAttackUpgrade(user);
     }
 
-    /// <summary>정확도 강화 구매</summary>
+    /// <summary>정확도 강화 구매 — 재화 처리는 CurrencyManager에서 수행합니다.</summary>
     public void BuyAccuracyUpgrade(Unit user)
     {
-        if (user.accuracyupgrade)
-        {
-            Debug.Log("최대 레벨");
-            return;
-        }
-
-        if (money < 3000)
-        {
-            Debug.Log("돈 부족");
-            return;
-        }
-
-        money -= 3000;
-        user.accuracyupgrade = true;
-        user.accuracy += 10;
-        Debug.Log(user.name + " 정확도 강화 완료");
+        if (CurrencyManager.instance != null)
+            CurrencyManager.instance.BuyAccuracyUpgrade(user);
     }
 }

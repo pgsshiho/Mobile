@@ -16,8 +16,9 @@ public class DataPollutionBullet : SkillBase
         int damage = user.CalculateDamage(target, skill);
         target.TakeDamage(damage);
 
-        // 무장 오염 상태 부여
-        target.AddStatus(StatusType.WeaponPollution);
+        // 무장 오염 상태 부여 (3턴)
+        target.AddStatus(StatusType.WeaponPollution, 3);
+        TryApplyStatus(target, skill);
         Debug.Log($"{target.Unitname} 데이터 오염탄 피격! 무장 오염 발생!");
     }
 }

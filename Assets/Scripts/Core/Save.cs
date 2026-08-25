@@ -16,6 +16,7 @@ public class SaveData
     public int currentZone = 0;
     public List<string> partySlotUnitNames = new List<string> { "", "", "", "" };
     public int money = 0;
+    public int material = 0;
     public List<SavedItemEntry> inventory = new List<SavedItemEntry>();
 }
 
@@ -154,7 +155,7 @@ public class Save : MonoBehaviour
 
         for (int i = 0; i < partySlots.Length; i++)
         {
-            data.partySlotUnitNames[i] = (partySlots[i] != null) ? partySlots[i].name : "";
+            data.partySlotUnitNames[i] = (partySlots[i] != null) ? partySlots[i].name.Replace("(Clone)", "").Trim() : "";
         }
 
         CommitSave();
@@ -295,14 +296,21 @@ public class Save : MonoBehaviour
             for (int i = 0; i < PartyManager.instance.partySlots.Length; i++)
             {
                 data.partySlotUnitNames[i] = PartyManager.instance.partySlots[i] != null 
-                    ? PartyManager.instance.partySlots[i].name 
+                    ? PartyManager.instance.partySlots[i].name.Replace("(Clone)", "").Trim()
                     : "";
             }
         }
 
+        // 재화 저장 (CurrencyManager)
+        if (CurrencyManager.instance != null)
+        {
+            data.money    = CurrencyManager.instance.Gold;
+            data.material = CurrencyManager.instance.Material;
+        }
+
+        // 인벤토리 저장 (ItemManager)
         if (ItemManager.Instance != null)
         {
-            data.money = ItemManager.Instance.money;
             data.inventory.Clear();
             if (ItemManager.Instance.inventory != null)
             {
@@ -312,8 +320,8 @@ public class Save : MonoBehaviour
                     {
                         data.inventory.Add(new SavedItemEntry
                         {
-                            itemName = runtime.data.name,
-                            count = runtime.count,
+                            itemName  = runtime.data.name,
+                            count     = runtime.count,
                             usedCount = runtime.usedCount
                         });
                     }
@@ -350,9 +358,10 @@ public class Save : MonoBehaviour
             PartyManager.instance.LoadParty();
         }
 
-        if (ItemManager.Instance != null)
+        // 재화 로드 (CurrencyManager)
+        if (CurrencyManager.instance != null)
         {
-            ItemManager.Instance.money = data.money;
+            CurrencyManager.instance.LoadFromSave();
         }
 
         Debug.Log("게임 전체 데이터 JSON 불러오기 완료");

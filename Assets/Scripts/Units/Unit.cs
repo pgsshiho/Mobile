@@ -3,6 +3,7 @@ using UnityEngine;
 
 public enum StatusType
 {
+    None = -1,       // 상태이상 없음
     OxidationI,      // 산화 I
     OxidationII,     // 산화 II
     Overheat,        // 과열 I
@@ -13,7 +14,9 @@ public enum StatusType
     OilLeak,         // 윤활유 누유
     OilEmpty,        // 윤활유 고갈
     Broken,          // 파손
-    Marked           // 목표지정
+    Marked,          // 목표지정
+    Stun,            // 기절
+    Bleeding         // 출혈
 }
 
 public class Unit : MonoBehaviour
@@ -78,8 +81,7 @@ public class Unit : MonoBehaviour
 
     [Header("Status Icon")]
     public Transform statusIconParent;
-    public GameObject statusIconPrefab;
-    public StatusIconData[] statusIconDatas;
+    public StatusIconSet statusIconSet;
 
     // Subsystem Handlers
     private UnitBuffHandler buffHandler;
@@ -114,24 +116,21 @@ public class Unit : MonoBehaviour
     }
 
     // Status Properties (Forwarding to StatusHandler for full backward compatibility)
-    public bool isOxidationI { get => StatusHandler.isOxidationI; set => StatusHandler.isOxidationI = value; }
-    public bool isOxidationII { get => StatusHandler.isOxidationII; set => StatusHandler.isOxidationII = value; }
-    public bool isOverheat { get => StatusHandler.isOverheat; set => StatusHandler.isOverheat = value; }
-    public bool isFire { get => StatusHandler.isFire; set => StatusHandler.isFire = value; }
-    public bool isShortCircuit { get => StatusHandler.isShortCircuit; set => StatusHandler.isShortCircuit = value; }
-    public bool isFuseBroken { get => StatusHandler.isFuseBroken; set => StatusHandler.isFuseBroken = value; }
-    public bool isWeaponPollution { get => StatusHandler.isWeaponPollution; set => StatusHandler.isWeaponPollution = value; }
-    public bool isOilLeak { get => StatusHandler.isOilLeak; set => StatusHandler.isOilLeak = value; }
-    public bool isOilEmpty { get => StatusHandler.isOilEmpty; set => StatusHandler.isOilEmpty = value; }
-    public bool isBroken { get => StatusHandler.isBroken; set => StatusHandler.isBroken = value; }
-    public bool isMarked { get => StatusHandler.isMarked; set => StatusHandler.isMarked = value; }
-    public int markedTurn { get => StatusHandler.markedTurn; set => StatusHandler.markedTurn = value; }
+    public bool isOxidationI     => StatusHandler.HasStatus(StatusType.OxidationI);
+    public bool isOxidationII    => StatusHandler.HasStatus(StatusType.OxidationII);
+    public bool isOverheat       => StatusHandler.HasStatus(StatusType.Overheat);
+    public bool isFire           => StatusHandler.HasStatus(StatusType.Fire);
+    public bool isShortCircuit   => StatusHandler.HasStatus(StatusType.ShortCircuit);
+    public bool isFuseBroken     => StatusHandler.HasStatus(StatusType.FuseBroken);
+    public bool isWeaponPollution=> StatusHandler.HasStatus(StatusType.WeaponPollution);
+    public bool isOilLeak        => StatusHandler.HasStatus(StatusType.OilLeak);
+    public bool isOilEmpty       => StatusHandler.HasStatus(StatusType.OilEmpty);
+    public bool isBroken         => StatusHandler.HasStatus(StatusType.Broken);
+    public bool isMarked         => StatusHandler.HasStatus(StatusType.Marked);
+    public bool isStunned        => StatusHandler.HasStatus(StatusType.Stun);
+    public bool isBleeding       => StatusHandler.HasStatus(StatusType.Bleeding);
+    public int markedTurn        => StatusHandler.GetRemainingTurns(StatusType.Marked);
 
-    public bool isBleeding { get => StatusHandler.isBleeding; set => StatusHandler.isBleeding = value; }
-    public int bleedingCount { get => StatusHandler.bleedingCount; set => StatusHandler.bleedingCount = value; }
-    public bool isStunned { get => StatusHandler.isStunned; set => StatusHandler.isStunned = value; }
-    public int fireCount { get => StatusHandler.fireCount; set => StatusHandler.fireCount = value; }
-    public bool isFires { get => StatusHandler.isFires; set => StatusHandler.isFires = value; }
 
     protected virtual void Awake()
     {
@@ -148,8 +147,7 @@ public class Unit : MonoBehaviour
                 damageTextSpawnPoint,
                 myturnUI,
                 statusIconParent,
-                statusIconPrefab,
-                statusIconDatas
+                statusIconSet
             );
         }
 
@@ -179,7 +177,7 @@ public class Unit : MonoBehaviour
         if (isStunned)
         {
             Debug.Log($"{name} 기절");
-            isStunned = false;
+            RemoveStatus(StatusType.Stun);
 
             if (TurnManager.instance != null)
             {
@@ -187,6 +185,7 @@ public class Unit : MonoBehaviour
             }
             return;
         }
+
 
         if (health <= 0)
         {
@@ -263,12 +262,15 @@ public class Unit : MonoBehaviour
     // Status Delegation
     // ==========================
 
-    public void AddStatus(StatusType type, int turn = 0) => StatusHandler.AddStatus(type, turn);
+    public void AddStatus(StatusType type, int turns = 3) => StatusHandler.AddStatus(type, turns);
     public void RemoveStatus(StatusType type) => StatusHandler.RemoveStatus(type);
     public void ClearStates() => StatusHandler.ClearStates();
-    public void AddMark(int turn) => StatusHandler.AddMark(turn);
+    public void AddMark(int turns) => StatusHandler.AddMark(turns);
+    public bool HasStatus(StatusType type) => StatusHandler.HasStatus(type);
+    public int GetStatusTurns(StatusType type) => StatusHandler.GetRemainingTurns(type);
     public void AddStatusIcon(StatusType type) => UIHandler.AddStatusIcon(type);
     public void RemoveStatusIcon(StatusType type) => UIHandler.RemoveStatusIcon(type);
+
 
     // ==========================
     // Stat & Combat Delegation

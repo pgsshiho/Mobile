@@ -15,6 +15,7 @@ public class HornetShot : SkillBase
 
         int damage = user.CalculateDamage(target, skill);
         target.TakeDamage(damage);
+        TryApplyStatus(target, skill);
 
         Debug.Log($"{user.Unitname} 이(가) {target.Unitname} 에게 {damage} 사격 피해!");
     }

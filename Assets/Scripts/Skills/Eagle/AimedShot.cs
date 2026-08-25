@@ -20,6 +20,7 @@ public class AimedShot : SkillBase
         damage = Mathf.RoundToInt(damage * chargeDamageMultiplier);
 
         target.TakeDamage(damage);
+        TryApplyStatus(target, skill);
         Debug.Log($"{user.Unitname}의 정밀 조준 사격 적중! {target.Unitname}에게 {damage} 치명적 피해!");
     }
 }

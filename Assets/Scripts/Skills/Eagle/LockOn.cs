@@ -11,6 +11,7 @@ public class LockOn : SkillBase
         if (target == null) return;
 
         target.AddMark(markDuration);
-        Debug.Log($"{target.Unitname}에게 조준 고정 표식 부여 완료 (3턴 지속, 아군 명중률 보장)!");
+        TryApplyStatus(target, skill);
+        Debug.Log($"{target.Unitname}에게 조준 고정 표식 부여 완료 ({markDuration}턴 지속, 아군 명중률 보장)!");
     }
 }

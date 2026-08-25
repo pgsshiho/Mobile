@@ -9,32 +9,18 @@ public class Attack : SkillBase
         SkillData skill
     )
     {
-        int finalHit =
-            user.accuracy +
-            skill.hitBonus;
+        if (user == null || target == null) return;
 
-        finalHit =
-            Mathf.Clamp(finalHit, 0, 100);
-
-        int roll =
-            Random.Range(0, 100);
-
-        if (roll >= finalHit)
+        if (!user.CheckHit(target, skill))
         {
             Debug.Log("빗나감!");
             return;
         }
 
-        int damage =
-            Mathf.Max(
-                1,
-                user.attackPower +
-                skill.power -
-                target.defensePower
-            );
+        int damage = user.CalculateDamage(target, skill);
+        target.TakeDamage(damage);
+        TryApplyStatus(target, skill);
 
-        target.health -= damage;
-
-        Debug.Log("공격!");
+        Debug.Log($"{user.Unitname} 공격! {target.Unitname}에게 {damage} 피해");
     }
 }

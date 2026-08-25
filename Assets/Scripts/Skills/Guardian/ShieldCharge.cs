@@ -26,7 +26,7 @@ public class ShieldCharge : SkillBase
 
         if (Random.Range(0, 100) < stunChance)
         {
-            target.isStunned = true;
+            target.AddStatus(StatusType.Stun, 1);
             Debug.Log($"{target.Unitname} 돌진 충격으로 기절!");
         }
 

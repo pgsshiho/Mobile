@@ -16,6 +16,7 @@ public class MissileLaunch : SkillBase
 
         int damage = user.CalculateDamage(target, skill);
         target.TakeDamage(damage);
+        TryApplyStatus(target, skill);
 
         Debug.Log($"{user.Unitname} 이(가) {target.Unitname} 에게 {damage} 미사일 폭격 피해!");
     }

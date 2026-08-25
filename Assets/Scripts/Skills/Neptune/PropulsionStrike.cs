@@ -23,6 +23,7 @@ public class PropulsionStrike : SkillBase
         int finalDamage = baseDamage + hpBonusDamage;
 
         target.TakeDamage(finalDamage);
+        TryApplyStatus(target, skill);
         Debug.Log($"{user.Unitname} 추진 타격! 체력 비례 총 {finalDamage} 피해!");
     }
 

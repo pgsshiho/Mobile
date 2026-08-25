@@ -10,8 +10,7 @@ public class UnitUIHandler
     private readonly Transform damageTextSpawnPoint;
     private readonly GameObject myturnUI;
     private readonly Transform statusIconParent;
-    private readonly GameObject statusIconPrefab;
-    private readonly StatusIconData[] statusIconDatas;
+    private readonly StatusIconSet statusIconSet;
 
     private readonly Dictionary<StatusType, GameObject> statusIcons = new Dictionary<StatusType, GameObject>();
 
@@ -21,16 +20,14 @@ public class UnitUIHandler
         Transform damageTextSpawnPoint,
         GameObject myturnUI,
         Transform statusIconParent,
-        GameObject statusIconPrefab,
-        StatusIconData[] statusIconDatas)
+        StatusIconSet statusIconSet)
     {
         this.owner = owner;
         this.damageTextPrefab = damageTextPrefab;
         this.damageTextSpawnPoint = damageTextSpawnPoint;
         this.myturnUI = myturnUI;
         this.statusIconParent = statusIconParent;
-        this.statusIconPrefab = statusIconPrefab;
-        this.statusIconDatas = statusIconDatas;
+        this.statusIconSet = statusIconSet;
     }
 
     public void SetTurnUI(bool active)
@@ -86,14 +83,14 @@ public class UnitUIHandler
         if (statusIcons.ContainsKey(type))
             return;
 
-        if (statusIconParent == null || statusIconPrefab == null)
+        if (statusIconParent == null || statusIconSet == null || statusIconSet.statusIconPrefab == null)
             return;
 
-        Sprite icon = GetStatusIcon(type);
+        Sprite icon = statusIconSet.GetIcon(type);
         if (icon == null)
             return;
 
-        GameObject obj = Object.Instantiate(statusIconPrefab, statusIconParent);
+        GameObject obj = Object.Instantiate(statusIconSet.statusIconPrefab, statusIconParent);
         Image image = obj.GetComponent<Image>();
         if (image != null)
         {
@@ -127,21 +124,5 @@ public class UnitUIHandler
         }
 
         statusIcons.Clear();
-    }
-
-    private Sprite GetStatusIcon(StatusType type)
-    {
-        if (statusIconDatas == null)
-            return null;
-
-        foreach (StatusIconData data in statusIconDatas)
-        {
-            if (data != null && data.statusType == type)
-            {
-                return data.icon;
-            }
-        }
-
-        return null;
     }
 }

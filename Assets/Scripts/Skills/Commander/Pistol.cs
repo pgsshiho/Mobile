@@ -9,29 +9,18 @@ public class Pistol : SkillBase
         SkillData skill
     )
     {
-        // 명중 체크
+        if (user == null || target == null) return;
+
         if (!user.CheckHit(target, skill))
         {
             Debug.Log("빗나감!");
             return;
         }
 
-        int damage =
-            user.CalculateDamage(
-                target,
-                skill
-            );
+        int damage = user.CalculateDamage(target, skill);
+        target.TakeDamage(damage);
+        TryApplyStatus(target, skill);
 
-        target.health -= damage;
-
-        Debug.Log(
-            target.name +
-            " 출혈!"
-        );
-
-        if (target.health <= 0)
-        {
-            target.Die();
-        }
+        Debug.Log($"{user.Unitname} 권총 사격! {target.Unitname}에게 {damage} 피해");
     }
 }

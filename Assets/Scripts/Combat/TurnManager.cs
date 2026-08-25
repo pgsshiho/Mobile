@@ -13,7 +13,6 @@ public class TurnManager : MonoBehaviour
     bool battleEnded = false;
 
     public bool waitingForTarget = false;
-    public GameObject reward;
 
     private void Awake()
     {

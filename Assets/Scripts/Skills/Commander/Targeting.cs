@@ -11,6 +11,8 @@ public class Targeting : SkillBase
         SkillData skill
     )
     {
+        if (target == null) return;
         target.AddMark(markDuration);
+        TryApplyStatus(target, skill);
     }
 }

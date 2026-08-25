@@ -16,24 +16,12 @@ public class FrontWait : SkillBase
             return;
         }
 
-        int damage =
-            user.CalculateDamage(
-                target,
-                skill
-            );
+        int damage = user.CalculateDamage(target, skill);
+        target.TakeDamage(damage);
 
-        target.health -= damage;
+        target.AddStatus(StatusType.Bleeding, 3);
+        TryApplyStatus(target, skill);
 
-        target.isBleeding = true;
-
-        Debug.Log(
-            target.name +
-            " 출혈!"
-        );
-
-        if (target.health <= 0)
-        {
-            target.Die();
-        }
+        Debug.Log(target.name + " 출혈!");
     }
 }

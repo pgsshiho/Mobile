@@ -37,4 +37,7 @@ public class ItemData : ScriptableObject
 
     [Header("Use Limit (0 = 무제한)")]
     public int maxUseCount = 0;
+
+    [Header("Stack Limit")]
+    public int maxStackCount = 10;
 }

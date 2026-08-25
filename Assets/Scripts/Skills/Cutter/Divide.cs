@@ -9,34 +9,18 @@ public class Divide : SkillBase
         SkillData skill
     )
     {
-        // 명중 체크
+        if (user == null || target == null) return;
+
         if (!user.CheckHit(target, skill))
         {
             Debug.Log("빗나감!");
             return;
         }
 
-        // 데미지 계산
-        int damage =
-            user.CalculateDamage(
-                target,
-                skill
-            );
-
+        int damage = user.CalculateDamage(target, skill);
         target.TakeDamage(damage);
+        TryApplyStatus(target, skill);
 
-        Debug.Log(
-            user.name +
-            " → " +
-            target.name +
-            " 절단 " +
-            damage
-        );
-
-        // 사망 체크
-        if (target.health <= 0)
-        {
-            target.Die();
-        }
+        Debug.Log($"{user.Unitname} → {target.Unitname} 절단 {damage}");
     }
 }

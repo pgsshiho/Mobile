@@ -21,6 +21,11 @@ public class ThreeRoundBurst : SkillBase
             }
         }
 
+        if (hitCount > 0)
+        {
+            TryApplyStatus(target, skill);
+        }
+
         Debug.Log($"{user.Unitname} 3점사 사격 완료! {hitCount}발 명중, 총 {totalDamage} 피해!");
     }
 }

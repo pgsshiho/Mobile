@@ -21,6 +21,7 @@ public class Bombardment : SkillBase
         damage = Mathf.RoundToInt(damage * criticalMultiplierBonus);
 
         target.TakeDamage(damage);
+        TryApplyStatus(target, skill);
 
         Debug.Log($"{user.Unitname} 이(가) {target.Unitname} 에게 {damage} 강력한 포격 피해!");
     }

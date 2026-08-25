@@ -18,8 +18,9 @@ public class SignalBullet : SkillBase
             target.AddDebuff(signalDebuff);
         }
 
-        // 표식 및 방어 감소
+        // 표식 및 상태이상 적용
         target.AddStatus(StatusType.Marked, 2);
+        TryApplyStatus(target, skill);
         Debug.Log($"{target.Unitname} 신호 탄환 피격! 회피 및 방어력 무력화!");
     }
 }

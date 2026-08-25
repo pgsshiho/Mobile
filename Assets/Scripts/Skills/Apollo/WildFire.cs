@@ -21,6 +21,11 @@ public class WildFire : SkillBase
             }
         }
 
+        if (totalDamage > 0)
+        {
+            TryApplyStatus(target, skill);
+        }
+
         Debug.Log($"{user.Unitname} 난사 완료! {target.Unitname}에게 총 {totalDamage} 피해!");
     }
 }

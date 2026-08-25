@@ -18,6 +18,7 @@ public class PiercingShot : SkillBase
         rawDamage = Mathf.Max(1, rawDamage);
 
         target.TakeDamage(rawDamage);
+        TryApplyStatus(target, skill);
         Debug.Log($"{user.Unitname} 관통 사격! 방어력을 무시하고 {target.Unitname}에게 {rawDamage} 피해!");
     }
 }

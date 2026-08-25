@@ -26,6 +26,7 @@ public class WeakpointSnipe : SkillBase
         }
 
         target.TakeDamage(damage);
+        TryApplyStatus(target, skill);
         Debug.Log($"{user.Unitname} 이(가) {target.Unitname} 에게 {damage} 약점 저격 피해!");
     }
 }

@@ -20,7 +20,8 @@ public class AttackDeploy : SkillBase
         target.TakeDamage(damage);
 
         // 지속 데미지 (출혈 또는 디버프)
-        target.isBleeding = true;
+        target.AddStatus(StatusType.Bleeding, 3);
+        TryApplyStatus(target, skill);
         if (attackDeployDebuff != null)
         {
             target.AddDebuff(attackDeployDebuff);

@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c288123f4dee4fb41847a79364f145cc, type: 3}
-  m_Name: Blood
+  m_Name: Broken
   m_EditorClassIdentifier: Assembly-CSharp::StatusIconData
-  statusType: 1
+  statusType: 9
   icon: {fileID: 0}

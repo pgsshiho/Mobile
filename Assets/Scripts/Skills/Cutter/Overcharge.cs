@@ -9,18 +9,22 @@ public class Overcharge : SkillBase
     public int overheatChance = 30;
 
     public override void Use(
-    Unit user,
-    Unit target,
-    SkillData skill
-)
+        Unit user,
+        Unit target,
+        SkillData skill
+    )
     {
-        user.AddBuff(overchargeBuff);
+        if (user == null) return;
+
+        if (overchargeBuff != null)
+        {
+            user.AddBuff(overchargeBuff);
+        }
 
         if (Random.Range(0, 100) < overheatChance)
         {
-            user.fireCount += 1;    
-
-            Debug.Log("과열 발생!");
+            user.AddStatus(StatusType.Overheat, 3);
+            Debug.Log($"{user.Unitname} 오버차지 반동으로 과열 발생!");
         }
     }
 }
