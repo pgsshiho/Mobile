@@ -334,19 +334,12 @@ public class RoomManager : MonoBehaviour
             Destroy(currentRoom.gameObject);
         }
 
-        GameObject prefab = GetRandomRoomPrefab(node.zoneType, node.roomType);
+        Room prefab = GetRandomRoomPrefab(node.zoneType, node.roomType);
 
         if (prefab != null)
         {
             Transform parentToUse = roomParent != null ? roomParent : transform;
-            GameObject obj = Instantiate(prefab, parentToUse);
-            currentRoom = obj.GetComponent<Room>();
-
-            if (currentRoom == null)
-            {
-                currentRoom = obj.AddComponent<Room>();
-            }
-
+            currentRoom = Instantiate(prefab, parentToUse);
             currentRoom.Setup(node);
         }
         else
@@ -391,7 +384,7 @@ public class RoomManager : MonoBehaviour
     //  프리팹 풀 조회
     // ────────────────────────────────────────────────────────────────
 
-    GameObject GetRandomRoomPrefab(ZoneType zone, RoomType type)
+    Room GetRandomRoomPrefab(ZoneType zone, RoomType type)
     {
         foreach (RoomPoolData pool in roomPools)
         {

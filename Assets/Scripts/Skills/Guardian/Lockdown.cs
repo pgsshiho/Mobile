@@ -13,8 +13,8 @@ public class Lockdown : SkillBase
         int healAmount = Mathf.RoundToInt(user.maxHealth * healPercent);
         user.Heal(healAmount);
 
-        // 다음 턴 스킵 (기절 부여)
-        user.isStunned = true;
+        // 다음 턴 스킵 (기절 1턴 부여)
+        user.AddStatus(StatusType.Stun, 1);
 
         Debug.Log($"{user.Unitname} 강제 고정! 체력 {healAmount} 회복 및 다음 턴 충전 대기!");
     }

@@ -16,7 +16,7 @@ public class BayonetThrust : SkillBase
         int damage = user.CalculateDamage(target, skill);
         target.TakeDamage(damage);
 
-        target.isBleeding = true;
+        target.StatusHandler.AddStatus(StatusType.Bleeding);
         Debug.Log($"{user.Unitname} 총검 찌르기 적중! {target.Unitname}에게 {damage} 피해 및 출혈!");
     }
 }
