@@ -21,10 +21,6 @@ public enum RoomType
     Start,
     Enemy,
     Boss,
-    Event,
-    Shop,
-    GGangGGang,
-    Reward,
     // 세부 방 종류
     ItemShop,
     Blacksmith,
@@ -168,8 +164,6 @@ public class RoomManager : MonoBehaviour
         middleRooms.Add(GetRandomVillageRoomType());
         middleRooms.Add(GetRandomVillageRoomType());
 
-        // [최소 보장 4] 기타 방(이벤트 등) 최소 1개
-        middleRooms.Add(RoomType.Event);
 
         // [최소 보장 5] 아무것도 없는 방 최소 1개
         middleRooms.Add(RoomType.None);
@@ -183,7 +177,6 @@ public class RoomManager : MonoBehaviour
                 case 0: middleRooms.Add(GetRandomEnemyRoomType(zone)); break;
                 case 1: middleRooms.Add(GetRandomRewardRoomType()); break;
                 case 2: middleRooms.Add(GetRandomVillageRoomType()); break;
-                case 3: middleRooms.Add(RoomType.Event); break;
                 case 4: middleRooms.Add(RoomType.None); break;
             }
         }
@@ -214,13 +207,13 @@ public class RoomManager : MonoBehaviour
 
     private RoomType GetRandomRewardRoomType()
     {
-        RoomType[] rewards = { RoomType.Reward, RoomType.Fountain, RoomType.SageStone, RoomType.TrainingRoom };
+        RoomType[] rewards = { RoomType.Fountain, RoomType.SageStone, RoomType.TrainingRoom };
         return rewards[Random.Range(0, rewards.Length)];
     }
 
     private RoomType GetRandomVillageRoomType()
     {
-        RoomType[] village = { RoomType.ItemShop, RoomType.Blacksmith, RoomType.RepairShop, RoomType.Shop };
+        RoomType[] village = { RoomType.ItemShop, RoomType.Blacksmith, RoomType.RepairShop };
         return village[Random.Range(0, village.Length)];
     }
 

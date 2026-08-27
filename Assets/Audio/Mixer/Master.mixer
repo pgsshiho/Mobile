@@ -18,6 +18,8 @@ AudioMixerController:
   m_ExposedParameters:
   - guid: 7aad5864460bb0b40b4e0a31a957ec9a
     name: BGM
+  - guid: 0dc1e59927e879548818ba2b3d68ce44
+    name: Master
   - guid: 3fba5cbbbe0b88542bec60b2bcaa0c32
     name: SFX
   m_AudioMixerGroupViews:

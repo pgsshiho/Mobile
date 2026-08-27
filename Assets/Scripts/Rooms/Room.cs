@@ -134,11 +134,6 @@ public class Room : MonoBehaviour
                 Debug.Log("빈 방 (아무것도 없는 방)");
                 break;
 
-            // ── 기타 방 ──────────────────────────────────────────────
-            case RoomType.Event:
-                Debug.Log("랜덤 이벤트 방");
-                break;
-
             case RoomType.EliteEnemy:
                 Debug.Log("엘리트 적 방");
                 if (!node.cleared)
