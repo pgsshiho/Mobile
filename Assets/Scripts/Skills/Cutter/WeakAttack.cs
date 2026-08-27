@@ -16,27 +16,14 @@ public class WeakAttack : SkillBase
             return;
         }
 
-        int damage =
-            user.CalculateDamage(
-                target,
-                skill
-            );
-        if (target.isBleeding || target.isFires || target.isStunned)
+        int damage = user.CalculateDamage(target, skill);
+        if (target.isBleeding || target.isFire || target.isStunned)
         {
             damage = (int)(damage * 1.5f);
         }
         target.TakeDamage(damage);
+        target.AddStatus(StatusType.Bleeding, 3);
 
-        target.isBleeding = true;
-
-        Debug.Log(
-            target.name +
-            " 출혈!"
-        );
-
-        if (target.health <= 0)
-        {
-            target.Die();
-        }
+        Debug.Log(target.name + " 출혈 부여!");
     }
 }

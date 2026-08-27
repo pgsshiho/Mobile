@@ -10,11 +10,30 @@ public class UnitUIHandler
     private readonly Transform damageTextSpawnPoint;
     private readonly GameObject myturnUI;
     private readonly Transform statusIconParent;
+    private readonly StatusIconSet statusIconSet;
     private readonly GameObject statusIconPrefab;
     private readonly StatusIconData[] statusIconDatas;
 
     private readonly Dictionary<StatusType, GameObject> statusIcons = new Dictionary<StatusType, GameObject>();
 
+    // 생성자 1: StatusIconSet 사용
+    public UnitUIHandler(
+        Unit owner,
+        GameObject damageTextPrefab,
+        Transform damageTextSpawnPoint,
+        GameObject myturnUI,
+        Transform statusIconParent,
+        StatusIconSet statusIconSet)
+    {
+        this.owner = owner;
+        this.damageTextPrefab = damageTextPrefab;
+        this.damageTextSpawnPoint = damageTextSpawnPoint;
+        this.myturnUI = myturnUI;
+        this.statusIconParent = statusIconParent;
+        this.statusIconSet = statusIconSet;
+    }
+
+    // 생성자 2: 레거시 개별 프리팹 및 배열 사용
     public UnitUIHandler(
         Unit owner,
         GameObject damageTextPrefab,
@@ -74,6 +93,14 @@ public class UnitUIHandler
                     text.text = "+" + damage;
                     break;
 
+                case Unit.DamageType.Corrosion:
+                    text.color = new Color(0.6f, 0.4f, 0.2f);
+                    break;
+
+                case Unit.DamageType.Electric:
+                    text.color = Color.yellow;
+                    break;
+
                 default:
                     text.color = Color.white;
                     break;
@@ -86,14 +113,18 @@ public class UnitUIHandler
         if (statusIcons.ContainsKey(type))
             return;
 
-        if (statusIconParent == null || statusIconPrefab == null)
+        if (statusIconParent == null)
+            return;
+
+        GameObject prefabToUse = (statusIconSet != null) ? statusIconSet.statusIconPrefab : statusIconPrefab;
+        if (prefabToUse == null)
             return;
 
         Sprite icon = GetStatusIcon(type);
         if (icon == null)
             return;
 
-        GameObject obj = Object.Instantiate(statusIconPrefab, statusIconParent);
+        GameObject obj = Object.Instantiate(prefabToUse, statusIconParent);
         Image image = obj.GetComponent<Image>();
         if (image != null)
         {
@@ -131,6 +162,11 @@ public class UnitUIHandler
 
     private Sprite GetStatusIcon(StatusType type)
     {
+        if (statusIconSet != null)
+        {
+            return statusIconSet.GetIcon(type);
+        }
+
         if (statusIconDatas == null)
             return null;
 

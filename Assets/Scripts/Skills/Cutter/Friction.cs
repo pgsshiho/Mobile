@@ -9,16 +9,7 @@ public class Friction : SkillBase
         SkillData skill
     )
     {
-        target.isFires = true;
-        target.fireCount += 1;
-        Debug.Log(
-            target.name +
-            " 화상!"
-        );
-
-        if (target.health <= 0)
-        {
-            target.Die();
-        }
+        target.AddStatus(StatusType.Fire, 4);
+        Debug.Log(target.name + " 화재 발생!");
     }
 }

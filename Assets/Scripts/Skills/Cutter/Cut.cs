@@ -16,21 +16,9 @@ public class Cut : SkillBase
             return;
         }
 
-        int damage =
-            user.CalculateDamage(
-                target,
-                skill
-            );
-
+        int damage = user.CalculateDamage(target, skill);
         target.TakeDamage(damage);
-        target.isBleeding = true;
-        Debug.Log(
-            user.name +
-            " 이 " +
-            target.name +
-            " 에게 " +
-            damage +
-            " 피해 / 출혈!"
-        );
+        target.AddStatus(StatusType.Bleeding, 3);
+        Debug.Log($"{user.name}이(가) {target.name}에게 {damage} 피해 및 출혈 부여!");
     }
 }

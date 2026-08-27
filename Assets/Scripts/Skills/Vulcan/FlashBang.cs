@@ -22,7 +22,7 @@ public class FlashBang : SkillBase
 
         if (Random.Range(0, 100) < stunChance)
         {
-            target.isStunned = true;
+            target.AddStatus(StatusType.Stun, 1);
             Debug.Log($"{target.Unitname} 섬광에 맞아 기절!");
         }
     }

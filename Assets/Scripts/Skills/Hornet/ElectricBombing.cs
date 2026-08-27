@@ -22,7 +22,7 @@ public class ElectricBombing : SkillBase
 
         if (Random.Range(0, 100) < stunChance)
         {
-            target.isStunned = true;
+            target.AddStatus(StatusType.Stun, 1);
             Debug.Log($"{target.Unitname} 전기 감전으로 기절!");
         }
     }
