@@ -40,8 +40,6 @@ public class Room : MonoBehaviour
         AutoFindSpawnPoints();
 
         SpawnByRoomType();
-
-        EnterRoom();
     }
 
     void AutoFindSpawnPoints()
@@ -80,7 +78,7 @@ public class Room : MonoBehaviour
         }
     }
 
-    void EnterRoom()
+    public void EnterRoom()
     {
         switch (roomType)
         {

@@ -106,13 +106,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a15364bfa04ba429a2875bab2bab56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerUnit
-  speed: 5
-  health: 100
   maxHealth: 100
+  health: 100
+  emergencyPower: 0.2
+  communication: 100
+  isPowerDown: 0
+  isEmergencyMode: 0
+  hasSelfDestructed: 0
   attackPower: 5
   defensePower: 5
+  specialArmor: 0
   criticalChance: 0
   accuracy: 90
+  dodgeChance: 0.05
+  speed: 5
+  energyMax: 100
+  energyCurrent: 100
+  rustChance: 20
+  rustDamage: 5
+  oxidationResist: 0
+  oxidationDamagePercent: 3
+  circuitShortStacks: 0
+  ghostingMissPenalty: 0
   skills:
   - {fileID: 11400000, guid: 26b4e2fcfdf7b4f4daa3e7d2f6424ee6, type: 2}
   - {fileID: 11400000, guid: 3d5fdd70ffec6c641bfbd6cb237c92c5, type: 2}
@@ -123,20 +138,17 @@ MonoBehaviour:
   selectedSkill: {fileID: 0}
   buffs: []
   debuffs: []
-  isBleeding: 0
-  bleedingCount: 0
-  isStunned: 0
-  fireCount: 0
-  isFires: 0
   myturnUI: {fileID: 2337522685214613665}
   damageTextPrefab: {fileID: 3432776059765830471, guid: 7d3631656ebbd604aa80f9e945222ebc, type: 3}
-  damageTextSpawnPoint: {fileID: 0}
+  damageTextSpawnPoint: {fileID: 6581149379377079235}
   attackLevel: 0
   defenseLevel: 0
   maxAttackLevel: 100
   maxDefenseLevel: 100
   accuracyupgrade: 0
   Unitname: Player
+  statusIconParent: {fileID: 0}
+  statusIconSet: {fileID: 0}
 --- !u!61 &7252561178064551604
 BoxCollider2D:
   m_ObjectHideFlags: 0
