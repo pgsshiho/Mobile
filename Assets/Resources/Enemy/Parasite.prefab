@@ -116,7 +116,7 @@ GameObject:
   - component: {fileID: 1669151837191854026}
   - component: {fileID: 1089639234783886399}
   m_Layer: 7
-  m_Name: Enemy
+  m_Name: Parasite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

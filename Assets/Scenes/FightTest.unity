@@ -344,7 +344,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1535e339c8f608a4d8ef8645bbe2cafd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Door
-  targetRoom: {fileID: 2064028799}
 --- !u!1 &146889652
 GameObject:
   m_ObjectHideFlags: 0
@@ -429,7 +428,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 156557549}
-  - component: {fileID: 156557550}
   m_Layer: 0
   m_Name: GameObject (2)
   m_TagString: Untagged
@@ -454,24 +452,6 @@ Transform:
   - {fileID: 953302877}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &156557550
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 156557548}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 995ee3dbe51f07946bdc6b9cdd8b6b9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Room
-  roomType: 0
-  nextRoom: {fileID: 156557550}
-  prevRoom: {fileID: 2064028799}
-  roomName: A
-  enemies:
-  - {fileID: 953302879}
 --- !u!1 &181508519
 GameObject:
   m_ObjectHideFlags: 0
@@ -484,7 +464,6 @@ GameObject:
   - component: {fileID: 181508520}
   - component: {fileID: 181508523}
   - component: {fileID: 181508522}
-  - component: {fileID: 181508524}
   - component: {fileID: 181508525}
   m_Layer: 0
   m_Name: BattleManager
@@ -505,6 +484,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6de98e42d904134f840df2af7ceac76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BattleManager
+  Party:
+  - {fileID: 1119047974}
+  Enemy:
+  - {fileID: 483704182}
   isBattle: 0
   battleUI: {fileID: 1581888786}
   turnText: {fileID: 720274642}
@@ -518,6 +501,7 @@ MonoBehaviour:
   sfxSource: {fileID: 1005819690}
   bgmSource: {fileID: 1089743659}
   battleBgm: {fileID: 8300000, guid: 4c2092eb325c73646befc8c17ede849f, type: 3}
+  Room: {fileID: 2064028799}
 --- !u!4 &181508521
 Transform:
   m_ObjectHideFlags: 0
@@ -563,22 +547,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TurnManager
   turnList: []
-  currentUnit: {fileID: 0}
+  currentUnit: {fileID: 1119047975}
   waitingForTarget: 0
   reward: {fileID: 0}
---- !u!114 &181508524
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 181508519}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 95d9a229b77316a409e8ad38c6206b72, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoomManager
-  currentRoom: {fileID: 2064028799}
 --- !u!82 &181508525
 AudioSource:
   m_ObjectHideFlags: 0
@@ -588,7 +559,7 @@ AudioSource:
   m_GameObject: {fileID: 181508519}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: 24300002, guid: fe790f07afea9a84fa741c09cfe21007, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
@@ -1087,13 +1058,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cf1286f1c294b024ba28ab20883c8c9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Enemy
-  speed: 3
-  health: 100
   maxHealth: 100
+  health: 100
+  emergencyPower: 0.2
+  communication: 100
+  isPowerDown: 0
+  isEmergencyMode: 0
+  hasSelfDestructed: 0
   attackPower: 3
   defensePower: 3
+  specialArmor: 0
   criticalChance: 0
   accuracy: 90
+  dodgeChance: 0.05
+  speed: 3
+  energyMax: 100
+  energyCurrent: 100
+  rustChance: 20
+  rustDamage: 5
+  oxidationResist: 0
+  oxidationDamagePercent: 3
+  circuitShortStacks: 0
+  ghostingMissPenalty: 0
   skills:
   - {fileID: 11400000, guid: 26b4e2fcfdf7b4f4daa3e7d2f6424ee6, type: 2}
   - {fileID: 11400000, guid: 3d5fdd70ffec6c641bfbd6cb237c92c5, type: 2}
@@ -1104,11 +1090,6 @@ MonoBehaviour:
   selectedSkill: {fileID: 0}
   buffs: []
   debuffs: []
-  isBleeding: 0
-  bleedingCount: 0
-  isStunned: 0
-  fireCount: 0
-  isFires: 0
   myturnUI: {fileID: 146889652}
   damageTextPrefab: {fileID: 3432776059765830471, guid: 7d3631656ebbd604aa80f9e945222ebc, type: 3}
   damageTextSpawnPoint: {fileID: 535973444}
@@ -1118,6 +1099,8 @@ MonoBehaviour:
   maxDefenseLevel: 10
   accuracyupgrade: 0
   Unitname: Enemy
+  statusIconParent: {fileID: 0}
+  statusIconSet: {fileID: 0}
   targetMode: 0
   attackDelay: 1.5
   endTurnDelay: 1.5
@@ -1292,13 +1275,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a15364bfa04ba429a2875bab2bab56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerUnit
-  speed: 5
-  health: 100
   maxHealth: 100
+  health: 100
+  emergencyPower: 0.2
+  communication: 100
+  isPowerDown: 0
+  isEmergencyMode: 0
+  hasSelfDestructed: 0
   attackPower: 5
   defensePower: 5
+  specialArmor: 0
   criticalChance: 0
   accuracy: 90
+  dodgeChance: 0.05
+  speed: 5
+  energyMax: 100
+  energyCurrent: 100
+  rustChance: 20
+  rustDamage: 5
+  oxidationResist: 0
+  oxidationDamagePercent: 3
+  circuitShortStacks: 0
+  ghostingMissPenalty: 0
   skills:
   - {fileID: 11400000, guid: 26b4e2fcfdf7b4f4daa3e7d2f6424ee6, type: 2}
   - {fileID: 11400000, guid: 3d5fdd70ffec6c641bfbd6cb237c92c5, type: 2}
@@ -1309,11 +1307,6 @@ MonoBehaviour:
   selectedSkill: {fileID: 0}
   buffs: []
   debuffs: []
-  isBleeding: 0
-  bleedingCount: 0
-  isStunned: 0
-  fireCount: 0
-  isFires: 0
   myturnUI: {fileID: 1768995498}
   damageTextPrefab: {fileID: 0}
   damageTextSpawnPoint: {fileID: 0}
@@ -1323,6 +1316,8 @@ MonoBehaviour:
   maxDefenseLevel: 100
   accuracyupgrade: 0
   Unitname: 
+  statusIconParent: {fileID: 0}
+  statusIconSet: {fileID: 0}
 --- !u!212 &542442345
 SpriteRenderer:
   serializedVersion: 2
@@ -1400,7 +1395,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &606990757
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1848,7 +1843,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &821941651
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2330,13 +2325,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cf1286f1c294b024ba28ab20883c8c9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Enemy
-  speed: 5
-  health: 100
   maxHealth: 100
+  health: 100
+  emergencyPower: 0.2
+  communication: 100
+  isPowerDown: 0
+  isEmergencyMode: 0
+  hasSelfDestructed: 0
   attackPower: 3
   defensePower: 3
+  specialArmor: 0
   criticalChance: 0
   accuracy: 90
+  dodgeChance: 0.05
+  speed: 5
+  energyMax: 100
+  energyCurrent: 100
+  rustChance: 20
+  rustDamage: 5
+  oxidationResist: 0
+  oxidationDamagePercent: 3
+  circuitShortStacks: 0
+  ghostingMissPenalty: 0
   skills:
   - {fileID: 11400000, guid: 26b4e2fcfdf7b4f4daa3e7d2f6424ee6, type: 2}
   - {fileID: 11400000, guid: 3d5fdd70ffec6c641bfbd6cb237c92c5, type: 2}
@@ -2347,11 +2357,6 @@ MonoBehaviour:
   selectedSkill: {fileID: 0}
   buffs: []
   debuffs: []
-  isBleeding: 0
-  bleedingCount: 0
-  isStunned: 0
-  fireCount: 0
-  isFires: 0
   myturnUI: {fileID: 2105393266}
   damageTextPrefab: {fileID: 0}
   damageTextSpawnPoint: {fileID: 0}
@@ -2361,6 +2366,8 @@ MonoBehaviour:
   maxDefenseLevel: 10
   accuracyupgrade: 0
   Unitname: 
+  statusIconParent: {fileID: 0}
+  statusIconSet: {fileID: 0}
   targetMode: 0
   attackDelay: 1.5
   endTurnDelay: 1.5
@@ -2501,6 +2508,10 @@ PrefabInstance:
       propertyPath: isBleeding
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7827829270568713427, guid: aea1206121711a54cbdc7016020e1f7f, type: 3}
+      propertyPath: statusIconParent
+      value: 
+      objectReference: {fileID: 1119047974}
     - target: {fileID: 7827829270568713427, guid: aea1206121711a54cbdc7016020e1f7f, type: 3}
       propertyPath: damageTextSpawnPoint
       value: 
@@ -2681,7 +2692,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1203227317
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3146,7 +3157,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1581888787
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3257,7 +3268,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1628940287
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3945,7 +3956,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1901651855
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4078,7 +4089,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1949134040
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4376,12 +4387,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 995ee3dbe51f07946bdc6b9cdd8b6b9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Room
-  roomType: 0
-  nextRoom: {fileID: 2064028799}
-  prevRoom: {fileID: 156557550}
+  roomType: 2
+  zoneType: 0
   roomName: A
+  enemySpawnPoints: []
   enemies:
   - {fileID: 483704183}
+  rewardData: {fileID: 11400000, guid: e9893c2a1f019324a954cd17fe12ca71, type: 2}
+  minMoney: 50
+  maxMoney: 150
+  minMaterial: 10
+  maxMaterial: 30
+  dropItems: []
+  node:
+    id: 0
+    floor: 0
+    zoneType: 0
+    roomType: 0
+    cleared: 0
 --- !u!1001 &2097168291
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4476,7 +4499,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6726294956233924360, guid: 7b4dc49aea0b85f4db6768cab8cee3b2, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4610,6 +4633,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Audio Manager
       objectReference: {fileID: 0}
+    - target: {fileID: 5520130838195949722, guid: 5f49d71127d606e4bae8f8ae731ca699, type: 3}
+      propertyPath: battleBgm
+      value: 
+      objectReference: {fileID: 8300000, guid: 4c2092eb325c73646befc8c17ede849f, type: 3}
+    - target: {fileID: 5520130838195949722, guid: 5f49d71127d606e4bae8f8ae731ca699, type: 3}
+      propertyPath: audioMixer
+      value: 
+      objectReference: {fileID: 24100000, guid: fe790f07afea9a84fa741c09cfe21007, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

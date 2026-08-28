@@ -25,7 +25,7 @@ public class BattleManager : MonoBehaviour
     public AudioSource sfxSource;
     public AudioSource bgmSource;
     public AudioClip battleBgm;
-
+    
     // UI Cache to avoid repeated GetComponent/GetComponentInChildren in loops
     private struct CachedSkillButton
     {
@@ -75,7 +75,6 @@ public class BattleManager : MonoBehaviour
     public void StartBattle(Room room)
     {
         isBattle = true;
-
         if (RoomNavigationUI.instance != null)
         {
             RoomNavigationUI.instance.HideAll();

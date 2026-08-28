@@ -2,100 +2,119 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 현재 방의 방향별 연결 상태에 따라 화살표 버튼을 자동으로 표시/숨깁니다.
-/// Canvas 안에 RoomNavigationUI 오브젝트를 만들고 이 컴포넌트를 붙이세요.
+/// 현재 방의 방향별 연결 상태에 따라
+/// 화살표 버튼을 자동으로 표시/숨깁니다.
 /// </summary>
 public class RoomNavigationUI : MonoBehaviour
 {
     public static RoomNavigationUI instance;
 
-    [Header("Arrow Buttons (버튼 오브젝트 할당)")]
-    [Tooltip("전방 화살표 버튼 (위쪽)")]
+    [Header("Arrow Buttons")]
+    [Tooltip("전방 화살표 버튼")]
     public Button forwardButton;
 
-    [Tooltip("후방 화살표 버튼 (아래쪽)")]
+    [Tooltip("후방 화살표 버튼")]
     public Button backwardButton;
 
-    [Tooltip("좌측 화살표 버튼 (왼쪽)")]
+    [Tooltip("좌측 화살표 버튼")]
     public Button leftButton;
 
-    [Tooltip("우측 화살표 버튼 (오른쪽)")]
+    [Tooltip("우측 화살표 버튼")]
     public Button rightButton;
 
-    [Header("Arrow Images (이미지 교체용 - 선택 사항)")]
-    [Tooltip("전방 화살표 이미지 (Sprite)")]
+    [Header("Arrow Images")]
+    [Tooltip("전방 화살표 이미지")]
     public Sprite forwardArrowSprite;
 
-    [Tooltip("후방 화살표 이미지 (Sprite)")]
+    [Tooltip("후방 화살표 이미지")]
     public Sprite backwardArrowSprite;
 
-    [Tooltip("좌측 화살표 이미지 (Sprite)")]
+    [Tooltip("좌측 화살표 이미지")]
     public Sprite leftArrowSprite;
 
-    [Tooltip("우측 화살표 이미지 (Sprite)")]
+    [Tooltip("우측 화살표 이미지")]
     public Sprite rightArrowSprite;
 
-    void Awake()
+    private void Awake()
     {
         instance = this;
     }
 
-    void Start()
+    private void Start()
     {
-        // 버튼 클릭 이벤트 연결
-        if (forwardButton != null)
-            forwardButton.onClick.AddListener(() => RoomManager.instance.MoveForward());
+        // ============================================
+        // 스프라이트 적용
+        // ============================================
 
-        if (backwardButton != null)
-            backwardButton.onClick.AddListener(() => RoomManager.instance.MoveBackward());
-
-        if (leftButton != null)
-            leftButton.onClick.AddListener(() => RoomManager.instance.MoveLeft());
-
-        if (rightButton != null)
-            rightButton.onClick.AddListener(() => RoomManager.instance.MoveRight());
-
-        // 스프라이트 자동 적용
         ApplySprites();
 
-        // 시작 시 전부 숨기기 (RoomManager.EnterNode()에서 Refresh 호출됨)
+        // 시작 시 숨김
         HideAll();
     }
 
-    /// <summary>
-    /// 할당된 Arrow Sprite를 각 버튼의 Image 컴포넌트에 자동 적용합니다.
-    /// </summary>
-    void ApplySprites()
+    // ============================================================
+    // Sprite 적용
+    // ============================================================
+
+    private void ApplySprites()
     {
-        if (forwardButton != null && forwardArrowSprite != null)
+        if (forwardButton != null &&
+            forwardArrowSprite != null)
         {
-            Image img = forwardButton.GetComponent<Image>();
-            if (img != null) img.sprite = forwardArrowSprite;
+            Image img =
+                forwardButton.GetComponent<Image>();
+
+            if (img != null)
+            {
+                img.sprite =
+                    forwardArrowSprite;
+            }
         }
 
-        if (backwardButton != null && backwardArrowSprite != null)
+        if (backwardButton != null &&
+            backwardArrowSprite != null)
         {
-            Image img = backwardButton.GetComponent<Image>();
-            if (img != null) img.sprite = backwardArrowSprite;
+            Image img =
+                backwardButton.GetComponent<Image>();
+
+            if (img != null)
+            {
+                img.sprite =
+                    backwardArrowSprite;
+            }
         }
 
-        if (leftButton != null && leftArrowSprite != null)
+        if (leftButton != null &&
+            leftArrowSprite != null)
         {
-            Image img = leftButton.GetComponent<Image>();
-            if (img != null) img.sprite = leftArrowSprite;
+            Image img =
+                leftButton.GetComponent<Image>();
+
+            if (img != null)
+            {
+                img.sprite =
+                    leftArrowSprite;
+            }
         }
 
-        if (rightButton != null && rightArrowSprite != null)
+        if (rightButton != null &&
+            rightArrowSprite != null)
         {
-            Image img = rightButton.GetComponent<Image>();
-            if (img != null) img.sprite = rightArrowSprite;
+            Image img =
+                rightButton.GetComponent<Image>();
+
+            if (img != null)
+            {
+                img.sprite =
+                    rightArrowSprite;
+            }
         }
     }
 
-    /// <summary>
-    /// 현재 RoomNode의 방향별 연결 여부에 따라 화살표 버튼을 표시/숨깁니다.
-    /// RoomManager.EnterNode() 에서 자동으로 호출됩니다.
-    /// </summary>
+    // ============================================================
+    // UI 갱신
+    // ============================================================
+
     public void Refresh(RoomNode node)
     {
         if (node == null)
@@ -104,40 +123,92 @@ public class RoomNavigationUI : MonoBehaviour
             return;
         }
 
-        SetButton(forwardButton, node.forwardRoom != null);
-        SetButton(backwardButton, node.previousRoom != null || node.backwardRoom != null);
-        SetButton(leftButton, node.leftRoom != null);
-        SetButton(rightButton, node.rightRoom != null);
+        // 전방
+        SetButton(
+            forwardButton,
+            node.forwardRoom != null
+        );
+
+        SetButton(
+            backwardButton,
+            node.backwardRoom != null
+        );
+
+        // 좌측
+        SetButton(
+            leftButton,
+            node.leftRoom != null
+        );
+
+        // 우측
+        SetButton(
+            rightButton,
+            node.rightRoom != null
+        );
     }
 
-    /// <summary>전투 중에는 모든 화살표를 숨기고, 전투가 끝나면 다시 표시합니다.</summary>
-    public void SetNavigationActive(bool active)
+    // ============================================================
+    // 전투 중 네비게이션 활성/비활성
+    // ============================================================
+
+    public void SetNavigationActive(
+        bool active)
     {
-        // active=true면 Refresh로 다시 갱신, false면 전부 숨김
         if (!active)
         {
             HideAll();
         }
         else
         {
-            RoomNode current = (RoomManager.instance != null) ? RoomManager.instance.GetCurrentNode() : null;
+            RoomNode current =
+                RoomManager.instance != null
+                    ? RoomManager.instance.GetCurrentNode()
+                    : null;
+
             Refresh(current);
         }
     }
 
-    void SetButton(Button btn, bool visible)
+    // ============================================================
+    // 버튼 활성화
+    // ============================================================
+
+    private void SetButton(
+        Button btn,
+        bool visible)
     {
         if (btn != null)
         {
-            btn.gameObject.SetActive(visible);
+            btn.gameObject.SetActive(
+                visible
+            );
         }
     }
 
+    // ============================================================
+    // 모든 버튼 숨김
+    // ============================================================
+
     public void HideAll()
     {
-        SetButton(forwardButton, false);
-        SetButton(backwardButton, false);
-        SetButton(leftButton, false);
-        SetButton(rightButton, false);
+        SetButton(
+            forwardButton,
+            false
+        );
+
+        SetButton(
+            backwardButton,
+            false
+        );
+
+        SetButton(
+            leftButton,
+            false
+        );
+
+        SetButton(
+            rightButton,
+            false
+        );
     }
 }
