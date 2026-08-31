@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c288123f4dee4fb41847a79364f145cc, type: 3}
   m_Name: OverHeat
   m_EditorClassIdentifier: Assembly-CSharp::StatusIconData
-  statusType: 3
-  icon: {fileID: 0}
+  statusType: 8
+  icon: {fileID: 2108380618382051289, guid: eb13aa4c0338b4f41bf01962aefa57a6, type: 3}

@@ -449,6 +449,7 @@ public class RoomManager : MonoBehaviour
 
             EnterNode(currentNode.forwardRoom);
         }
+        MoveSound();
     }
 
     public void MoveBackward()
@@ -472,6 +473,7 @@ public class RoomManager : MonoBehaviour
         );
 
         EnterNode(target);
+        MoveSound();
     }
 
     public void MoveLeft()
@@ -489,6 +491,7 @@ public class RoomManager : MonoBehaviour
 
             EnterNode(currentNode.leftRoom);
         }
+        MoveSound();
     }
 
     public void MoveRight()
@@ -506,6 +509,7 @@ public class RoomManager : MonoBehaviour
 
             EnterNode(currentNode.rightRoom);
         }
+        MoveSound();
     }
 
     public void MoveToNext(int index)
@@ -520,6 +524,12 @@ public class RoomManager : MonoBehaviour
         EnterNode(currentNode.nextRooms[index]);
     }
 
+    public void MoveSound()
+    {
+        if (currentNode == null)
+            return;
+            AudioManager.instance?.PlaySfx(AudioManager.instance.moveSound);
+    }
     // ============================================================
     // 방 진입
     // ============================================================

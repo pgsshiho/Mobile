@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c288123f4dee4fb41847a79364f145cc, type: 3}
   m_Name: Stun
   m_EditorClassIdentifier: Assembly-CSharp::StatusIconData
-  statusType: 2
-  icon: {fileID: 0}
+  statusType: 17
+  icon: {fileID: 3156634924717718424, guid: 901b86e6706e9b342872439ff3883bfb, type: 3}

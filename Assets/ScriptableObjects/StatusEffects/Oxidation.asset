@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c288123f4dee4fb41847a79364f145cc, type: 3}
   m_Name: Oxidation
   m_EditorClassIdentifier: Assembly-CSharp::StatusIconData
-  statusType: 5
-  icon: {fileID: 0}
+  statusType: 6
+  icon: {fileID: 5377014538347576266, guid: 2ded3d318b0c9c44a8662b2bd64a1f37, type: 3}

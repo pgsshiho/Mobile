@@ -29,6 +29,8 @@ public class AudioManager : MonoBehaviour
     private float prevBGMVolume = 1f;
     private float prevSFXVolume = 1f;
 
+    public AudioClip moveSound;
+
     private void Awake()
     {
         instance = this;
