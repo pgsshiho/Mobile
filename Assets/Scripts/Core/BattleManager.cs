@@ -62,6 +62,15 @@ public class BattleManager : MonoBehaviour
             GameObject btn = skillButtons[i];
             if (btn != null)
             {
+                int skillIndex = i;
+                Button button = btn.GetComponent<Button>();
+                if (button != null)
+                {
+                    button.onClick.AddListener(
+                        () => SelectSkill(skillIndex)
+                    );
+                }
+
                 cachedButtons[i] = new CachedSkillButton
                 {
                     root = btn,
@@ -87,6 +96,7 @@ public class BattleManager : MonoBehaviour
             battleUI.SetActive(true);
 
         if (AudioManager.instance != null)
+            AudioManager.instance.StopBgm();
             AudioManager.instance.PlayBattleBgm();
 
         if (TurnManager.instance != null)

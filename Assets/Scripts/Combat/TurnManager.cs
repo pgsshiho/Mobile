@@ -22,8 +22,8 @@ public class TurnManager : MonoBehaviour
 
     public void RegisterRoom(Room room)
     {
-        if (room.roomType != RoomType.Enemy &&
-            room.roomType != RoomType.Boss)
+        if (room == null ||
+            !Room.IsCombatRoom(room.roomType))
         {
             return;
         }

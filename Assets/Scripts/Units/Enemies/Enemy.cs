@@ -24,6 +24,33 @@ public class Enemy :
     public float attackDelay = 1.5f;
     public float endTurnDelay = 1.5f;
 
+    protected override void Awake()
+    {
+        base.Awake();
+        EnsurePointerClickSupport();
+    }
+
+    private void EnsurePointerClickSupport()
+    {
+        if (GetComponent<Collider2D>() == null)
+        {
+            BoxCollider2D collider = gameObject.AddComponent<BoxCollider2D>();
+            SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+
+            if (spriteRenderer != null && spriteRenderer.sprite != null)
+            {
+                collider.size = spriteRenderer.sprite.bounds.size;
+            }
+        }
+
+        Camera mainCamera = Camera.main;
+        if (mainCamera != null &&
+            mainCamera.GetComponent<Physics2DRaycaster>() == null)
+        {
+            mainCamera.gameObject.AddComponent<Physics2DRaycaster>();
+        }
+    }
+
     public override void MyTurn()
     {
         base.MyTurn();
@@ -361,14 +388,17 @@ public class Enemy :
         PointerEventData eventData
     )
     {
-        if (!TurnManager.instance
-            .waitingForTarget)
+        if (TurnManager.instance == null ||
+            !TurnManager.instance.waitingForTarget)
             return;
 
         Unit current =
             TurnManager.instance.currentUnit;
 
         if (current == null)
+            return;
+
+        if (!(current is PlayerUnit))
             return;
 
         SkillData skill =
