@@ -157,7 +157,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 6
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: bee2dd31f5cead44fba52365c0f2c082, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -181,13 +181,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a15364bfa04ba429a2875bab2bab56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerUnit
-  speed: 3
-  health: 90
   maxHealth: 90
+  health: 90
+  emergencyPower: 0.2
+  communication: 100
+  isPowerDown: 0
+  isEmergencyMode: 0
+  hasSelfDestructed: 0
   attackPower: 12
   defensePower: 4
+  specialArmor: 0
   criticalChance: 10
   accuracy: 90
+  dodgeChance: 0.05
+  speed: 3
+  energyMax: 100
+  energyCurrent: 100
+  rustChance: 20
+  rustDamage: 5
+  oxidationResist: 0
+  oxidationDamagePercent: 3
+  circuitShortStacks: 0
+  ghostingMissPenalty: 0
   skills:
   - {fileID: 11400000, guid: ac99d61ee2bbfd44fbc6f7ceb4988234, type: 2}
   - {fileID: 11400000, guid: 2ba78ed5d9db31441bf238c91eaf9e77, type: 2}
@@ -208,8 +223,7 @@ MonoBehaviour:
   accuracyupgrade: 0
   Unitname: Meteor
   statusIconParent: {fileID: 0}
-  statusIconPrefab: {fileID: 0}
-  statusIconDatas: []
+  statusIconSet: {fileID: 0}
 --- !u!61 &3213482163738237533
 BoxCollider2D:
   m_ObjectHideFlags: 0

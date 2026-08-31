@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public enum StatusType
 {
@@ -133,6 +134,7 @@ public class Unit : MonoBehaviour
     public GameObject myturnUI;
     public GameObject damageTextPrefab;
     public Transform damageTextSpawnPoint;
+    public GameObject HPBar;
 
     [Header("Upgrade")]
     public int attackLevel = 0;
@@ -150,6 +152,7 @@ public class Unit : MonoBehaviour
     private UnitBuffHandler buffHandler;
     private UnitStatusHandler statusHandler;
     private UnitUIHandler uiHandler;
+    private Slider healthSlider;
 
     public UnitBuffHandler BuffHandler
     {
@@ -204,6 +207,54 @@ public class Unit : MonoBehaviour
     protected virtual void Awake()
     {
         EnsureInitialized();
+        CacheHealthBar();
+        UpdateHealthBar();
+    }
+
+    protected virtual void LateUpdate()
+    {
+        // 일부 스킬이 health 값을 직접 변경하므로,
+        // 매 프레임 UI를 동기화해 모든 피해/회복을 반영한다.
+        UpdateHealthBar();
+    }
+
+    private void CacheHealthBar()
+    {
+        if (HPBar != null)
+        {
+            healthSlider = HPBar.GetComponent<Slider>();
+            if (healthSlider == null)
+            {
+                healthSlider = HPBar.GetComponentInChildren<Slider>(true);
+            }
+        }
+
+        if (healthSlider == null)
+        {
+            healthSlider = GetComponentInChildren<Slider>(true);
+        }
+
+        if (HPBar == null && healthSlider != null)
+        {
+            HPBar = healthSlider.gameObject;
+        }
+    }
+
+    public void UpdateHealthBar()
+    {
+        if (healthSlider == null)
+        {
+            CacheHealthBar();
+        }
+
+        if (healthSlider == null)
+            return;
+
+        healthSlider.minValue = 0f;
+        healthSlider.maxValue = Mathf.Max(1f, maxHealth);
+        healthSlider.SetValueWithoutNotify(
+            Mathf.Clamp(health, 0f, healthSlider.maxValue)
+        );
     }
 
     public void EnsureInitialized()

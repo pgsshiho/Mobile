@@ -564,10 +564,19 @@ public class RoomManager : MonoBehaviour
             currentRoom = null;
         }
 
-        // 방향 UI 갱신
         if (RoomNavigationUI.instance != null)
         {
-            RoomNavigationUI.instance.Refresh(node);
+            if (BattleManager.instance != null &&
+                BattleManager.instance.isBattle)
+            {
+                // Room.EnterRoom()에서 전투가 시작된 경우,
+                // 아래 Refresh가 이동 버튼을 다시 표시하지 않게 한다.
+                RoomNavigationUI.instance.HideAll();
+            }
+            else
+            {
+                RoomNavigationUI.instance.Refresh(node);
+            }
         }
     }
 
@@ -730,11 +739,16 @@ public class RoomManager : MonoBehaviour
             return new Enemy[0];
         }
 
-        int count =
-            Random.Range(
-                1,
-                spawnPoints.Length + 1
+        int maxEnemyCount = Mathf.Min(4, spawnPoints.Length);
+        if (maxEnemyCount < 2)
+        {
+            Debug.LogWarning(
+                "[RoomManager] 전투 적을 2마리 이상 배치할 스폰 위치가 부족합니다."
             );
+            return new Enemy[0];
+        }
+
+        int count = Random.Range(2, maxEnemyCount + 1);
 
         List<Enemy> spawned =
             new List<Enemy>();

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ForestEnemy
   m_EditorClassIdentifier: Assembly-CSharp::RoomPoolData
   zoneType: 0
-  roomType: 0
+  roomType: 2
   roomPrefabs:
   - {fileID: 2801577289397536717, guid: 51a4825003a20d94488e219e5d5279fe, type: 3}
   - {fileID: 2678869357936784424, guid: c61907259fe2f9141bcfdadbb4014b7e, type: 3}

@@ -30,6 +30,17 @@ public class Room : MonoBehaviour
     [HideInInspector]
     public RoomNode node;
 
+    public static bool IsCombatRoom(RoomType type)
+    {
+        return type == RoomType.Enemy ||
+               type == RoomType.Boss ||
+               type == RoomType.GrassRoom ||
+               type == RoomType.FloodedRoom ||
+               type == RoomType.CloudRoom ||
+               type == RoomType.PollutedRoom ||
+               type == RoomType.EliteEnemy;
+    }
+
     public void Setup(RoomNode roomNode)
     {
         node = roomNode;
@@ -63,12 +74,7 @@ public class Room : MonoBehaviour
 
     void SpawnByRoomType()
     {
-        if (roomType == RoomType.Enemy ||
-            roomType == RoomType.Boss ||
-            roomType == RoomType.GrassRoom ||
-            roomType == RoomType.FloodedRoom ||
-            roomType == RoomType.CloudRoom ||
-            roomType == RoomType.PollutedRoom)
+        if (IsCombatRoom(roomType))
         {
             enemies =
                 RoomManager.instance
