@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c288123f4dee4fb41847a79364f145cc, type: 3}
-  m_Name: Short Circuit
+  m_Name: Oil Leak 1
   m_EditorClassIdentifier: Assembly-CSharp::StatusIconData
-  statusType: 10
-  icon: {fileID: -1246029327303092368, guid: a63b6d33c04c5db4f9cffe0d783eb6c2, type: 3}
+  statusType: 12
+  icon: {fileID: -6748384255609890082, guid: b43eb04321f41c445860c639cc05231b, type: 3}

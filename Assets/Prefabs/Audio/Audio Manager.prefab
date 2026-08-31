@@ -275,7 +275,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
   bgmSource: {fileID: 3581990218917371848}
   sfxSource: {fileID: 3581990218917371848}
+  masterVolumeSlider: {fileID: 0}
+  bgmSlider: {fileID: 0}
+  sfxSlider: {fileID: 0}
+  audioMixer: {fileID: 0}
   battleBgm: {fileID: 0}
+  nowMasterVolume: 1
+  nowBGMVolume: 1
+  nowSFXVolume: 1
+  moveSound: {fileID: 8300000, guid: f245a066fbd9b9e438009007411c402d, type: 3}
 --- !u!1 &6903467257519251797
 GameObject:
   m_ObjectHideFlags: 0

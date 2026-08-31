@@ -4935,6 +4935,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1436038945}
     - target: {fileID: 5520130838195949722, guid: 5f49d71127d606e4bae8f8ae731ca699, type: 3}
+      propertyPath: moveSound
+      value: 
+      objectReference: {fileID: 8300000, guid: f245a066fbd9b9e438009007411c402d, type: 3}
+    - target: {fileID: 5520130838195949722, guid: 5f49d71127d606e4bae8f8ae731ca699, type: 3}
       propertyPath: sfxSlider
       value: 
       objectReference: {fileID: 1971610865}
@@ -7296,7 +7300,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 29eb9f343012f9444928d1e2468a7ef5, type: 2}
   currentRoom: {fileID: 0}
   currentZone: 0
-  roomPools: []
+  roomPools:
+  - {fileID: 11400000, guid: 4389b0fc976d2664aadb3c772a33fd15, type: 2}
   roomParent: {fileID: 1740126632}
   allNodes: []
   generatedMapOverview: []
