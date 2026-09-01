@@ -74,7 +74,7 @@ public static class CombatCalculator
             {
                 if (buff?.data != null)
                 {
-                    finalDefense += buff.data.defenseBonus;
+                    finalDefense += Mathf.RoundToInt(buff.data.defenseBonus);
                 }
             }
         }

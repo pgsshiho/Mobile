@@ -16,6 +16,7 @@ MonoBehaviour:
   icon: {fileID: -8519203006988308643, guid: c7cd4c86408c96349ab16585b0529421, type: 3}
   description: 
   targetType: 4
+  maxTargetDistance: 1
   power: 0
   hitBonus: 0
   soundEffect: {fileID: 8300000, guid: 2c22111d39918b544b1289c226ad505c, type: 3}

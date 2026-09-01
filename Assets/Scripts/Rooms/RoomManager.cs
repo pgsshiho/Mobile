@@ -380,54 +380,129 @@ public class RoomManager : MonoBehaviour
         if (nodes == null || nodes.Count == 0)
             return;
 
-        // 미래의 메인 경로 방을 분기에 재사용하지 않는다.
-        // 메인 경로와 분기 방을 명확히 분리해 모든 연결을 양방향으로 만든다.
-        int branchCount = Mathf.Min(
-            nodes.Count - 2,
-            Mathf.Max(0, nodes.Count / 3)
-        );
-        int mainNonBossCount = nodes.Count - 1 - branchCount;
-
-        List<RoomNode> mainPath = new List<RoomNode>();
-        for (int i = 0; i < mainNonBossCount; i++)
+        // 모든 방을 한 번만 부모에 붙여 순환이 없는 랜덤 트리를 만든다.
+        // 어떤 방향으로 들어왔든 반대 방향은 반드시 원래 방을 가리킨다.
+        foreach (RoomNode node in nodes)
         {
-            mainPath.Add(nodes[i]);
+            node.nextRooms.Clear();
+            node.previousRoom = null;
+            node.forwardRoom = null;
+            node.backwardRoom = null;
+            node.leftRoom = null;
+            node.rightRoom = null;
         }
 
-        // 보스는 항상 메인 경로의 마지막 노드다.
-        mainPath.Add(nodes[nodes.Count - 1]);
+        RoomNode startNode = nodes[0];
+        startNode.floor = 0;
 
-        for (int i = 0; i < mainPath.Count - 1; i++)
+        // 보스는 마지막에 가장 깊은 말단에 붙여, 여러 갈래를 탐험한 뒤
+        // 도달하는 최종 방으로 유지한다.
+        int bossIndex = nodes.Count - 1;
+        List<RoomNode> expandableNodes = new List<RoomNode> { startNode };
+
+        for (int i = 1; i < bossIndex; i++)
         {
-            RoomNode curr = mainPath[i];
-            RoomNode next = mainPath[i + 1];
+            RoomNode child = nodes[i];
+            RoomNode parent = ChooseRandomBranchParent(expandableNodes);
+            ConnectTreeNodes(parent, child);
 
-            curr.forwardRoom = next;
-            next.backwardRoom = curr;
-            next.previousRoom = curr;
-            curr.nextRooms.Add(next);
-        }
-
-        // 남은 노드는 메인 경로에서만 출입 가능한 독립 좌/우 분기 방이다.
-        for (int i = 0; i < branchCount; i++)
-        {
-            RoomNode sideNode = nodes[mainNonBossCount + i];
-            int hostIndex = 1 + (i % (mainPath.Count - 2));
-            RoomNode hostNode = mainPath[hostIndex];
-
-            if (i % 2 == 0)
+            if (GetFreeDirectionCount(parent) == 0)
             {
-                hostNode.leftRoom = sideNode;
-                sideNode.rightRoom = hostNode;
-            }
-            else
-            {
-                hostNode.rightRoom = sideNode;
-                sideNode.leftRoom = hostNode;
+                expandableNodes.Remove(parent);
             }
 
-            hostNode.nextRooms.Add(sideNode);
+            expandableNodes.Add(child);
         }
+
+        RoomNode bossParent = ChooseDeepestBranchParent(expandableNodes);
+        ConnectTreeNodes(bossParent, nodes[bossIndex]);
+    }
+
+    private RoomNode ChooseRandomBranchParent(
+        List<RoomNode> expandableNodes)
+    {
+        // 최근에 생성된 방을 조금 더 자주 뽑아 가지 안에 또 가지가
+        // 생성되도록 하되, 이전 방들도 후보로 남겨 매번 다른 나무가 된다.
+        int recentCount = Mathf.Min(4, expandableNodes.Count);
+        int startIndex = expandableNodes.Count - recentCount;
+        return expandableNodes[
+            Random.Range(startIndex, expandableNodes.Count)
+        ];
+    }
+
+    private RoomNode ChooseDeepestBranchParent(
+        List<RoomNode> expandableNodes)
+    {
+        int deepestFloor = -1;
+        List<RoomNode> candidates = new List<RoomNode>();
+
+        foreach (RoomNode node in expandableNodes)
+        {
+            if (node.floor > deepestFloor)
+            {
+                deepestFloor = node.floor;
+                candidates.Clear();
+                candidates.Add(node);
+            }
+            else if (node.floor == deepestFloor)
+            {
+                candidates.Add(node);
+            }
+        }
+
+        return candidates[Random.Range(0, candidates.Count)];
+    }
+
+    private void ConnectTreeNodes(RoomNode parent, RoomNode child)
+    {
+        List<int> freeDirections = new List<int>();
+
+        if (parent.forwardRoom == null) freeDirections.Add(0);
+        if (parent.leftRoom == null) freeDirections.Add(1);
+        if (parent.rightRoom == null) freeDirections.Add(2);
+        // 시작 방의 뒤쪽은 비워 둔다. 시작부터 뒤로 가는 길이 생기면
+        // 플레이어가 출발 방향을 혼동하기 쉽기 때문이다.
+        if (parent.backwardRoom == null && parent.previousRoom != null)
+            freeDirections.Add(3);
+
+        int direction = freeDirections[
+            Random.Range(0, freeDirections.Count)
+        ];
+
+        switch (direction)
+        {
+            case 0:
+                parent.forwardRoom = child;
+                child.backwardRoom = parent;
+                break;
+            case 1:
+                parent.leftRoom = child;
+                child.rightRoom = parent;
+                break;
+            case 2:
+                parent.rightRoom = child;
+                child.leftRoom = parent;
+                break;
+            default:
+                parent.backwardRoom = child;
+                child.forwardRoom = parent;
+                break;
+        }
+
+        child.previousRoom = parent;
+        child.floor = parent.floor + 1;
+        parent.nextRooms.Add(child);
+    }
+
+    private int GetFreeDirectionCount(RoomNode node)
+    {
+        int count = 0;
+        if (node.forwardRoom == null) count++;
+        if (node.backwardRoom == null && node.previousRoom != null)
+            count++;
+        if (node.leftRoom == null) count++;
+        if (node.rightRoom == null) count++;
+        return count;
     }
 
     // ============================================================

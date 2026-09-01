@@ -381,6 +381,15 @@ public class Unit : MonoBehaviour
                 Die();
             }
         }
+        if (health > maxHealth)
+        {
+            health = maxHealth;
+        }
+        if(health > 1 && isEmergencyMode)
+        {
+            isEmergencyMode = false;
+            Debug.Log($"<color=yellow>[비상전력 해제]</color> {Unitname} 체력 회복으로 비상전력 모드 종료!");
+        }
     }
 
     /// <summary>
@@ -475,17 +484,18 @@ public class Unit : MonoBehaviour
         return false;
     }
 
-    public void Heal(int amount)
+    public void Heal(float amount)
     {
-        health += amount;
+        int finalHealAmount = Mathf.RoundToInt(amount * GetHealMultiplier());
+        health += finalHealAmount;
 
         if (health > maxHealth)
         {
             health = maxHealth;
         }
 
-        UIHandler.ShowDamageText(amount, DamageType.Heal);
-        Debug.Log($"{Unitname} 회복 {amount}");
+        UIHandler.ShowDamageText(finalHealAmount, DamageType.Heal);
+        Debug.Log($"{Unitname} 회복 {finalHealAmount}");
     }
 
     public virtual void Die()

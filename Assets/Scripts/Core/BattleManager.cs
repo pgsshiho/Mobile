@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
 
 public class BattleManager : MonoBehaviour
 {
@@ -30,11 +31,14 @@ public class BattleManager : MonoBehaviour
     private struct CachedSkillButton
     {
         public GameObject root;
+        public Button button;
         public TMP_Text label;
         public Image iconImage;
     }
 
     private CachedSkillButton[] cachedButtons;
+    private readonly Dictionary<Enemy, int> enemyColumns =
+        new Dictionary<Enemy, int>();
 
     private void Awake()
     {
@@ -74,6 +78,7 @@ public class BattleManager : MonoBehaviour
                 cachedButtons[i] = new CachedSkillButton
                 {
                     root = btn,
+                    button = button,
                     label = btn.GetComponentInChildren<TMP_Text>(),
                     iconImage = btn.GetComponent<Image>()
                 };
@@ -110,6 +115,8 @@ public class BattleManager : MonoBehaviour
     /// </summary>
     public void SetupBattlePositions(Room room)
     {
+        enemyColumns.Clear();
+
         // 1. 파티 유닛들을 지정된 Party 위치들로 배치
         if (PartyManager.instance != null && Party != null && Party.Length > 0)
         {
@@ -144,6 +151,76 @@ public class BattleManager : MonoBehaviour
                 }
 
                 enemy.gameObject.SetActive(true);
+                enemyColumns[enemy] = i;
+            }
+        }
+    }
+
+    public bool CanPlayerTargetEnemy(
+        PlayerUnit attacker,
+        Enemy target,
+        SkillData skill)
+    {
+        if (attacker == null || target == null || skill == null ||
+            PartyManager.instance == null)
+            return false;
+
+        int partyColumn = GetPartyColumn(attacker);
+
+        if (partyColumn < 0 ||
+            !enemyColumns.TryGetValue(target, out int enemyColumn))
+            return false;
+
+        int distance = partyColumn + enemyColumn + 1;
+        return distance <= Mathf.Max(1, skill.maxTargetDistance);
+    }
+
+    public int GetPartyColumn(PlayerUnit player)
+    {
+        if (player == null || PartyManager.instance == null ||
+            PartyManager.instance.partySlots == null)
+            return -1;
+
+        return System.Array.IndexOf(PartyManager.instance.partySlots, player);
+    }
+
+    public bool CanUseSkillAtCurrentColumn(PlayerUnit player, SkillData skill)
+    {
+        if (player == null || skill == null)
+            return false;
+
+        int partyColumn = GetPartyColumn(player);
+        if (partyColumn < 0)
+            return false;
+
+        int minColumn = Mathf.Min(skill.minUserColumn, skill.maxUserColumn);
+        int maxColumn = Mathf.Max(skill.minUserColumn, skill.maxUserColumn);
+        return partyColumn >= minColumn && partyColumn <= maxColumn;
+    }
+
+    public void RefreshEnemyTargetAvailability(
+        PlayerUnit attacker,
+        SkillData skill)
+    {
+        foreach (KeyValuePair<Enemy, int> pair in enemyColumns)
+        {
+            Enemy enemy = pair.Key;
+            if (enemy != null && enemy.gameObject.activeInHierarchy)
+            {
+                enemy.SetTargetSelectable(
+                    CanPlayerTargetEnemy(attacker, enemy, skill)
+                );
+            }
+        }
+    }
+
+    public void ClearEnemyTargetAvailability()
+    {
+        foreach (Enemy enemy in enemyColumns.Keys)
+        {
+            if (enemy != null)
+            {
+                enemy.SetTargetSelectable(true);
             }
         }
     }
@@ -198,6 +275,14 @@ public class BattleManager : MonoBehaviour
                     cached.iconImage.sprite = skill.icon;
                     cached.iconImage.enabled = skill.icon != null;
                 }
+
+                if (cached.button != null)
+                {
+                    cached.button.interactable = CanUseSkillAtCurrentColumn(
+                        player,
+                        skill
+                    );
+                }
             }
             else
             {
@@ -232,11 +317,33 @@ public class BattleManager : MonoBehaviour
         if (index < 0 || index >= player.skills.Count)
             return;
 
-        player.selectedSkill = player.skills[index];
-        if (player.selectedSkill == null)
+        SkillData selectedSkill = player.skills[index];
+        if (selectedSkill == null)
             return;
 
+        if (!CanUseSkillAtCurrentColumn(player, selectedSkill))
+        {
+            Debug.Log($"[전투] {selectedSkill.skillName}은(는) 현재 " +
+                      $"{GetPartyColumn(player) + 1}열에서는 사용할 수 없습니다.");
+            return;
+        }
+
+        player.selectedSkill = selectedSkill;
+
         Debug.Log($"{player.selectedSkill.skillName} 선택");
+
+        if (player.selectedSkill.targetType == TargetType.Ally)
+        {
+            ClearEnemyTargetAvailability();
+            Debug.Log("[전투] 아군 1명을 선택하세요.");
+        }
+        else
+        {
+            RefreshEnemyTargetAvailability(
+                player,
+                player.selectedSkill
+            );
+        }
 
         if (player.selectedSkill.targetType == TargetType.Self)
         {
@@ -262,6 +369,7 @@ public class BattleManager : MonoBehaviour
     public void EndPlayerAction()
     {
         HidePlayerUI();
+        ClearEnemyTargetAvailability();
 
         if (TurnManager.instance != null)
         {

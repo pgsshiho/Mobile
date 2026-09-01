@@ -23,11 +23,33 @@ public class Enemy :
     [Header("AI Delay")]
     public float attackDelay = 1.5f;
     public float endTurnDelay = 1.5f;
+    private SpriteRenderer spriteRenderer;
+    private Color defaultColor = Color.white;
 
     protected override void Awake()
     {
         base.Awake();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
+        {
+            defaultColor = spriteRenderer.color;
+        }
         EnsurePointerClickSupport();
+    }
+
+    public void SetTargetSelectable(bool selectable)
+    {
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponent<SpriteRenderer>();
+        }
+
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = selectable
+                ? defaultColor
+                : new Color(0.35f, 0.35f, 0.35f, 0.45f);
+        }
     }
 
     private void EnsurePointerClickSupport()
@@ -406,6 +428,17 @@ public class Enemy :
 
         if (skill == null)
             return;
+
+        if (current is PlayerUnit player &&
+            (BattleManager.instance == null ||
+             !BattleManager.instance.CanPlayerTargetEnemy(
+                 player,
+                 this,
+                 skill
+             )))
+        {
+            return;
+        }
 
         if (
             skill.targetType ==

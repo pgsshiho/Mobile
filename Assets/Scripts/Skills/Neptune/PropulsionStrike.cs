@@ -4,7 +4,7 @@ using UnityEngine;
 public class PropulsionStrike : SkillBase
 {
     [Header("Max HP Damage Ratio")]
-    public float hpDamageRatio = 0.15f;
+    public float hpDamageRatio = 0.05f;
 
     public override void Use(Unit user, Unit target, SkillData skill)
     {
@@ -19,7 +19,9 @@ public class PropulsionStrike : SkillBase
         }
 
         int baseDamage = user.CalculateDamage(target, skill);
-        int hpBonusDamage = Mathf.RoundToInt(user.maxHealth * hpDamageRatio);
+        int hpBonusDamage = 0;
+        int selfDamage = Mathf.RoundToInt(user.maxHealth * hpDamageRatio);
+        user.TakeDamage(selfDamage);
         int finalDamage = baseDamage + hpBonusDamage;
 
         target.TakeDamage(finalDamage);

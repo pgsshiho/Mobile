@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4148de06aa3f6fc4fb8b87538ee7aabc, type: 3}
-  m_Name: WeakAttacks
+  m_Name: Front Wait
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
-  skillName: WeakAttack
-  icon: {fileID: -8519203006988308643, guid: c7cd4c86408c96349ab16585b0529421, type: 3}
+  skillName: 
+  icon: {fileID: 0}
   description: 
-  targetType: 0
-  maxTargetDistance: 3
+  targetType: 4
+  maxTargetDistance: 2
   minUserColumn: 0
-  maxUserColumn: 1
-  power: 15
-  hitBonus: 20
-  soundEffect: {fileID: 8300000, guid: 526573bc7e6cd6e4e8d7cff9be7ceba8, type: 3}
-  skillLogic: {fileID: 11400000, guid: 989ceb755715c63448256b48ff4ff305, type: 2}
+  maxUserColumn: 3
+  power: 0
+  hitBonus: 0
+  soundEffect: {fileID: 0}
+  skillLogic: {fileID: 11400000, guid: 57e9d0c469c0bb047b0bf93b770e23d0, type: 2}

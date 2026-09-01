@@ -8,8 +8,7 @@ public class BuffData : ScriptableObject
     public int duration;
 
     public int attackBonus;
-    public int defenseBonus;
-
+    public float defenseBonus;
     public int speedBonus;
 
     public int hitBonus;

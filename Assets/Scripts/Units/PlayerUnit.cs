@@ -6,6 +6,33 @@ public class PlayerUnit :
     Unit,
     IPointerClickHandler
 {
+    protected override void Awake()
+    {
+        base.Awake();
+        EnsurePointerClickSupport();
+    }
+
+    private void EnsurePointerClickSupport()
+    {
+        if (GetComponent<Collider2D>() == null)
+        {
+            BoxCollider2D collider = gameObject.AddComponent<BoxCollider2D>();
+            SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+
+            if (spriteRenderer != null && spriteRenderer.sprite != null)
+            {
+                collider.size = spriteRenderer.sprite.bounds.size;
+            }
+        }
+
+        Camera mainCamera = Camera.main;
+        if (mainCamera != null &&
+            mainCamera.GetComponent<Physics2DRaycaster>() == null)
+        {
+            mainCamera.gameObject.AddComponent<Physics2DRaycaster>();
+        }
+    }
+
     public override void MyTurn()
     {
         base.MyTurn();
@@ -84,6 +111,25 @@ public class PlayerUnit :
     {
         if (selectedSkill == null)
             return;
+
+        if (BattleManager.instance != null &&
+            !BattleManager.instance.CanUseSkillAtCurrentColumn(this, selectedSkill))
+        {
+            Debug.Log("[전투] 현재 위치에서는 이 스킬을 사용할 수 없습니다.");
+            return;
+        }
+
+        if (target is Enemy enemy &&
+            (BattleManager.instance == null ||
+             !BattleManager.instance.CanPlayerTargetEnemy(
+                 this,
+                 enemy,
+                 selectedSkill
+             )))
+        {
+            Debug.Log("[전투] 현재 위치에서는 해당 적을 공격할 수 없습니다.");
+            return;
+        }
 
         // 논리 오류(Logic Loop) 검사: 50% 확률로 아군을 적군으로 오인하여 아군에게 스킬 시전!
         if (isLogicLoop && target != null && target.gameObject.layer == LayerMask.NameToLayer("Enemy"))
@@ -168,6 +214,10 @@ public class PlayerUnit :
         if (TurnManager.instance != null)
         {
             TurnManager.instance.waitingForTarget = false;
+            if (BattleManager.instance != null)
+            {
+                BattleManager.instance.ClearEnemyTargetAvailability();
+            }
             TurnManager.instance.EndTurn();
         }
     }
@@ -209,11 +259,14 @@ public class PlayerUnit :
             return;
 
         Unit current = TurnManager.instance.currentUnit;
-        if (current == null) return;
+        if (!(current is PlayerUnit) || health <= 0)
+            return;
 
         SkillData skill = current.selectedSkill;
         if (skill == null) return;
 
+        // TargetType.Ally는 아군 1명을 직접 지정하는 스킬이다.
+        // 선택한 행동 유닛 자신도 포함하므로 회복/보호 스킬에 모두 사용 가능하다.
         if (skill.targetType == TargetType.Ally)
         {
             current.SelectTarget(this);

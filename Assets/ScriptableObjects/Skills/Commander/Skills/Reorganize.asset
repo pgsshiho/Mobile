@@ -10,13 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4148de06aa3f6fc4fb8b87538ee7aabc, type: 3}
-  m_Name: Situation Command
+  m_Name: Reorganize
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
-  skillName: Situation Command
+  skillName: 
   icon: {fileID: 0}
   description: 
-  targetType: 0
+  targetType: 5
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 0
   hitBonus: 0
   soundEffect: {fileID: 0}
-  skillLogic: {fileID: 0}
+  skillLogic: {fileID: 11400000, guid: cc6e1c070dd51ee4e9973c12a37cbbda, type: 2}
