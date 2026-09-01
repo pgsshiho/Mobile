@@ -21,6 +21,7 @@ public enum RoomType
     Start,
     Enemy,
     Boss,
+    AddRobot,
 
     // 세부 방 종류
     ItemShop,
@@ -43,7 +44,7 @@ public class RoomManager : MonoBehaviour
     public static RoomManager instance;
 
     [Header("Zone & Room Settings")]
-    [Tooltip("한 Zone당 생성할 총 방의 개수 (기본 13개)")]
+    [Tooltip("한 Zone당 생성할 총 방의 개수 (필수 방 포함 최소 10개, 기본 13개)")]
     [Min(10)]
     public int roomsPerZone = 13;
 
@@ -218,6 +219,10 @@ public class RoomManager : MonoBehaviour
         ZoneType zone,
         int totalCount)
     {
+        // 시작, 보스, 전투 3개, 보상 2개, 상점 2개, 빈 방을
+        // 모두 보장하려면 최소 10개가 필요하다.
+        totalCount = Mathf.Max(10, totalCount);
+
         List<RoomType> types = new List<RoomType>();
 
         // 시작 방
@@ -229,7 +234,7 @@ public class RoomManager : MonoBehaviour
         List<RoomType> middleRooms =
             new List<RoomType>();
 
-        // 적 최소 3개
+        // 전투 방 최소 3개
         for (int i = 0; i < 3; i++)
         {
             middleRooms.Add(
@@ -237,27 +242,35 @@ public class RoomManager : MonoBehaviour
             );
         }
 
-        // 보상 방 최소 1개
-        middleRooms.Add(
-            GetRandomRewardRoomType()
-        );
+        // 보상 방 3종 중 서로 다른 2개를 필수로 넣는다.
+        List<RoomType> requiredRewards = new List<RoomType>
+        {
+            RoomType.Fountain,
+            RoomType.SageStone,
+            RoomType.TrainingRoom
+        };
+        ShuffleList(requiredRewards);
+        middleRooms.Add(requiredRewards[0]);
+        middleRooms.Add(requiredRewards[1]);
 
-        // 마을 방 최소 2개
-        middleRooms.Add(
-            GetRandomVillageRoomType()
-        );
+        // 상점 방 3종 중 서로 다른 2개를 필수로 넣는다.
+        List<RoomType> requiredShops = new List<RoomType>
+        {
+            RoomType.ItemShop,
+            RoomType.Blacksmith,
+            RoomType.RepairShop
+        };
+        ShuffleList(requiredShops);
+        middleRooms.Add(requiredShops[0]);
+        middleRooms.Add(requiredShops[1]);
 
-        middleRooms.Add(
-            GetRandomVillageRoomType()
-        );
-
-        // 아무것도 없는 방 최소 1개
+        // 아무것도 없는 방도 최소 1개 포함한다.
         middleRooms.Add(RoomType.None);
 
         // 남은 방 랜덤 생성
         while (middleRooms.Count < middleCount)
         {
-            int r = Random.Range(0, 5);
+            int r = Random.Range(0, 4);
 
             switch (r)
             {
@@ -279,7 +292,7 @@ public class RoomManager : MonoBehaviour
                     );
                     break;
 
-                case 4:
+                case 3:
                     middleRooms.Add(RoomType.None);
                     break;
             }

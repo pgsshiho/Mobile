@@ -6,6 +6,8 @@ public class PlayerUnit :
     Unit,
     IPointerClickHandler
 {
+    public Sprite normal;
+    public Sprite attack;
     protected override void Awake()
     {
         base.Awake();
@@ -207,6 +209,7 @@ public class PlayerUnit :
                     }
                 }
                 break;
+            
         }
 
         BattleManager.instance.HidePlayerUI();
@@ -220,6 +223,11 @@ public class PlayerUnit :
             }
             TurnManager.instance.EndTurn();
         }
+        if(attack != null)
+            sp.sprite = attack;
+        StartCoroutine(base.WaitSecond(0.5f));
+        if(normal != null)
+            sp.sprite = normal;
     }
 
     // 다인 공격
