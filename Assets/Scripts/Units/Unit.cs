@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -154,6 +155,8 @@ public class Unit : MonoBehaviour
     private UnitUIHandler uiHandler;
     private Slider healthSlider;
 
+    public SpriteRenderer sp;
+
     public UnitBuffHandler BuffHandler
     {
         get
@@ -206,6 +209,7 @@ public class Unit : MonoBehaviour
 
     protected virtual void Awake()
     {
+        sp = GetComponent<SpriteRenderer>();
         EnsureInitialized();
         CacheHealthBar();
         UpdateHealthBar();
@@ -556,4 +560,9 @@ public class Unit : MonoBehaviour
 
     public int CalculateDamage(Unit target, SkillData skill) => CombatCalculator.CalculateDamage(this, target, skill);
     public bool CheckHit(Unit target, SkillData skill) => CombatCalculator.CheckHit(this, target, skill);
+
+    public IEnumerator WaitSecond(float second)
+    {
+        yield return new WaitForSeconds(second);
+    }
 }
