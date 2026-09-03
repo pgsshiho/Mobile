@@ -19,6 +19,10 @@ MonoBehaviour:
     m_Key: Ex1
     m_Metadata:
       m_Items: []
+  - m_Id: 41015848047443968
+    m_Key: "\uC804\uB825"
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

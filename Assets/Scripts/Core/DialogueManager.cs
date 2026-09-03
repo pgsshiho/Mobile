@@ -24,7 +24,6 @@ public class DialogueManager : MonoBehaviour
 
     // 타이핑 끝났는지
     bool isTyping;
-
     private void Awake()
     {
         instance = this;
@@ -61,6 +60,11 @@ public class DialogueManager : MonoBehaviour
         if (currentPage >= currentDialogueKeys.Length)
         {
             CloseDialogue();
+            if (RoomNavigationUI.instance != null)
+            {
+                RoomNavigationUI.instance.SetNavigationActive(true);
+                
+            }
             return;
         }
 
@@ -88,7 +92,7 @@ public class DialogueManager : MonoBehaviour
         dialogueText.text = "";
 
         LocalizedString localizedString =
-            new LocalizedString("MainText", key);
+            new LocalizedString("En", key);
 
         string text =
             localizedString.GetLocalizedString();
@@ -97,7 +101,9 @@ public class DialogueManager : MonoBehaviour
         {
             dialogueText.text += c;
 
-            yield return new WaitForSeconds(typingSpeed);
+            yield return new 
+                
+                WaitForSeconds(typingSpeed);
         }
 
         isTyping = false;
@@ -106,5 +112,6 @@ public class DialogueManager : MonoBehaviour
     public void CloseDialogue()
     {
         dialoguePanel.SetActive(false);
+        currentDialogueKeys = null;
     }
 }
