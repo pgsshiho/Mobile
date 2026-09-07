@@ -1,8 +1,9 @@
 using System;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
-public class FocusManager : MonoBehaviour
+public class FocusManager : MonoBehaviour,IPointerClickHandler
 {
     [Header("기본 연출 설정")]
     public float duration = 1.0f;
@@ -18,7 +19,7 @@ public class FocusManager : MonoBehaviour
     public static Action<GameObject> RequestFocusIn;
     public static Action RequestFocusOut;
     public static Action<GameObject> RequestToggleFocus;
-
+    public string[] Dialoguekey;
     private Camera mainCamera;
     private FocusableObject currentFocusedTarget;
 
@@ -42,7 +43,14 @@ public class FocusManager : MonoBehaviour
         RequestFocusOut -= FocusOut;
         RequestToggleFocus -= ToggleFocus;
     }
-
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        GameObject clickedObject = eventData.pointerPress;
+        if (clickedObject != null)
+        {
+            ToggleFocus(clickedObject);
+        }
+    }
     private void FocusIn(GameObject target)
     {
         if (IsTweening || target == null) return;
@@ -84,6 +92,7 @@ public class FocusManager : MonoBehaviour
 
         seq.SetEase(Ease.OutCubic)
            .OnComplete(() => IsTweening = false);
+        DialogueManager.instance.StartDialogue(Dialoguekey);
     }
 
     private void FocusOut()

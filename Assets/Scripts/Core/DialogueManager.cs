@@ -86,24 +86,26 @@ public class DialogueManager : MonoBehaviour
     IEnumerator TypeLocalizedText(string key)
     {
         isTyping = true;
-
         dialoguePanel.SetActive(true);
-
         dialogueText.text = "";
 
-        LocalizedString localizedString =
-            new LocalizedString("En", key);
+        // 1. "En" 대신 실제 Localization String Table 이름을 넣어야 합니다 (예: "DialogueTable").
+        // 만약 Table Name이 "DialogueTable"이라면 아래와 같이 작성합니다.
+        LocalizedString localizedString = new LocalizedString("En", key);
 
-        string text =
-            localizedString.GetLocalizedString();
+        // 2. 비동기로 번역 텍스트를 안전하게 가져옵니다.
+        var handle = localizedString.GetLocalizedStringAsync();
 
+        // 로딩이 완료될 때까지 대기
+        yield return handle;
+
+        string text = handle.Result;
+
+        // 3. 한 글자씩 출력
         foreach (char c in text)
         {
             dialogueText.text += c;
-
-            yield return new 
-                
-                WaitForSeconds(typingSpeed);
+            yield return new WaitForSeconds(typingSpeed);
         }
 
         isTyping = false;

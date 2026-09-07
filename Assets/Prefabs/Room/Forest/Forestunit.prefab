@@ -333,10 +333,8 @@ MonoBehaviour:
   duration: 0.4
   targetScaleMultiplier: 2.5
   distanceFromCamera: 5
-  defaultQuestObject: {fileID: 4083865077435298470}
-  dialogKey:
-  - "\uC804\uB825"
-  isquest: 0
+  Dialoguekey:
+  - "\uD018\uC2A4\uD2B81"
 --- !u!1 &4083865077435298470
 GameObject:
   m_ObjectHideFlags: 0
