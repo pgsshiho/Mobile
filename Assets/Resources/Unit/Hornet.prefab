@@ -147,7 +147,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0.114, y: -1.568}
-  m_SizeDelta: {x: 160, y: 20}
+  m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &4996659698805210411
 MonoBehaviour:
@@ -362,6 +362,11 @@ MonoBehaviour:
   Unitname: Player
   statusIconParent: {fileID: 8799366825746644908}
   statusIconSet: {fileID: 11400000, guid: d1e54b7e3b3164b4b9ae45b7b986cfa2, type: 2}
+  sp: {fileID: 0}
+  normal: {fileID: 0}
+  attack: {fileID: 0}
+  maxForwardMoveColumns: 1
+  maxBackwardMoveColumns: 1
 --- !u!61 &5939398439755310862
 BoxCollider2D:
   m_ObjectHideFlags: 0

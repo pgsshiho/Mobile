@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ReadyTodel
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: ReadyToEleminate
-  icon: {fileID: -8519203006988308643, guid: c7cd4c86408c96349ab16585b0529421, type: 3}
+  icon: {fileID: 21300000, guid: af6bf4921887d6241a71ff7de75a84e1, type: 3}
   description: 
   targetType: 4
   maxTargetDistance: 3

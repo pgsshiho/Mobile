@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: WeakAttacks
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: WeakAttack
-  icon: {fileID: -8519203006988308643, guid: c7cd4c86408c96349ab16585b0529421, type: 3}
+  icon: {fileID: 21300000, guid: ad5d0d9f34ffdea499ca07c43c01a70e, type: 3}
   description: 
   targetType: 0
   maxTargetDistance: 3

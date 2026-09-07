@@ -157,6 +157,7 @@ public class Unit : MonoBehaviour
 
     public SpriteRenderer sp;
 
+
     public UnitBuffHandler BuffHandler
     {
         get
@@ -364,7 +365,29 @@ public class Unit : MonoBehaviour
     public virtual void SelectTarget(Unit target)
     {
     }
+    // =========================================================
+    // Focus 연출 메서드 (Action 기반 수정)
+    // =========================================================
+    public virtual void AttackFocus(GameObject Self)
+    {
+        StartCoroutine(AttackFocusSequence(Self));
+    }
 
+    private System.Collections.IEnumerator AttackFocusSequence(GameObject Self)
+    {
+        // 1. 포커스 인 이벤트 요청
+        FocusManager.RequestFocusIn?.Invoke(Self);
+
+        // 2. FocusManager의 연출 시간(기본 1초, 필요에 따라 조정)만큼 대기
+        // (IsTweening 값을 검사하고 싶다면 FocusManager의 duration 스펙에 맞춰 대기합니다)
+        yield return new WaitForSeconds(1.0f);
+
+        // 3. 공격 연출/동작 수행 시간 추가 (필요 시)
+        yield return new WaitForSeconds(0.5f);
+
+        // 4. 포커스 아웃 이벤트 요청
+        FocusManager.RequestFocusOut?.Invoke();
+    }
     public virtual void TakeDamage(int damage, DamageType type = DamageType.Normal)
     {
         UIHandler.ShowDamageText(damage, type);

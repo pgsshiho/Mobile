@@ -13,9 +13,12 @@ MonoBehaviour:
   m_Name: Divide 1
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: Divide
-  icon: {fileID: -8519203006988308643, guid: c7cd4c86408c96349ab16585b0529421, type: 3}
+  icon: {fileID: 21300000, guid: fa27e2de0e7d20842a9b78b1acbd1c6f, type: 3}
   description: 
   targetType: 1
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 15
   hitBonus: 20
   soundEffect: {fileID: 8300000, guid: b491e346d4157714599b3bab7862201f, type: 3}

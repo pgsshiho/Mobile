@@ -221,7 +221,7 @@ public class RoomManager : MonoBehaviour
     {
         // 시작, 보스, 전투 3개, 보상 2개, 상점 2개, 빈 방을
         // 모두 보장하려면 최소 10개가 필요하다.
-        totalCount = Mathf.Max(10, totalCount);
+        totalCount = Mathf.Max(11, totalCount);
 
         List<RoomType> types = new List<RoomType>();
 
@@ -241,7 +241,7 @@ public class RoomManager : MonoBehaviour
                 GetRandomEnemyRoomType(zone)
             );
         }
-
+        middleRooms.Add(RoomType.AddRobot);
         // 보상 방 3종 중 서로 다른 2개를 필수로 넣는다.
         List<RoomType> requiredRewards = new List<RoomType>
         {

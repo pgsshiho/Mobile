@@ -22,6 +22,10 @@ public class BattleManager : MonoBehaviour
     [Header("Skill Buttons")]
     public GameObject[] skillButtons;
 
+    [Header("Formation Move Button")]
+    [Tooltip("누른 뒤 아군을 선택하면 해당 아군의 열로 교대 이동하는 버튼")]
+    public Button formationMoveButton;
+
     [Header("Audio")]
     public AudioSource sfxSource;
     public AudioSource bgmSource;
@@ -37,6 +41,7 @@ public class BattleManager : MonoBehaviour
     }
 
     private CachedSkillButton[] cachedButtons;
+    private bool isSelectingFormationMove;
     private readonly Dictionary<Enemy, int> enemyColumns =
         new Dictionary<Enemy, int>();
 
@@ -50,6 +55,7 @@ public class BattleManager : MonoBehaviour
 
         instance = this;
         CacheSkillButtons();
+        CacheFormationMoveButtons();
     }
 
     private void CacheSkillButtons()
@@ -83,6 +89,15 @@ public class BattleManager : MonoBehaviour
                     iconImage = btn.GetComponent<Image>()
                 };
             }
+        }
+    }
+
+    private void CacheFormationMoveButtons()
+    {
+        if (formationMoveButton != null)
+        {
+            formationMoveButton.onClick.AddListener(BeginFormationMove);
+            formationMoveButton.gameObject.SetActive(false);
         }
     }
 
@@ -289,20 +304,128 @@ public class BattleManager : MonoBehaviour
                 cached.root.SetActive(false);
             }
         }
+
+        UpdateFormationMoveButtons(player);
     }
 
     public void HidePlayerUI()
     {
-        if (cachedButtons == null)
-            return;
-
-        for (int i = 0; i < cachedButtons.Length; i++)
+        if (cachedButtons != null)
         {
-            if (cachedButtons[i].root != null)
+            for (int i = 0; i < cachedButtons.Length; i++)
             {
-                cachedButtons[i].root.SetActive(false);
+                if (cachedButtons[i].root != null)
+                {
+                    cachedButtons[i].root.SetActive(false);
+                }
             }
         }
+
+        isSelectingFormationMove = false;
+        if (formationMoveButton != null)
+            formationMoveButton.gameObject.SetActive(false);
+    }
+
+    private void UpdateFormationMoveButtons(PlayerUnit player)
+    {
+        if (formationMoveButton != null)
+        {
+            formationMoveButton.gameObject.SetActive(true);
+            formationMoveButton.interactable = CanStartFormationMove(player);
+        }
+    }
+
+    // Inspector의 단일 열 이동 버튼에 직접 연결해도 되는 공개 메서드다.
+    public void BeginFormationMove()
+    {
+        if (TurnManager.instance == null ||
+            !(TurnManager.instance.currentUnit is PlayerUnit player) ||
+            !CanStartFormationMove(player))
+            return;
+
+        isSelectingFormationMove = true;
+        player.selectedSkill = null;
+        ClearEnemyTargetAvailability();
+        Debug.Log("[전투] 교대할 아군을 선택하세요.");
+    }
+
+    public bool TryHandleFormationMoveTarget(
+        PlayerUnit mover,
+        PlayerUnit target)
+    {
+        if (!isSelectingFormationMove || mover == null || target == null)
+            return false;
+
+        if (!isBattle || TurnManager.instance == null ||
+            !TurnManager.instance.waitingForTarget ||
+            TurnManager.instance.currentUnit != mover ||
+            PartyManager.instance == null ||
+            PartyManager.instance.partySlots == null)
+            return true;
+
+        Unit[] slots = PartyManager.instance.partySlots;
+        int currentColumn = GetPartyColumn(mover);
+        int targetColumn = GetPartyColumn(target);
+
+        if (currentColumn < 0 || targetColumn < 0 ||
+            currentColumn == targetColumn ||
+            !CanMoveToColumn(mover, currentColumn, targetColumn))
+        {
+            Debug.Log("[전투] 이 아군의 열까지는 이동할 수 없습니다.");
+            return true;
+        }
+
+        // 선택한 아군과 위치를 바꿔 해당 열로 이동한다.
+        slots[targetColumn] = mover;
+        slots[currentColumn] = target;
+
+        if (Party != null && Party.Length > 0)
+        {
+            PartyManager.instance.PlacePartyAtPositions(Party);
+        }
+
+        PartyManager.instance.SaveParty();
+        Debug.Log($"[전투] {mover.Unitname}: {currentColumn + 1}열 → " +
+                  $"{targetColumn + 1}열 이동");
+
+        // 열 이동은 한 턴의 행동으로 처리한다.
+        EndPlayerAction();
+        return true;
+    }
+
+    private bool CanStartFormationMove(PlayerUnit player)
+    {
+        if (player == null || PartyManager.instance == null ||
+            PartyManager.instance.partySlots == null)
+            return false;
+
+        int currentColumn = GetPartyColumn(player);
+        if (currentColumn < 0)
+            return false;
+
+        foreach (Unit unit in PartyManager.instance.partySlots)
+        {
+            if (unit is PlayerUnit target && target != player &&
+                target.health > 0)
+            {
+                int targetColumn = GetPartyColumn(target);
+                if (CanMoveToColumn(player, currentColumn, targetColumn))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool CanMoveToColumn(
+        PlayerUnit player,
+        int currentColumn,
+        int targetColumn)
+    {
+        int distance = targetColumn - currentColumn;
+        return distance < 0
+            ? -distance <= player.maxForwardMoveColumns
+            : distance > 0 && distance <= player.maxBackwardMoveColumns;
     }
 
     public void SelectSkill(int index)
@@ -316,6 +439,8 @@ public class BattleManager : MonoBehaviour
 
         if (index < 0 || index >= player.skills.Count)
             return;
+
+        isSelectingFormationMove = false;
 
         SkillData selectedSkill = player.skills[index];
         if (selectedSkill == null)
@@ -368,6 +493,7 @@ public class BattleManager : MonoBehaviour
 
     public void EndPlayerAction()
     {
+        isSelectingFormationMove = false;
         HidePlayerUI();
         ClearEnemyTargetAvailability();
 

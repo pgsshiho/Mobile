@@ -8,6 +8,14 @@ public class PlayerUnit :
 {
     public Sprite normal;
     public Sprite attack;
+
+    [Header("Formation Movement")]
+    [Tooltip("이 유닛이 전열 방향으로 한 번에 이동할 수 있는 최대 칸 수")]
+    [Min(0)] public int maxForwardMoveColumns = 1;
+
+    [Tooltip("이 유닛이 후열 방향으로 한 번에 이동할 수 있는 최대 칸 수")]
+    [Min(0)] public int maxBackwardMoveColumns = 1;
+
     protected override void Awake()
     {
         base.Awake();
@@ -149,7 +157,7 @@ public class PlayerUnit :
 
         // 스킬 사용 트리거 (회로 단선 등 체크)
         OnSkillUsed(selectedSkill);
-
+        base.AttackFocus(this.gameObject);
         switch (selectedSkill.targetType)
         {
             // 단일 적
@@ -209,7 +217,6 @@ public class PlayerUnit :
                     }
                 }
                 break;
-            
         }
 
         BattleManager.instance.HidePlayerUI();
@@ -221,6 +228,7 @@ public class PlayerUnit :
             {
                 BattleManager.instance.ClearEnemyTargetAvailability();
             }
+            StartCoroutine(WaitSecond(1f));
             TurnManager.instance.EndTurn();
         }
         if(attack != null)
@@ -234,7 +242,7 @@ public class PlayerUnit :
     void AttackMultipleEnemies(int count)
     {
         int attacked = 0;
-
+        base.AttackFocus(this.gameObject);
         foreach (Unit unit in TurnManager.instance.turnList)
         {
             if (unit != null && unit.health > 0 && unit.gameObject.layer == LayerMask.NameToLayer("Enemy"))
@@ -251,6 +259,7 @@ public class PlayerUnit :
     // 전체 공격
     void AttackAllEnemies()
     {
+        base.AttackFocus(this.gameObject);
         foreach (Unit unit in TurnManager.instance.turnList)
         {
             if (unit != null && unit.health > 0 && unit.gameObject.layer == LayerMask.NameToLayer("Enemy"))
@@ -263,11 +272,19 @@ public class PlayerUnit :
     // 아군 클릭
     public void OnPointerClick(PointerEventData eventData)
     {
+        base.AttackFocus(this.gameObject);
         if (TurnManager.instance == null || !TurnManager.instance.waitingForTarget)
             return;
 
         Unit current = TurnManager.instance.currentUnit;
         if (!(current is PlayerUnit) || health <= 0)
+            return;
+
+        if (BattleManager.instance != null &&
+            BattleManager.instance.TryHandleFormationMoveTarget(
+                (PlayerUnit)current,
+                this
+            ))
             return;
 
         SkillData skill = current.selectedSkill;
@@ -279,5 +296,6 @@ public class PlayerUnit :
         {
             current.SelectTarget(this);
         }
+
     }
 }
