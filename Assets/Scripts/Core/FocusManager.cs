@@ -92,7 +92,6 @@ public class FocusManager : MonoBehaviour,IPointerClickHandler
 
         seq.SetEase(Ease.OutCubic)
            .OnComplete(() => IsTweening = false);
-        DialogueManager.instance.StartDialogue(Dialoguekey);
     }
 
     private void FocusOut()

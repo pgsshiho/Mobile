@@ -77,6 +77,18 @@ public class Enemy :
     {
         base.MyTurn();
 
+        // 상태이상으로 사망했거나
+        // 기절 / 데이터 파편화 등으로 이미 턴이 종료된 경우
+        if (turnEndedBySystem)
+            return;
+
+        // 안전장치
+        if (health <= 0 ||
+            !gameObject.activeInHierarchy)
+        {
+            return;
+        }
+
         StartCoroutine(EnemyTurnRoutine());
     }
 
@@ -84,20 +96,36 @@ public class Enemy :
     {
         yield return new WaitForSeconds(attackDelay);
 
+        // 대기하는 동안 죽었을 수 있음
+        if (health <= 0 ||
+            !gameObject.activeInHierarchy)
+        {
+            yield break;
+        }
+
+        if (TurnManager.instance == null ||
+            TurnManager.instance.currentUnit != this)
+        {
+            yield break;
+        }
+
         if (skills == null ||
             skills.Count <= 0)
         {
             yield return new WaitForSeconds(endTurnDelay);
 
-            TurnManager.instance.EndTurn();
+            if (TurnManager.instance != null &&
+                TurnManager.instance.currentUnit == this)
+            {
+                TurnManager.instance.EndTurn();
+            }
+
             yield break;
         }
 
-        selectedSkill =
-            ChooseSkill();
+        selectedSkill = ChooseSkill();
 
-        Unit target =
-            GetTarget();
+        Unit target = GetTarget();
 
         if (target != null &&
             selectedSkill != null)
@@ -149,7 +177,19 @@ public class Enemy :
 
         yield return new WaitForSeconds(endTurnDelay);
 
-        TurnManager.instance.EndTurn();
+        // 공격 도중 사망했을 경우
+        if (health <= 0 ||
+            !gameObject.activeInHierarchy)
+        {
+            yield break;
+        }
+
+        // 이미 다른 턴으로 넘어갔다면 종료
+        if (TurnManager.instance != null &&
+            TurnManager.instance.currentUnit == this)
+        {
+            TurnManager.instance.EndTurn();
+        }
     }
 
     SkillData ChooseSkill()

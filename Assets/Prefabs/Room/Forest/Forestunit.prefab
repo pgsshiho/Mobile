@@ -240,7 +240,7 @@ GameObject:
   - component: {fileID: 6139145953229430852}
   - component: {fileID: 1964905559191511614}
   - component: {fileID: 5817471529752462235}
-  - component: {fileID: 339350348696385241}
+  - component: {fileID: 3781832073923391996}
   m_Layer: 5
   m_Name: Image
   m_TagString: Untagged
@@ -295,7 +295,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: bee2dd31f5cead44fba52365c0f2c082, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 8dc8484911e15ff4d81c756952814723, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -317,8 +317,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8754a075ca8db764a8c84221ccd5437d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AddParty
-  NewOne: {fileID: 6373275724900144376, guid: 71415678880d3c14db480426dfddab10, type: 3}
---- !u!114 &339350348696385241
+  NewOne: {fileID: 6754200348863659914, guid: ccf636b54f8fd3142a6232b5169ca0b8, type: 3}
+--- !u!114 &3781832073923391996
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -327,10 +327,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 3428418353450725162}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c10e5e261f217ff47ad2b08d0b55420a, type: 3}
+  m_Script: {fileID: 11500000, guid: c2b0f7a672a58db448805cb8a79a088d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Mobile2DFocus
-  duration: 0.4
+  m_EditorClassIdentifier: Assembly-CSharp::FocusManagerQuest
+  duration: 1
   targetScaleMultiplier: 2.5
   distanceFromCamera: 5
   Dialoguekey:

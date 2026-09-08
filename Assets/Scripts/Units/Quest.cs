@@ -39,13 +39,13 @@ public class Quest : MonoBehaviour
         CheckQuestCompletion();
     }
 
-    private void CheckQuestCompletion()
+    public void CheckQuestCompletion()
     {
         if (!isCompleted && currentCount >= data.needCount)
         {
             isCompleted = true;
             Debug.Log($"<color=green>★ [{data.questTitle}] 완료! ★</color>");
-            AddParty addParty = GetComponent<AddParty>();
+            AddParty addParty = FindAnyObjectByType<AddParty>();
             addParty?.Add();
         }
     }

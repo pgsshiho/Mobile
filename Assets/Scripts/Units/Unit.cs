@@ -45,7 +45,7 @@ public class Unit : MonoBehaviour
         Corrosion,  // 산화 / 녹 데미지
         Electric    // 전기 / 단선 폭발
     }
-
+    protected bool turnEndedBySystem = false;
     [Header("=== 1. 체력 & 생존 (Health & Survival) ===")]
     [Tooltip("최대 체력")]
     public float maxHealth = 100f;              // MaxHp: 최대 체력
@@ -293,40 +293,64 @@ public class Unit : MonoBehaviour
 
     public virtual void MyTurn()
     {
+        turnEndedBySystem = false;
+
         UIHandler.SetTurnUI(true);
 
         BuffHandler.BuffTurn();
         BuffHandler.DebuffTurn();
         StatusHandler.TickTurn();
 
-        // 1. 기절 검사
-        if (isStunned)
-        {
-            Debug.Log($"{Unitname} 기절로 행동 불가");
-            RemoveStatus(StatusType.Stun);
-
-            if (TurnManager.instance != null)
-            {
-                TurnManager.instance.EndTurn();
-            }
-            return;
-        }
-
-        // 2. 데이터 파편화 검사 (35% 확률로 오류 카드/행동 캔슬)
-        if (isDataFragmentation && UnityEngine.Random.Range(0, 100) < 35)
-        {
-            Debug.LogWarning($"<color=cyan>[데이터 파편화]</color> {Unitname} 시스템 오류로 행동 실패 (턴 스킵)!");
-            if (TurnManager.instance != null)
-            {
-                TurnManager.instance.EndTurn();
-            }
-            return;
-        }
-
-        // 3. 사망 검사
+        // 상태이상으로 사망
         if (health <= 0)
         {
             Die();
+            turnEndedBySystem = true;
+            return;
+        }
+
+        // 기절
+        if (isStunned)
+        {
+            Debug.Log($"{Unitname} 기절로 행동 불가");
+
+            RemoveStatus(StatusType.Stun);
+
+            turnEndedBySystem = true;
+
+            if (TurnManager.instance != null)
+            {
+                TurnManager.instance.EndTurn();
+            }
+
+            return;
+        }
+
+        // 데이터 파편화
+        if (isDataFragmentation &&
+            UnityEngine.Random.Range(0, 100) < 35)
+        {
+            Debug.LogWarning(
+                $"<color=cyan>[데이터 파편화]</color> " +
+                $"{Unitname} 시스템 오류로 행동 실패 (턴 스킵)!"
+            );
+
+            turnEndedBySystem = true;
+
+            if (TurnManager.instance != null)
+            {
+                TurnManager.instance.EndTurn();
+            }
+
+            return;
+        }
+
+        // 혹시 TickTurn() 내부에서 사망했는데
+        // health 체크를 놓치는 상황 방지
+        if (health <= 0 || !gameObject.activeInHierarchy)
+        {
+            turnEndedBySystem = true;
+            return;
         }
     }
 
@@ -394,7 +418,7 @@ public class Unit : MonoBehaviour
 
         health -= damage;
 
-        if (health <= 0)
+        if (health <= 0 && gameObject.tag == "Player")
         {
             // 체력 0 도달 시: 비상전력 확률로 1HP 생존 (비상전력 모드 가동)
             if (emergencyPower > 0f && UnityEngine.Random.value < emergencyPower)
@@ -527,20 +551,29 @@ public class Unit : MonoBehaviour
 
     public virtual void Die()
     {
+        if (!gameObject.activeInHierarchy)
+            return;
+
         Debug.Log($"{Unitname} 사망");
 
-        if (TurnManager.instance != null)
-        {
-            TurnManager.instance.RemoveUnit(this);
-        }
+        UIHandler.SetTurnUI(false);
+
+        gameObject.SetActive(false);
 
         if (PartyManager.instance != null)
         {
             PartyManager.instance.Remove(this);
         }
 
-        UIHandler.SetTurnUI(false);
-        gameObject.SetActive(false);
+        if (BattleManager.instance != null)
+        {
+            BattleManager.instance.RearrangeEnemies();
+        }
+
+        if (TurnManager.instance != null)
+        {
+            TurnManager.instance.OnUnitDeath(this);
+        }
     }
 
     // ==========================

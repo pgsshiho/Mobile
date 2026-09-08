@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: SmokeScreen
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: "\uC5F0\uB9C9 \uC804\uAC1C"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 74af5fda7e754cc42b272c53151c4cca, type: 3}
   description: "\uC5F0\uB9C9\uD0C4\uC744 \uC0B4\uD3EC\uD558\uC5EC \uC790\uC2E0\uC758
     \uBC29\uC5B4\uB825\uACFC \uD68C\uD53C\uC728\uC744 \uD06C\uAC8C \uB192\uC785\uB2C8\uB2E4."
   targetType: 4
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 0
   hitBonus: 0
   soundEffect: {fileID: 0}

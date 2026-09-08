@@ -61,7 +61,15 @@ public class TurnManager : MonoBehaviour
 
         StartTurn();
     }
+    public void OnUnitDeath(Unit unit)
+    {
+        if (battleEnded)
+            return;
 
+        RemoveUnit(unit);
+
+        CheckBattleEnd();
+    }
     public void StartTurn()
     {
         if (battleEnded)
@@ -135,7 +143,6 @@ public class TurnManager : MonoBehaviour
 
         return false;
     }
-
     public void EndTurn()
     {
         if (currentUnit != null &&

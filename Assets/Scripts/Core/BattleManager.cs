@@ -508,6 +508,9 @@ public class BattleManager : MonoBehaviour
     {
         isBattle = false;
 
+        // 전투에 사용한 유닛 비활성화
+        DisableBattleUnits();
+
         if (battleUI != null)
             battleUI.SetActive(false);
 
@@ -541,6 +544,62 @@ public class BattleManager : MonoBehaviour
         else
         {
             Debug.Log("패배!");
+        }
+    }
+    private void DisableBattleUnits()
+    {
+        // 아군 끄기
+        if (PartyManager.instance != null &&
+            PartyManager.instance.partySlots != null)
+        {
+            foreach (Unit unit in PartyManager.instance.partySlots)
+            {
+                if (unit != null)
+                    unit.gameObject.SetActive(false);
+            }
+        }
+
+        // 적 끄기
+        foreach (Enemy enemy in enemyColumns.Keys)
+        {
+            if (enemy != null)
+                enemy.gameObject.SetActive(false);
+        }
+
+        enemyColumns.Clear();
+    }
+    public void RearrangeEnemies()
+    {
+        if (Enemy == null || Enemy.Length == 0)
+            return;
+
+        // 현재 살아있는 적들을 앞쪽부터 다시 정렬
+        List<Enemy> aliveEnemies = new List<Enemy>();
+
+        foreach (KeyValuePair<Enemy, int> pair in enemyColumns)
+        {
+            Enemy enemy = pair.Key;
+
+            if (enemy != null &&
+                enemy.gameObject.activeSelf &&
+                enemy.health > 0)
+            {
+                aliveEnemies.Add(enemy);
+            }
+        }
+
+        // 앞쪽 열부터 살아있는 적 배치
+        for (int i = 0; i < aliveEnemies.Count; i++)
+        {
+            Enemy enemy = aliveEnemies[i];
+
+            if (Enemy[i] != null)
+            {
+                enemy.transform.position = Enemy[i].position;
+                enemy.transform.rotation = Enemy[i].rotation;
+            }
+
+            enemyColumns[enemy] = i;
         }
     }
 }

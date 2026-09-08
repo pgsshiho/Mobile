@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Localization;
@@ -11,19 +12,24 @@ public class DialogueManager : MonoBehaviour
     public GameObject dialoguePanel;
     public TextMeshProUGUI dialogueText;
 
+    [Header("Localization Settings")]
+    [Tooltip("Unity Localization String Table의 이름을 입력하세요.")]
+    public string tableName = "DialogueTable"; // Inspector에서 설정 가능
+
     [Header("Typing")]
     public float typingSpeed = 0.03f;
 
-    Coroutine typingCoroutine;
+    // 캐싱된 번역 완료 텍스트들
+    private string[] cachedDialogueTexts;
 
-    // 현재 대화들
-    public string[] currentDialogueKeys;
-
-    // 현재 페이지
+    // 현재 페이지 및 코루틴
     public int currentPage;
+    private Coroutine typingCoroutine;
 
-    // 타이핑 끝났는지
-    bool isTyping;
+    // 상태 플래그
+    private bool isTyping;
+    private bool isLoading;
+
     private void Awake()
     {
         instance = this;
@@ -31,77 +37,78 @@ public class DialogueManager : MonoBehaviour
 
     private void Update()
     {
-        if (dialoguePanel.activeSelf &&
-           Input.GetMouseButtonDown(0))
+        // 로딩 중이거나 타이핑 중일 때 클릭 이벤트 처리
+        if (dialoguePanel.activeSelf && Input.GetMouseButtonDown(0))
         {
-            NextDialogue();
+            if (isTyping)
+            {
+                // 타이핑 중 클릭 시 전체 문장 즉시 출력 (스킵)
+                CompleteCurrentLine();
+            }
+            else if (!isLoading)
+            {
+                // 타이핑이 완전히 끝난 후 클릭 시 다음 문장으로
+                NextDialogue();
+            }
         }
     }
 
-    // 대화 시작
+    // 대화 시작: 모든 키를 한번에 번역
     public void StartDialogue(string[] keys)
     {
-        currentDialogueKeys = keys;
+        if (keys == null || keys.Length == 0) return;
 
-        currentPage = 0;
-
-        ShowDialogue(currentDialogueKeys[currentPage]);
-    }
-
-    // 다음 대화
-    public void NextDialogue()
-    {
-        if (isTyping)
-            return;
-
-        currentPage++;
-
-        // 끝났으면 종료
-        if (currentPage >= currentDialogueKeys.Length)
+        if (typingCoroutine != null)
         {
-            CloseDialogue();
-            if (RoomNavigationUI.instance != null)
-            {
-                RoomNavigationUI.instance.SetNavigationActive(true);
-                
-            }
-            return;
+            StopCoroutine(typingCoroutine);
         }
 
-        ShowDialogue(currentDialogueKeys[currentPage]);
+        typingCoroutine = StartCoroutine(PreloadAndStartDialogue(keys));
     }
 
-    // 출력
-    public void ShowDialogue(string key)
+    // 일괄 번역 처리 후 출력 시작
+    private IEnumerator PreloadAndStartDialogue(string[] keys)
+    {
+        isLoading = true;
+        dialoguePanel.SetActive(true);
+        dialogueText.text = "";
+
+        cachedDialogueTexts = new string[keys.Length];
+
+        // 1. 모든 키를 한번에 비동기로 로드
+        for (int i = 0; i < keys.Length; i++)
+        {
+            LocalizedString localizedString = new LocalizedString(tableName, keys[i]);
+            var handle = localizedString.GetLocalizedStringAsync();
+
+            yield return handle;
+
+            cachedDialogueTexts[i] = handle.Result;
+        }
+
+        isLoading = false;
+        currentPage = 0;
+
+        // 2. 첫 문장 출력
+        ShowDialogue(currentPage);
+    }
+
+    // 지정된 페이지의 대화 출력
+    public void ShowDialogue(int pageIndex)
     {
         if (typingCoroutine != null)
         {
             StopCoroutine(typingCoroutine);
         }
 
-        typingCoroutine =
-            StartCoroutine(TypeLocalizedText(key));
+        typingCoroutine = StartCoroutine(TypeDialogueText(cachedDialogueTexts[pageIndex]));
     }
 
-    IEnumerator TypeLocalizedText(string key)
+    IEnumerator TypeDialogueText(string text)
     {
         isTyping = true;
-        dialoguePanel.SetActive(true);
         dialogueText.text = "";
 
-        // 1. "En" 대신 실제 Localization String Table 이름을 넣어야 합니다 (예: "DialogueTable").
-        // 만약 Table Name이 "DialogueTable"이라면 아래와 같이 작성합니다.
-        LocalizedString localizedString = new LocalizedString("En", key);
-
-        // 2. 비동기로 번역 텍스트를 안전하게 가져옵니다.
-        var handle = localizedString.GetLocalizedStringAsync();
-
-        // 로딩이 완료될 때까지 대기
-        yield return handle;
-
-        string text = handle.Result;
-
-        // 3. 한 글자씩 출력
         foreach (char c in text)
         {
             dialogueText.text += c;
@@ -111,9 +118,44 @@ public class DialogueManager : MonoBehaviour
         isTyping = false;
     }
 
+    // 타이핑 스킵 (즉시 전체 출력)
+    private void CompleteCurrentLine()
+    {
+        if (typingCoroutine != null)
+        {
+            StopCoroutine(typingCoroutine);
+        }
+
+        dialogueText.text = cachedDialogueTexts[currentPage];
+        isTyping = false;
+    }
+
+    // 다음 대화
+    public void NextDialogue()
+    {
+        currentPage++;
+
+        // 대화 종료
+        if (currentPage >= cachedDialogueTexts.Length)
+        {
+            CloseDialogue();
+
+            if (RoomNavigationUI.instance != null)
+            {
+                RoomNavigationUI.instance.SetNavigationActive(true);
+            }
+            return;
+        }
+
+        ShowDialogue(currentPage);
+    }
+
     public void CloseDialogue()
     {
         dialoguePanel.SetActive(false);
-        currentDialogueKeys = null;
+        cachedDialogueTexts = null;
+        currentPage = 0;
+        isTyping = false;
+        isLoading = false;
     }
 }

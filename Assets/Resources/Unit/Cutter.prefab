@@ -89,7 +89,7 @@ GameObject:
   - component: {fileID: 7252561178064551604}
   m_Layer: 6
   m_Name: Cutter
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -222,14 +222,14 @@ MonoBehaviour:
   maxAttackLevel: 100
   maxDefenseLevel: 100
   accuracyupgrade: 0
-  Unitname: Player
+  Unitname: Lapture
   statusIconParent: {fileID: 6581149379377079235}
   statusIconSet: {fileID: 11400000, guid: d1e54b7e3b3164b4b9ae45b7b986cfa2, type: 2}
-  sp: {fileID: 0}
-  normal: {fileID: 0}
-  attack: {fileID: 0}
-  maxForwardMoveColumns: 1
-  maxBackwardMoveColumns: 1
+  sp: {fileID: 2528666844815541323}
+  normal: {fileID: 21300000, guid: bee2dd31f5cead44fba52365c0f2c082, type: 3}
+  attack: {fileID: 21300000, guid: bee2dd31f5cead44fba52365c0f2c082, type: 3}
+  maxForwardMoveColumns: 2
+  maxBackwardMoveColumns: 2
 --- !u!61 &7252561178064551604
 BoxCollider2D:
   m_ObjectHideFlags: 0

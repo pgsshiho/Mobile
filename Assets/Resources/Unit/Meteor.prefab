@@ -282,15 +282,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a15364bfa04ba429a2875bab2bab56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerUnit
-  maxHealth: 100
-  health: 100
+  maxHealth: 70
+  health: 70
   emergencyPower: 0.2
   communication: 100
   isPowerDown: 0
   isEmergencyMode: 0
   hasSelfDestructed: 0
-  attackPower: 5
-  defensePower: 5
+  attackPower: 8
+  defensePower: 0
   specialArmor: 0
   criticalChance: 0
   accuracy: 90
@@ -327,8 +327,8 @@ MonoBehaviour:
   statusIconParent: {fileID: 846971750688396973}
   statusIconSet: {fileID: 11400000, guid: d1e54b7e3b3164b4b9ae45b7b986cfa2, type: 2}
   sp: {fileID: 0}
-  normal: {fileID: 0}
-  attack: {fileID: 0}
+  normal: {fileID: 21300000, guid: 8dc8484911e15ff4d81c756952814723, type: 3}
+  attack: {fileID: 21300000, guid: 8dc8484911e15ff4d81c756952814723, type: 3}
   maxForwardMoveColumns: 1
   maxBackwardMoveColumns: 1
 --- !u!61 &2982472894341290846
@@ -369,7 +369,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 6.4, y: 6.4}
+    oldSize: {x: 2.5, y: 2.5}
     newSize: {x: 2.5, y: 2.5}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -573,7 +573,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &7363980638657859384
 RectTransform:
   m_ObjectHideFlags: 0
