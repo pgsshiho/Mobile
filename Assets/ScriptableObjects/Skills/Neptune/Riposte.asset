@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: Riposte
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: "\uBC18\uACA9"
-  icon: {fileID: 0}
+  icon: {fileID: -3923129804859700216, guid: 5439bfd56e1762648b3ea435c4f2fa83, type: 3}
   description: "1\uD134 \uB3D9\uC548 \uD53C\uACA9 \uC2DC \uAC00\uD574\uC790\uB97C
     \uC989\uC2DC \uBC18\uACA9\uD569\uB2C8\uB2E4. (1\uC5F4)"
   targetType: 4
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 0
   hitBonus: 0
   soundEffect: {fileID: 0}

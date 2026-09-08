@@ -50,8 +50,7 @@ MonoBehaviour:
   zoneType: 0
   roomName: ForestEnemy1
   enemySpawnPoints: []
-  enemies:
-  - {fileID: 1669151837191854026, guid: a40a920696447354284c6286375d1e76, type: 3}
+  enemies: []
   rewardData: {fileID: 11400000, guid: e9893c2a1f019324a954cd17fe12ca71, type: 2}
   minMoney: 50
   maxMoney: 150

@@ -13,11 +13,14 @@ MonoBehaviour:
   m_Name: PropulsionStrike
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: "\uCD94\uC9C4 \uD0C0\uACA9"
-  icon: {fileID: 0}
+  icon: {fileID: -8968648470041882675, guid: f8f5b5dcf39b93149af5de70eb339193, type: 3}
   description: "1\uC5F4\uB85C \uC804\uC9C4\uD558\uBA70 \uC790\uC2E0 \uCCB4\uB825\uC5D0
     \uBE44\uB840\uD55C \uAC15\uB825\uD55C \uD53C\uD574\uB97C \uC785\uD799\uB2C8\uB2E4.
     (1~2\uC5F4)"
   targetType: 0
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 14
   hitBonus: 0
   soundEffect: {fileID: 0}

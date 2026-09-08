@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: SelfRepairMode
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: "\uC790\uAC00\uC218\uB9AC\uBAA8\uB4DC"
-  icon: {fileID: 0}
+  icon: {fileID: 2974832866102504368, guid: f1716445c139c144da8c9dd7d4721f78, type: 3}
   description: "\uB4A4\uB85C \uC774\uB3D9\uD558\uBA70 \uBC29\uC5B4\uB825\uC774 \uAC10\uC18C\uD558\uC9C0\uB9CC
     \uB300\uD3ED \uD68C\uBCF5\uD569\uB2C8\uB2E4. (1~2\uC5F4)"
   targetType: 4
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 0
   hitBonus: 0
   soundEffect: {fileID: 0}

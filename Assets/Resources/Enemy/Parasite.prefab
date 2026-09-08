@@ -92,7 +92,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &4303577350906677370
 RectTransform:
   m_ObjectHideFlags: 0
@@ -318,7 +318,7 @@ Transform:
   m_GameObject: {fileID: 7952997034942780863}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 2, y: 2, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -396,15 +396,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cf1286f1c294b024ba28ab20883c8c9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Enemy
-  maxHealth: 100
-  health: 100
+  maxHealth: 50
+  health: 50
   emergencyPower: 0.2
   communication: 100
   isPowerDown: 0
   isEmergencyMode: 0
   hasSelfDestructed: 0
-  attackPower: 3
-  defensePower: 3
+  attackPower: 4
+  defensePower: 0
   specialArmor: 0
   criticalChance: 0
   accuracy: 90
@@ -428,7 +428,7 @@ MonoBehaviour:
   selectedSkill: {fileID: 0}
   buffs: []
   debuffs: []
-  myturnUI: {fileID: 0}
+  myturnUI: {fileID: 6028381918955862834}
   damageTextPrefab: {fileID: 3432776059765830471, guid: 7d3631656ebbd604aa80f9e945222ebc, type: 3}
   damageTextSpawnPoint: {fileID: 7284542131567827613}
   HPBar: {fileID: 8759068627910526035}
@@ -440,7 +440,7 @@ MonoBehaviour:
   Unitname: Enemy
   statusIconParent: {fileID: 7284542131567827613}
   statusIconSet: {fileID: 11400000, guid: d1e54b7e3b3164b4b9ae45b7b986cfa2, type: 2}
-  sp: {fileID: 0}
+  sp: {fileID: 3240321451945104701}
   targetMode: 0
   attackDelay: 1.5
   endTurnDelay: 1.5

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4148de06aa3f6fc4fb8b87538ee7aabc, type: 3}
+  m_Name: Armorfuges
+  m_EditorClassIdentifier: Assembly-CSharp::SkillData
+  skillName: "\uC544\uBA38 \uD37C\uC9C0"
+  icon: {fileID: 4962578317884713911, guid: 2cb130118d9ec9b4b984907a9535fdf7, type: 3}
+  description: "\uBC29\uC5B4\uB825 \uB300\uD3ED \uAC10\uC18C,\uACF5\uACA9\uB825 \uC99D\uAC00,\uC18D\uB3C4
+    \uC99D\uAC00,\uCCB4\uB825 \uD68C\uBCF5\n"
+  targetType: 5
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
+  power: 0
+  hitBonus: 0
+  soundEffect: {fileID: 0}
+  skillLogic: {fileID: 11400000, guid: 1bcc5795c8a16ee4cbcbd38ce8fb2417, type: 2}
