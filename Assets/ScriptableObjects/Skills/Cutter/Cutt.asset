@@ -14,12 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: Cut
   icon: {fileID: 21300000, guid: acd5cc8718fd9044586022fd3e513a41, type: 3}
-  description: 
+  description: Cut
   targetType: 0
   maxTargetDistance: 2
   minUserColumn: 0
   maxUserColumn: 3
-  power: 20
+  power: 30
   hitBonus: 20
   soundEffect: {fileID: 8300000, guid: 526573bc7e6cd6e4e8d7cff9be7ceba8, type: 3}
   skillLogic: {fileID: 11400000, guid: 0fb2ac3896204b6429109783af7a9d3a, type: 2}

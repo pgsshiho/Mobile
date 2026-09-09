@@ -214,9 +214,12 @@ public class BattleManager : MonoBehaviour
 
         try
         {
-            string localizedDescription =
+            var localizedDescription =
                 await LocalizationSettings.StringDatabase
-                    .GetLocalizedStringAsync(skill.description)
+                    .GetLocalizedStringAsync(
+                        "En",
+                        skill.description
+                    )
                     .Task;
 
             text.text = localizedDescription;

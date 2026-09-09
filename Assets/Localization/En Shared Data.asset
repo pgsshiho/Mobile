@@ -27,6 +27,10 @@ MonoBehaviour:
     m_Key: "\uD018\uC2A4\uD2B81"
     m_Metadata:
       m_Items: []
+  - m_Id: 43611436949667840
+    m_Key: Cut
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
