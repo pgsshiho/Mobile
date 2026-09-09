@@ -1,9 +1,8 @@
-using System;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class FocusManager : MonoBehaviour,IPointerClickHandler
+public class BlackSmith : MonoBehaviour, IPointerClickHandler
 {
     [Header("기본 연출 설정")]
     public float duration = 1.0f;
@@ -12,42 +11,39 @@ public class FocusManager : MonoBehaviour,IPointerClickHandler
     public float distanceFromCamera = 5f;
 
     public bool IsTweening { get; private set; } = false;
-
-    // =========================================================
-    // [C# Action] 외부에서 FocusManager를 호출할 수 있는 창구
-    // =========================================================
-    public static Action<GameObject> RequestFocusIn;
-    public static Action RequestFocusOut;
-    public static Action<GameObject> RequestToggleFocus;
+    public string[] Dialoguekey;
     private Camera mainCamera;
     private FocusableObject currentFocusedTarget;
+    public GameObject BlackSmithUIOpenChoose;
+    public GameObject BlackSmithUI;
 
     private void Awake()
     {
         mainCamera = Camera.main;
     }
-
-    // 오브젝트가 활성화될 때 이벤트 연결
-    private void OnEnable()
+    public void leave()
     {
-        RequestFocusIn += FocusIn;
-        RequestFocusOut += FocusOut;
-        RequestToggleFocus += ToggleFocus;
+        if (currentFocusedTarget != null)
+        {
+            FocusOut();
+            BlackSmithUIOpenChoose.SetActive(false);
+        }
     }
-
-    // 오브젝트가 비활성화될 때 이벤트 해제 (메모리 누수 방지)
-    private void OnDisable()
+    public void OpenBlackSmithUI()
     {
-        RequestFocusIn -= FocusIn;
-        RequestFocusOut -= FocusOut;
-        RequestToggleFocus -= ToggleFocus;
+        BlackSmithUI.SetActive(true);
+    }
+    public void CloseBlackSmithUI()
+    {
+        BlackSmithUI.SetActive(false);
     }
     public void OnPointerClick(PointerEventData eventData)
     {
         GameObject clickedObject = eventData.pointerPress;
         if (clickedObject != null)
         {
-            ToggleFocus(clickedObject);
+            FocusIn(gameObject);
+            BlackSmithUIOpenChoose.SetActive(true);
         }
     }
     private void FocusIn(GameObject target)
@@ -91,6 +87,10 @@ public class FocusManager : MonoBehaviour,IPointerClickHandler
 
         seq.SetEase(Ease.OutCubic)
            .OnComplete(() => IsTweening = false);
+        if(DialogueManager.instance != null)
+        {
+            DialogueManager.instance.StartDialogue(Dialoguekey);
+        }
     }
 
     private void FocusOut()

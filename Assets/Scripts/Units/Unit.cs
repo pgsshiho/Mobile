@@ -388,10 +388,8 @@ public class Unit : MonoBehaviour
 
     public virtual void SelectTarget(Unit target)
     {
+        AttackFocus(target.gameObject);
     }
-    // =========================================================
-    // Focus 연출 메서드 (Action 기반 수정)
-    // =========================================================
     public virtual void AttackFocus(GameObject Self)
     {
         StartCoroutine(AttackFocusSequence(Self));
