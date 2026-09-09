@@ -154,6 +154,8 @@ public class Unit : MonoBehaviour
     private UnitStatusHandler statusHandler;
     private UnitUIHandler uiHandler;
     private Slider healthSlider;
+    private float displayedHealth = float.NaN;
+    private float displayedMaxHealth = float.NaN;
 
     public SpriteRenderer sp;
 
@@ -218,8 +220,8 @@ public class Unit : MonoBehaviour
 
     protected virtual void LateUpdate()
     {
-        // 일부 스킬이 health 값을 직접 변경하므로,
-        // 매 프레임 UI를 동기화해 모든 피해/회복을 반영한다.
+        // 일부 스킬이 health 값을 직접 변경하므로 동기화는 유지한다.
+        // 단, 값이 달라졌을 때만 Slider를 갱신해 매 프레임 UI 재구축을 피한다.
         UpdateHealthBar();
     }
 
@@ -250,16 +252,26 @@ public class Unit : MonoBehaviour
         if (healthSlider == null)
         {
             CacheHealthBar();
+            displayedHealth = float.NaN;
+            displayedMaxHealth = float.NaN;
         }
 
         if (healthSlider == null)
             return;
 
+        float sliderMax = Mathf.Max(1f, maxHealth);
+        float sliderValue = Mathf.Clamp(health, 0f, sliderMax);
+
+        if (Mathf.Approximately(displayedHealth, sliderValue) &&
+            Mathf.Approximately(displayedMaxHealth, sliderMax))
+            return;
+
         healthSlider.minValue = 0f;
-        healthSlider.maxValue = Mathf.Max(1f, maxHealth);
-        healthSlider.SetValueWithoutNotify(
-            Mathf.Clamp(health, 0f, healthSlider.maxValue)
-        );
+        healthSlider.maxValue = sliderMax;
+        healthSlider.SetValueWithoutNotify(sliderValue);
+
+        displayedHealth = sliderValue;
+        displayedMaxHealth = sliderMax;
     }
 
     public void EnsureInitialized()

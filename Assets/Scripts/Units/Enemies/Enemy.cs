@@ -25,6 +25,7 @@ public class Enemy :
     public float endTurnDelay = 1.5f;
     private SpriteRenderer spriteRenderer;
     private Color defaultColor = Color.white;
+    private readonly List<Unit> alivePlayersBuffer = new List<Unit>(4);
 
     protected override void Awake()
     {
@@ -356,8 +357,7 @@ public class Enemy :
 
     List<Unit> GetAlivePlayers()
     {
-        List<Unit> alivePlayers =
-            new List<Unit>();
+        alivePlayersBuffer.Clear();
 
         foreach (Unit party
             in PartyManager.instance.partySlots)
@@ -365,11 +365,11 @@ public class Enemy :
             if (party != null &&
                 party.health > 0)
             {
-                alivePlayers.Add(party);
+                alivePlayersBuffer.Add(party);
             }
         }
 
-        return alivePlayers;
+        return alivePlayersBuffer;
     }
 
     int CountAlivePlayers()

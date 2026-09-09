@@ -107,11 +107,14 @@ public class DialogueManager : MonoBehaviour
     IEnumerator TypeDialogueText(string text)
     {
         isTyping = true;
-        dialogueText.text = "";
+        dialogueText.text = text;
+        dialogueText.maxVisibleCharacters = 0;
 
-        foreach (char c in text)
+        // 문자열을 글자마다 다시 연결하지 않고 TMP의 표시 글자 수만 늘린다.
+        // 화면 결과는 기존 타이핑 연출과 동일하지만 GC 할당을 만들지 않는다.
+        for (int i = 1; i <= text.Length; i++)
         {
-            dialogueText.text += c;
+            dialogueText.maxVisibleCharacters = i;
             yield return new WaitForSeconds(typingSpeed);
         }
 
@@ -127,6 +130,7 @@ public class DialogueManager : MonoBehaviour
         }
 
         dialogueText.text = cachedDialogueTexts[currentPage];
+        dialogueText.maxVisibleCharacters = int.MaxValue;
         isTyping = false;
     }
 

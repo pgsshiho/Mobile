@@ -17,6 +17,11 @@ public class PlayerUnit :
     [Tooltip("이 유닛이 후열 방향으로 한 번에 이동할 수 있는 최대 칸 수")]
     [Min(0)] public int maxBackwardMoveColumns = 1;
 
+    // 전투 중 자율 행동/상태이상 처리에서 재사용한다.
+    // 매번 새 List를 만들지 않아 GC 할당을 줄인다.
+    private readonly List<Unit> aliveEnemies = new List<Unit>(4);
+    private readonly List<Unit> aliveAllies = new List<Unit>(4);
+
     protected override void Awake()
     {
         base.Awake();
@@ -82,29 +87,33 @@ public class PlayerUnit :
     private Unit GetRandomAliveEnemy()
     {
         if (TurnManager.instance == null) return null;
-        List<Unit> enemies = new List<Unit>();
+        aliveEnemies.Clear();
         foreach (Unit u in TurnManager.instance.turnList)
         {
             if (u != null && u.health > 0 && u.gameObject.layer == LayerMask.NameToLayer("Enemy"))
             {
-                enemies.Add(u);
+                aliveEnemies.Add(u);
             }
         }
-        return (enemies.Count > 0) ? enemies[Random.Range(0, enemies.Count)] : null;
+        return (aliveEnemies.Count > 0)
+            ? aliveEnemies[Random.Range(0, aliveEnemies.Count)]
+            : null;
     }
 
     private Unit GetRandomAliveAlly()
     {
         if (TurnManager.instance == null) return null;
-        List<Unit> allies = new List<Unit>();
+        aliveAllies.Clear();
         foreach (Unit u in TurnManager.instance.turnList)
         {
             if (u != null && u.health > 0 && u.gameObject.layer == LayerMask.NameToLayer("Player"))
             {
-                allies.Add(u);
+                aliveAllies.Add(u);
             }
         }
-        return (allies.Count > 0) ? allies[Random.Range(0, allies.Count)] : null;
+        return (aliveAllies.Count > 0)
+            ? aliveAllies[Random.Range(0, aliveAllies.Count)]
+            : null;
     }
 
     // 스킬 선택
