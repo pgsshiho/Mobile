@@ -137,6 +137,10 @@ public class Unit : MonoBehaviour
     public Transform damageTextSpawnPoint;
     public GameObject HPBar;
 
+    [Header("SFX")]
+    [Tooltip("사망 시 재생할 SFX")]
+    public AudioClip deathSFX;
+
     [Header("Upgrade")]
     public int attackLevel = 0;
     public int defenseLevel = 0;
@@ -576,6 +580,10 @@ public class Unit : MonoBehaviour
             return;
 
         Debug.Log($"{Unitname} 사망");
+
+        // 사망 SFX 재생
+        if (AudioManager.instance != null)
+            AudioManager.instance.PlaySfx(deathSFX);
 
         if (QuestManager.Instance != null)
         {
