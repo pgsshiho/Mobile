@@ -250,11 +250,14 @@ public class UnitUIHandler
 
     private Transform GetOrCreateIconContainer()
     {
-        if (statusIconParent != null)
+        if (statusIconParent != null && statusIconParent != owner.transform)
             return statusIconParent;
 
         if (dynamicIconContainer != null)
+        {
+            dynamicIconContainer.localPosition = new Vector3(-0.3f, 2.9f, 0f);
             return dynamicIconContainer;
+        }
 
         if (owner == null)
             return null;
@@ -263,12 +266,13 @@ public class UnitUIHandler
         if (existing != null)
         {
             dynamicIconContainer = existing;
+            dynamicIconContainer.localPosition = new Vector3(-0.3f, 2.9f, 0f);
             return dynamicIconContainer;
         }
 
         GameObject containerObj = new GameObject("StatusIcon_Container");
         containerObj.transform.SetParent(owner.transform, false);
-        containerObj.transform.localPosition = new Vector3(0f, 1.9f, 0f);
+        containerObj.transform.localPosition = new Vector3(-0.3f, 2.9f, 0f);
         dynamicIconContainer = containerObj.transform;
 
         return dynamicIconContainer;
@@ -276,7 +280,7 @@ public class UnitUIHandler
 
     private void RepositionStatusIcons()
     {
-        float spacing = 0.17f;
+        float spacing = 0.25f;
         int total = statusIcons.Count;
         if (total == 0) return;
 
