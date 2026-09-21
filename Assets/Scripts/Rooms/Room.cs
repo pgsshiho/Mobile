@@ -129,6 +129,10 @@ public class Room : MonoBehaviour
                 Debug.Log("훈련 교관 - 능력치 업 구매");
                 break;
 
+            case RoomType.RobotFactory:
+                Debug.Log("로봇 공장 입장");
+                break;
+
             // ── 시작 / 빈 방 ─────────────────────────────────────────
             case RoomType.Start:
                 Debug.Log("시작 방");

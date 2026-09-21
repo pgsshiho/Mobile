@@ -12,6 +12,10 @@ public class DialogueManager : MonoBehaviour
     public GameObject dialoguePanel;
     public TextMeshProUGUI dialogueText;
 
+    [Header("Choices")]
+    [Tooltip("선택지 전용 컨트롤러입니다. 별도 UI 오브젝트에 붙여 연결하세요.")]
+    public DialogueChoiceController choiceController;
+
     [Header("Localization Settings")]
     [Tooltip("Unity Localization String Table의 이름을 입력하세요.")]
     public string tableName = "DialogueTable"; // Inspector에서 설정 가능
@@ -29,6 +33,7 @@ public class DialogueManager : MonoBehaviour
     // 상태 플래그
     private bool isTyping;
     private bool isLoading;
+    private DialogueChoice[] pendingChoices;
 
     private void Awake()
     {
@@ -38,7 +43,9 @@ public class DialogueManager : MonoBehaviour
     private void Update()
     {
         // 로딩 중이거나 타이핑 중일 때 클릭 이벤트 처리
-        if (dialoguePanel.activeSelf && Input.GetMouseButtonDown(0))
+        if (dialoguePanel.activeSelf &&
+            (choiceController == null || !choiceController.IsShowing) &&
+            Input.GetMouseButtonDown(0))
         {
             if (isTyping)
             {
@@ -55,6 +62,23 @@ public class DialogueManager : MonoBehaviour
 
     // 대화 시작: 모든 키를 한번에 번역
     public void StartDialogue(string[] keys)
+    {
+        pendingChoices = null;
+        StartDialogueInternal(keys);
+    }
+
+    /// <summary>
+    /// 마지막 대사 뒤 선택지를 보여 주는 대화 시작 메서드입니다.
+    /// </summary>
+    public void StartDialogueWithChoices(
+        string[] keys,
+        DialogueChoice[] choices)
+    {
+        pendingChoices = choices;
+        StartDialogueInternal(keys);
+    }
+
+    private void StartDialogueInternal(string[] keys)
     {
         if (keys == null || keys.Length == 0) return;
 
@@ -142,6 +166,13 @@ public class DialogueManager : MonoBehaviour
         // 대화 종료
         if (currentPage >= cachedDialogueTexts.Length)
         {
+            if (pendingChoices != null && pendingChoices.Length > 0 &&
+                choiceController != null && choiceController.CanShowChoices)
+            {
+                choiceController.ShowChoices(pendingChoices, SelectChoice);
+                return;
+            }
+
             CloseDialogue();
 
             if (RoomNavigationUI.instance != null)
@@ -154,10 +185,23 @@ public class DialogueManager : MonoBehaviour
         ShowDialogue(currentPage);
     }
 
+    private void SelectChoice(DialogueChoice choice)
+    {
+        choice?.onSelected?.Invoke();
+        CloseDialogue();
+
+        if (RoomNavigationUI.instance != null)
+            RoomNavigationUI.instance.SetNavigationActive(true);
+    }
+
     public void CloseDialogue()
     {
         dialoguePanel.SetActive(false);
+        if (choiceController != null)
+            choiceController.HideChoices();
+
         cachedDialogueTexts = null;
+        pendingChoices = null;
         currentPage = 0;
         isTyping = false;
         isLoading = false;

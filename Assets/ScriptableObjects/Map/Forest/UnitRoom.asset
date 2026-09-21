@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: UnitRoom
   m_EditorClassIdentifier: Assembly-CSharp::RoomPoolData
   zoneType: 0
-  roomType: 4
+  roomType: 16
   roomPrefabs:
   - {fileID: 7246727099977304148, guid: 99b14b8e014681d4baad53f30c12701d, type: 3}

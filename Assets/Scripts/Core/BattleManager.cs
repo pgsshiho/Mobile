@@ -52,6 +52,11 @@ public class BattleManager : MonoBehaviour
 
     private bool isSelectingFormationMove;
 
+    // 전투 규칙은 UI/씬 참조 없이 별도 객체에 둔다.
+    private readonly BattleTargetingRules targetingRules =
+        new BattleTargetingRules();
+    private FormationMoveRules formationMoveRules;
+
     private readonly Dictionary<Enemy, int> enemyColumns =
         new Dictionary<Enemy, int>();
 
@@ -65,6 +70,7 @@ public class BattleManager : MonoBehaviour
         }
 
         instance = this;
+        formationMoveRules = new FormationMoveRules(targetingRules);
 
         CacheSkillButtons();
         CacheBattleUIEX();
@@ -355,45 +361,22 @@ public class BattleManager : MonoBehaviour
         Enemy target,
         SkillData skill)
     {
-        if (attacker == null ||
-            target == null ||
-            skill == null ||
-            PartyManager.instance == null)
-        {
-            return false;
-        }
+        Unit[] partySlots = PartyManager.instance != null
+            ? PartyManager.instance.partySlots
+            : null;
 
-        int partyColumn =
-            GetPartyColumn(attacker);
-
-        if (partyColumn < 0 ||
-            !enemyColumns.TryGetValue(
-                target,
-                out int enemyColumn))
-        {
-            return false;
-        }
-
-        int distance =
-            partyColumn + enemyColumn + 1;
-
-        return distance <=
-               Mathf.Max(1, skill.maxTargetDistance);
+        return targetingRules.CanPlayerTargetEnemy(
+            partySlots, enemyColumns, attacker, target, skill);
     }
 
 
     public int GetPartyColumn(PlayerUnit player)
     {
-        if (player == null ||
-            PartyManager.instance == null ||
-            PartyManager.instance.partySlots == null)
-        {
-            return -1;
-        }
+        Unit[] partySlots = PartyManager.instance != null
+            ? PartyManager.instance.partySlots
+            : null;
 
-        return System.Array.IndexOf(
-            PartyManager.instance.partySlots,
-            player);
+        return targetingRules.GetPartyColumn(partySlots, player);
     }
 
 
@@ -401,27 +384,12 @@ public class BattleManager : MonoBehaviour
         PlayerUnit player,
         SkillData skill)
     {
-        if (player == null || skill == null)
-            return false;
+        Unit[] partySlots = PartyManager.instance != null
+            ? PartyManager.instance.partySlots
+            : null;
 
-        int partyColumn =
-            GetPartyColumn(player);
-
-        if (partyColumn < 0)
-            return false;
-
-        int minColumn =
-            Mathf.Min(
-                skill.minUserColumn,
-                skill.maxUserColumn);
-
-        int maxColumn =
-            Mathf.Max(
-                skill.minUserColumn,
-                skill.maxUserColumn);
-
-        return partyColumn >= minColumn &&
-               partyColumn <= maxColumn;
+        return targetingRules.CanUseSkillAtCurrentColumn(
+            partySlots, player, skill);
     }
 
 
@@ -687,28 +655,15 @@ public class BattleManager : MonoBehaviour
         Unit[] slots =
             PartyManager.instance.partySlots;
 
-        int currentColumn =
-            GetPartyColumn(mover);
-
-        int targetColumn =
-            GetPartyColumn(target);
-
-        if (currentColumn < 0 ||
-            targetColumn < 0 ||
-            currentColumn == targetColumn ||
-            !CanMoveToColumn(
-                mover,
-                currentColumn,
-                targetColumn))
+        if (!formationMoveRules.TrySwap(
+            slots, mover, target,
+            out int currentColumn, out int targetColumn))
         {
             Debug.Log(
                 "[전투] 이 아군의 열까지는 이동할 수 없습니다.");
 
             return true;
         }
-
-        slots[targetColumn] = mover;
-        slots[currentColumn] = target;
 
         if (Party != null &&
             Party.Length > 0)
@@ -733,55 +688,12 @@ public class BattleManager : MonoBehaviour
     private bool CanStartFormationMove(
         PlayerUnit player)
     {
-        if (player == null ||
-            PartyManager.instance == null ||
-            PartyManager.instance.partySlots == null)
-        {
-            return false;
-        }
-
-        int currentColumn =
-            GetPartyColumn(player);
-
-        if (currentColumn < 0)
-            return false;
-
-        foreach (Unit unit
-                 in PartyManager.instance.partySlots)
-        {
-            if (unit is PlayerUnit target &&
-                target != player &&
-                target.health > 0)
-            {
-                int targetColumn =
-                    GetPartyColumn(target);
-
-                if (CanMoveToColumn(
-                    player,
-                    currentColumn,
-                    targetColumn))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-
-    private bool CanMoveToColumn(
-        PlayerUnit player,
-        int currentColumn,
-        int targetColumn)
-    {
-        int distance =
-            targetColumn - currentColumn;
-
-        return distance < 0
-            ? -distance <= player.maxForwardMoveColumns
-            : distance > 0 &&
-              distance <= player.maxBackwardMoveColumns;
+        return player != null &&
+               PartyManager.instance != null &&
+               formationMoveRules != null &&
+               formationMoveRules.CanStartMove(
+                   PartyManager.instance.partySlots,
+                   player);
     }
 
 

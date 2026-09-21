@@ -3,16 +3,13 @@ using UnityEngine;
 
 public enum ZoneType
 {
-    Forest,
-    Cliff,
-    Village,
-    Underwater,
-    Coast,
-    Sea,
-    Cave,
-    Basement,
-    Lab,
-    City
+    // 기존 저장/에셋의 숫자 값을 유지해 직렬화된 Zone이 바뀌지 않게 한다.
+    Forest = 0,
+    Coast = 4,
+    Cave = 6,
+    Basement = 7,
+    Lab = 8,
+    City = 9
 }
 
 public enum RoomType
@@ -36,7 +33,10 @@ public enum RoomType
     CloudRoom,
     PollutedRoom,
 
-    EliteEnemy
+    EliteEnemy,
+
+    // 로봇 영입/제작 등 로봇 관련 기능을 담당하는 필수 특수 방
+    RobotFactory
 }
 
 public class RoomManager : MonoBehaviour
@@ -44,8 +44,8 @@ public class RoomManager : MonoBehaviour
     public static RoomManager instance;
 
     [Header("Zone & Room Settings")]
-    [Tooltip("한 Zone당 생성할 총 방의 개수 (필수 방 포함 최소 10개, 기본 13개)")]
-    [Min(10)]
+    [Tooltip("한 Zone당 생성할 총 방의 개수 (항상 최소 13개)")]
+    [Min(13)]
     public int roomsPerZone = 13;
 
     [Header("Enemy")]
@@ -219,9 +219,9 @@ public class RoomManager : MonoBehaviour
         ZoneType zone,
         int totalCount)
     {
-        // 시작, 보스, 전투 3개, 보상 2개, 상점 2개, 빈 방을
-        // 모두 보장하려면 최소 10개가 필요하다.
-        totalCount = Mathf.Max(11, totalCount);
+        // 시작, 보스, 전투 3개, 로봇 공장, 보상 2개, 상점 2개, 빈 방을
+        // 필수 방을 포함해 항상 13개 이상 생성한다.
+        totalCount = Mathf.Max(13, totalCount);
 
         List<RoomType> types = new List<RoomType>();
 
@@ -241,7 +241,9 @@ public class RoomManager : MonoBehaviour
                 GetRandomEnemyRoomType(zone)
             );
         }
-        middleRooms.Add(RoomType.AddRobot);
+        // AddRobot은 일반 방으로 남기되 필수 생성에서는 제외한다.
+        // RobotFactory는 매 맵에 정확히 하나 이상 포함한다.
+        middleRooms.Add(RoomType.RobotFactory);
         // 보상 방 3종 중 서로 다른 2개를 필수로 넣는다.
         List<RoomType> requiredRewards = new List<RoomType>
         {
@@ -323,12 +325,8 @@ public class RoomManager : MonoBehaviour
                 list.Add(RoomType.GrassRoom);
                 break;
 
-            case ZoneType.Underwater:
+            case ZoneType.Coast:
                 list.Add(RoomType.FloodedRoom);
-                break;
-
-            case ZoneType.Cliff:
-                list.Add(RoomType.CloudRoom);
                 break;
 
             case ZoneType.Lab:

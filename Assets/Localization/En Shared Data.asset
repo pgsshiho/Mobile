@@ -31,6 +31,10 @@ MonoBehaviour:
     m_Key: Cut
     m_Metadata:
       m_Items: []
+  - m_Id: 43906713262718976
+    m_Key: Blacksmithwelcome
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
