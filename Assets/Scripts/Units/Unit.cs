@@ -411,8 +411,8 @@ public class Unit : MonoBehaviour
         StartCoroutine(AttackFocusSequence(Self));
     }
 
-    private static readonly WaitForSeconds WaitOneSec = new WaitForSeconds(1.0f);
-    private static readonly WaitForSeconds WaitHalfSec = new WaitForSeconds(0.5f);
+    public static readonly WaitForSeconds WaitOneSec = new WaitForSeconds(1.0f);
+    public static readonly WaitForSeconds WaitHalfSec = new WaitForSeconds(0.5f);
 
     private System.Collections.IEnumerator AttackFocusSequence(GameObject Self)
     {
