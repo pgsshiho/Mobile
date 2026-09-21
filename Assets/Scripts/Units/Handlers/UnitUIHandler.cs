@@ -103,46 +103,7 @@ public class UnitUIHandler
             prefab = Resources.Load<GameObject>("Prefabs/UI/Text (TMP)");
         }
 
-        GameObject obj = null;
-        if (prefab != null)
-        {
-            obj = Object.Instantiate(prefab, spawnPos, Quaternion.identity);
-        }
-        else
-        {
-            // 프리팹이 없을 경우 월드 텍스트 오브젝트 동적 생성
-            obj = new GameObject("DamageText_Dynamic");
-            obj.transform.position = spawnPos;
-            var textComp = obj.AddComponent<TextMeshPro>();
-            textComp.fontSize = 6;
-            textComp.alignment = TextAlignmentOptions.Center;
-            textComp.sortingOrder = 50;
-        }
-
-        if (obj != null)
-        {
-            // TextMeshProUGUI가 월드에 독립 생성된 경우 렌더링을 위해 World Canvas 자동 보정
-            var tmpUGUI = obj.GetComponentInChildren<TextMeshProUGUI>();
-            if (tmpUGUI != null && obj.GetComponentInParent<Canvas>() == null)
-            {
-                Canvas worldCanvas = obj.AddComponent<Canvas>();
-                worldCanvas.renderMode = RenderMode.WorldSpace;
-                worldCanvas.sortingOrder = 50;
-
-                var scaler = obj.AddComponent<CanvasScaler>();
-                scaler.dynamicPixelsPerUnit = 10;
-
-                RectTransform rt = obj.GetComponent<RectTransform>();
-                if (rt != null)
-                {
-                    rt.sizeDelta = new Vector2(200, 50);
-                    rt.localScale = Vector3.one * 0.015f;
-                }
-            }
-
-            DamageText dmgText = obj.GetComponent<DamageText>() ?? obj.AddComponent<DamageText>();
-            dmgText.SetText(displayText, textColor);
-        }
+        DamageTextPool.Instance.Spawn(prefab, spawnPos, displayText, textColor);
     }
 
     /// <summary>
@@ -255,7 +216,7 @@ public class UnitUIHandler
 
         if (dynamicIconContainer != null)
         {
-            dynamicIconContainer.localPosition = new Vector3(-0.3f, 2.9f, 0f);
+            dynamicIconContainer.localPosition = new Vector3(-0.3f, 1.3f, 0f);
             return dynamicIconContainer;
         }
 
@@ -266,13 +227,13 @@ public class UnitUIHandler
         if (existing != null)
         {
             dynamicIconContainer = existing;
-            dynamicIconContainer.localPosition = new Vector3(-0.3f, 2.9f, 0f);
+            dynamicIconContainer.localPosition = new Vector3(-0.3f, 1.3f, 0f);
             return dynamicIconContainer;
         }
 
         GameObject containerObj = new GameObject("StatusIcon_Container");
         containerObj.transform.SetParent(owner.transform, false);
-        containerObj.transform.localPosition = new Vector3(-0.3f, 2.9f, 0f);
+        containerObj.transform.localPosition = new Vector3(-0.3f, 1.3f, 0f);
         dynamicIconContainer = containerObj.transform;
 
         return dynamicIconContainer;
@@ -280,7 +241,7 @@ public class UnitUIHandler
 
     private void RepositionStatusIcons()
     {
-        float spacing = 0.25f;
+        float spacing = 0.5f;
         int total = statusIcons.Count;
         if (total == 0) return;
 

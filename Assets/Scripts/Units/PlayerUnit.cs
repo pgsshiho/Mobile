@@ -261,7 +261,7 @@ public class PlayerUnit :
     }
     private IEnumerator ResetAttackSprite()
     {
-        yield return new WaitForSeconds(0.5f);
+        yield return WaitHalfSec;
 
         if (sp != null && normal != null)
             sp.sprite = normal;

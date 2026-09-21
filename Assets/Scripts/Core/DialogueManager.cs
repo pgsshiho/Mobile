@@ -173,6 +173,19 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
+    private WaitForSeconds cachedTypingWait;
+    private float cachedTypingSpeed = -1f;
+
+    private WaitForSeconds GetTypingWait()
+    {
+        if (cachedTypingWait == null || !Mathf.Approximately(cachedTypingSpeed, typingSpeed))
+        {
+            cachedTypingSpeed = typingSpeed;
+            cachedTypingWait = new WaitForSeconds(typingSpeed);
+        }
+        return cachedTypingWait;
+    }
+
     IEnumerator TypeDialogueText(string text)
     {
         isTyping = true;
@@ -181,11 +194,12 @@ public class DialogueManager : MonoBehaviour
             dialogueText.text = text;
             dialogueText.maxVisibleCharacters = 0;
 
-            // 문자열을 글자마다 다시 연결하지 않고 TMP의 표시 글자 수만 늘린다.
-            for (int i = 1; i <= text.Length; i++)
+            WaitForSeconds wait = GetTypingWait();
+            int len = text.Length;
+            for (int i = 1; i <= len; i++)
             {
                 dialogueText.maxVisibleCharacters = i;
-                yield return new WaitForSeconds(typingSpeed);
+                yield return wait;
             }
         }
 

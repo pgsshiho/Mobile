@@ -7,24 +7,55 @@ public class DamageText : MonoBehaviour
     public float speed = 1.2f;
     public float lifeTime = 0.9f;
 
+    [HideInInspector]
+    public bool isPooled = false;
+
     private float maxLifeTime;
     private TMP_Text textMesh;
     private Color baseColor = Color.white;
 
     private void Awake()
     {
-        textMesh = GetComponentInChildren<TMP_Text>();
+        EnsureCached();
+    }
+
+    private void EnsureCached()
+    {
+        if (textMesh == null)
+        {
+            textMesh = GetComponentInChildren<TMP_Text>();
+            if (textMesh != null)
+            {
+                baseColor = textMesh.color;
+            }
+        }
+        if (maxLifeTime <= 0)
+        {
+            maxLifeTime = lifeTime > 0 ? lifeTime : 0.9f;
+        }
+    }
+
+    /// <summary>
+    /// 풀에서 재사용될 때 위치, 텍스트, 색상 및 수명을 초기화합니다.
+    /// </summary>
+    public void Init(Vector3 position, string text, Color color)
+    {
+        transform.position = position;
+        EnsureCached();
+
+        lifeTime = maxLifeTime;
+        baseColor = color;
+
         if (textMesh != null)
         {
-            baseColor = textMesh.color;
+            textMesh.text = text;
+            textMesh.color = color;
         }
-        maxLifeTime = lifeTime;
     }
 
     public void SetText(string text, Color color)
     {
-        if (textMesh == null)
-            textMesh = GetComponentInChildren<TMP_Text>();
+        EnsureCached();
 
         if (textMesh != null)
         {
@@ -54,7 +85,14 @@ public class DamageText : MonoBehaviour
 
         if (lifeTime <= 0)
         {
-            Destroy(gameObject);
+            if (isPooled)
+            {
+                gameObject.SetActive(false);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
     }
 }

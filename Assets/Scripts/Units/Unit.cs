@@ -225,8 +225,12 @@ public class Unit : MonoBehaviour
         UpdateHealthBar();
     }
 
+    private bool healthBarSearched = false;
+
     private void CacheHealthBar()
     {
+        healthBarSearched = true;
+
         if (HPBar != null)
         {
             healthSlider = HPBar.GetComponent<Slider>();
@@ -249,7 +253,7 @@ public class Unit : MonoBehaviour
 
     public void UpdateHealthBar()
     {
-        if (healthSlider == null)
+        if (healthSlider == null && !healthBarSearched)
         {
             CacheHealthBar();
             displayedHealth = float.NaN;
@@ -407,17 +411,19 @@ public class Unit : MonoBehaviour
         StartCoroutine(AttackFocusSequence(Self));
     }
 
+    private static readonly WaitForSeconds WaitOneSec = new WaitForSeconds(1.0f);
+    private static readonly WaitForSeconds WaitHalfSec = new WaitForSeconds(0.5f);
+
     private System.Collections.IEnumerator AttackFocusSequence(GameObject Self)
     {
         // 1. 포커스 인 이벤트 요청
         FocusManager.RequestFocusIn?.Invoke(Self);
 
-        // 2. FocusManager의 연출 시간(기본 1초, 필요에 따라 조정)만큼 대기
-        // (IsTweening 값을 검사하고 싶다면 FocusManager의 duration 스펙에 맞춰 대기합니다)
-        yield return new WaitForSeconds(1.0f);
+        // 2. FocusManager의 연출 시간 대기
+        yield return WaitOneSec;
 
-        // 3. 공격 연출/동작 수행 시간 추가 (필요 시)
-        yield return new WaitForSeconds(0.5f);
+        // 3. 공격 연출/동작 수행 시간 추가
+        yield return WaitHalfSec;
 
         // 4. 포커스 아웃 이벤트 요청
         FocusManager.RequestFocusOut?.Invoke();

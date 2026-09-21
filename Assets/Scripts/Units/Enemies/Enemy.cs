@@ -27,6 +27,32 @@ public class Enemy :
     private Color defaultColor = Color.white;
     private readonly List<Unit> alivePlayersBuffer = new List<Unit>(4);
 
+    // WaitForSeconds 캐싱 (GC 스파이크 방지)
+    private WaitForSeconds cachedAttackDelayWait;
+    private WaitForSeconds cachedEndTurnDelayWait;
+    private float cachedAttackDelayVal = -1f;
+    private float cachedEndTurnDelayVal = -1f;
+
+    private WaitForSeconds GetAttackDelayWait()
+    {
+        if (cachedAttackDelayWait == null || !Mathf.Approximately(cachedAttackDelayVal, attackDelay))
+        {
+            cachedAttackDelayVal = attackDelay;
+            cachedAttackDelayWait = new WaitForSeconds(attackDelay);
+        }
+        return cachedAttackDelayWait;
+    }
+
+    private WaitForSeconds GetEndTurnDelayWait()
+    {
+        if (cachedEndTurnDelayWait == null || !Mathf.Approximately(cachedEndTurnDelayVal, endTurnDelay))
+        {
+            cachedEndTurnDelayVal = endTurnDelay;
+            cachedEndTurnDelayWait = new WaitForSeconds(endTurnDelay);
+        }
+        return cachedEndTurnDelayWait;
+    }
+
     protected override void Awake()
     {
         base.Awake();
@@ -95,7 +121,7 @@ public class Enemy :
 
     IEnumerator EnemyTurnRoutine()
     {
-        yield return new WaitForSeconds(attackDelay);
+        yield return GetAttackDelayWait();
 
         // 대기하는 동안 죽었을 수 있음
         if (health <= 0 ||
@@ -113,7 +139,7 @@ public class Enemy :
         if (skills == null ||
             skills.Count <= 0)
         {
-            yield return new WaitForSeconds(endTurnDelay);
+            yield return GetEndTurnDelayWait();
 
             if (TurnManager.instance != null &&
                 TurnManager.instance.currentUnit == this)
@@ -176,7 +202,7 @@ public class Enemy :
             }
         }
 
-        yield return new WaitForSeconds(endTurnDelay);
+        yield return GetEndTurnDelayWait();
 
         // 공격 도중 사망했을 경우
         if (health <= 0 ||
