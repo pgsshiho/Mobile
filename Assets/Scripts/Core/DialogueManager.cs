@@ -205,5 +205,9 @@ public class DialogueManager : MonoBehaviour
         currentPage = 0;
         isTyping = false;
         isLoading = false;
+
+        // 대화 종료 시 카메라 포커스 아웃(FocusOut) 트리거
+        FocusManager.RequestFocusOut?.Invoke();
+        FocusManagerQuest.RequestFocusOut?.Invoke();
     }
 }

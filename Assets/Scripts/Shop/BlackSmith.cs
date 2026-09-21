@@ -21,6 +21,16 @@ public class BlackSmith : MonoBehaviour, IPointerClickHandler
     {
         mainCamera = Camera.main;
     }
+
+    private void OnEnable()
+    {
+        FocusManager.RequestFocusOut += FocusOut;
+    }
+
+    private void OnDisable()
+    {
+        FocusManager.RequestFocusOut -= FocusOut;
+    }
     public void leave()
     {
         if (currentFocusedTarget != null)

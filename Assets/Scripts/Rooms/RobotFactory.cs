@@ -34,6 +34,12 @@ public class RobotFactory : MonoBehaviour, IPointerClickHandler
     public void OnEnable()
     {
         RefreshRobotVisibility();
+        FocusManager.RequestFocusOut += FocusOut;
+    }
+
+    public void OnDisable()
+    {
+        FocusManager.RequestFocusOut -= FocusOut;
     }
 
     /// <summary>
