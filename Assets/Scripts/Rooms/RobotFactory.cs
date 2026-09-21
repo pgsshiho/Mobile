@@ -13,9 +13,12 @@ public class RobotFactory : MonoBehaviour, IPointerClickHandler
     [Tooltip("구매에 필요한 재료")]
     public int requiredMaterial = 0;
 
-    [Header("구매 실패 다이얼로그 키 (돈 부족)")]
+    [Header("다이얼로그 키 설정")]
     [Tooltip("로컬라이제이션 테이블의 '돈이 더 필요해' 키")]
     public string noMoneyDialogueKey = "FACTORY_NO_MONEY";
+
+    [Tooltip("로컬라이제이션 테이블의 '파티가 가득 찼어' 키 (4명 초과 시)")]
+    public string partyFullDialogueKey = "FACTORY_PARTY_FULL";
 
     [Header("기본 연출 설정")]
     public float duration = 1.0f;
@@ -25,23 +28,38 @@ public class RobotFactory : MonoBehaviour, IPointerClickHandler
     public bool IsTweening { get; private set; } = false;
     public string[] Dialoguekey;
 
-    // 현재 포커스된 로봇 (구매 선택 시 이 유닛을 추가)
-    private Unit focusedRobot;
-
     private Camera mainCamera;
     private FocusableObject currentFocusedTarget;
 
     public void OnEnable()
     {
+        RefreshRobotVisibility();
+    }
+
+    /// <summary>
+    /// 이미 파티에 소속된 로봇은 공장에서 숨김 처리합니다.
+    /// </summary>
+    public void RefreshRobotVisibility()
+    {
+        if (Robots == null || PartyManager.instance == null || PartyManager.instance.partySlots == null) return;
+
         foreach (Unit robot in Robots)
         {
+            if (robot == null) continue;
+
+            bool isInParty = false;
             foreach (Unit party in PartyManager.instance.partySlots)
             {
-                if (party == robot)
+                if (party == robot || (party != null && party.name.Replace("(Clone)", "").Trim() == robot.name.Replace("(Clone)", "").Trim()))
                 {
-                    robot.gameObject.SetActive(false);
+                    isInParty = true;
                     break;
                 }
+            }
+
+            if (isInParty)
+            {
+                robot.gameObject.SetActive(false);
             }
         }
     }
@@ -51,17 +69,6 @@ public class RobotFactory : MonoBehaviour, IPointerClickHandler
         GameObject clickedObject = eventData.pointerPress;
         if (clickedObject != null)
         {
-            // 클릭된 오브젝트에 해당하는 로봇을 찾아 포커스
-            Unit clickedRobot = clickedObject.GetComponent<Unit>();
-            if (clickedRobot != null)
-            {
-                focusedRobot = clickedRobot;
-            }
-            else if (Robots.Length > 0)
-            {
-                focusedRobot = Robots[0];
-            }
-
             FocusIn(gameObject);
         }
     }
@@ -124,7 +131,6 @@ public class RobotFactory : MonoBehaviour, IPointerClickHandler
                     new DialogueChoice
                     {
                         text = "나간다"
-                        // onSelected 없으면 대화만 닫힘
                     },
                 }
             );
@@ -142,28 +148,39 @@ public class RobotFactory : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// 구매 조건 확인 → 부족하면 "돈이 더 필요해" 다이얼로그, 충분하면 CanClick 갱신 + 파티 추가
+    /// 구매 조건 확인 (파티 정원 4명 검사 -> 재화 검사 -> Action으로 모든 FactoryAddUnit의 CanClick 활성화)
     /// </summary>
     private void TryPurchase()
     {
-        // 1. 비용 조건 확인 (CurrencyManager)
+        // 1. 파티 슬롯(4명) 가득 찼는지 사전 검사
+        if (PartyManager.instance != null && PartyManager.instance.IsPartyFull())
+        {
+            Debug.Log("[RobotFactory] 파티 슬롯(4명)이 가득 차서 더 이상 구매할 수 없습니다.");
+
+            if (DialogueManager.instance != null)
+            {
+                DialogueManager.instance.StartDialogue(new string[] { partyFullDialogueKey });
+            }
+            return;
+        }
+
+        // 2. 비용 조건 확인 (CurrencyManager)
         bool hasGold     = CurrencyManager.instance == null || CurrencyManager.instance.HasEnough(CurrencyType.Gold, requiredGold);
         bool hasMaterial = CurrencyManager.instance == null || requiredMaterial <= 0 || CurrencyManager.instance.HasEnough(CurrencyType.Material, requiredMaterial);
 
         if (!hasGold || !hasMaterial)
         {
-            // ── 실패: "돈이 더 필요해" 다이얼로그 표시 후 닫기 ──
+            // 재화 부족 실패: 다이얼로그 출력 후 종료
             Debug.Log("[RobotFactory] 재화 부족 — 구매 실패");
 
             if (DialogueManager.instance != null)
             {
-                // 기존 다이얼로그를 닫고 실패 메시지만 출력 후 자동 종료
                 DialogueManager.instance.StartDialogue(new string[] { noMoneyDialogueKey });
             }
             return;
         }
 
-        // ── 성공: 재화 차감 ──
+        // 3. 재화 결제 차감
         if (CurrencyManager.instance != null)
         {
             if (requiredGold > 0)
@@ -172,13 +189,12 @@ public class RobotFactory : MonoBehaviour, IPointerClickHandler
                 CurrencyManager.instance.SpendCurrency(CurrencyType.Material, requiredMaterial);
         }
 
-        Debug.Log($"[RobotFactory] 구매 성공! (골드 -{requiredGold}, 재료 -{requiredMaterial})");
+        Debug.Log($"<color=cyan>[RobotFactory]</color> 구매 완료! (골드 -{requiredGold}, 재료 -{requiredMaterial}) 원하는 로봇을 클릭/선택하세요.");
 
-        // ── 씬 내 모든 FactoryAddUnit의 CanClick = true 갱신 + 파티 추가 ──
-        Unit targetUnit = focusedRobot;
-        FactoryAddUnit.UnlockAndAdd(targetUnit);
+        // 4. Action을 통해 씬 내의 모든 FactoryAddUnit의 CanClick을 true로 갱신
+        FactoryAddUnit.UnlockAll();
 
-        // 다이얼로그 닫기
+        // 5. 다이얼로그 종료
         if (DialogueManager.instance != null)
         {
             DialogueManager.instance.CloseDialogue();
