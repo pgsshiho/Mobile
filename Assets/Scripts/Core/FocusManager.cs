@@ -19,7 +19,6 @@ public class FocusManager : MonoBehaviour,IPointerClickHandler
     public static Action<GameObject> RequestFocusIn;
     public static Action RequestFocusOut;
     public static Action<GameObject> RequestToggleFocus;
-    public string[] Dialoguekey;
     private Camera mainCamera;
     private FocusableObject currentFocusedTarget;
 
@@ -92,7 +91,6 @@ public class FocusManager : MonoBehaviour,IPointerClickHandler
 
         seq.SetEase(Ease.OutCubic)
            .OnComplete(() => IsTweening = false);
-        DialogueManager.instance.StartDialogue(Dialoguekey);
     }
 
     private void FocusOut()

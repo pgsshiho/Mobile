@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: MissileLaunch
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: "\uBBF8\uC0AC\uC77C \uBC1C\uC0AC"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: cccb6f2d7c182814c95d5951b822375d, type: 3}
   description: "\uC804\uCCB4 \uB300\uC0C1\uC5D0\uAC8C \uBBF8\uC0AC\uC77C \uD3ED\uACA9\uC744
     \uC3DF\uC544\uBD93\uC2B5\uB2C8\uB2E4. (4\uC5F4 \uAD8C\uC7A5)"
   targetType: 3
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 14
   hitBonus: -5
   soundEffect: {fileID: 0}

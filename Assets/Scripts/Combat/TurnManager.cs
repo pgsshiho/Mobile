@@ -61,7 +61,15 @@ public class TurnManager : MonoBehaviour
 
         StartTurn();
     }
+    public void OnUnitDeath(Unit unit)
+    {
+        if (battleEnded)
+            return;
 
+        RemoveUnit(unit);
+
+        CheckBattleEnd();
+    }
     public void StartTurn()
     {
         if (battleEnded)
@@ -92,6 +100,18 @@ public class TurnManager : MonoBehaviour
         currentUnit.MyTurn();
     }
 
+    private static int playerLayer = -1;
+    private static int enemyLayer = -1;
+
+    private static void EnsureLayersCached()
+    {
+        if (playerLayer == -1)
+        {
+            playerLayer = LayerMask.NameToLayer("Player");
+            enemyLayer = LayerMask.NameToLayer("Enemy");
+        }
+    }
+
     bool CheckBattleEnd()
     {
         if (battleEnded)
@@ -100,20 +120,20 @@ public class TurnManager : MonoBehaviour
         bool playerAlive = false;
         bool enemyAlive = false;
 
+        EnsureLayersCached();
+
         foreach (Unit unit in turnList)
         {
             if (unit == null ||
                 unit.health <= 0)
                 continue;
 
-            if (unit.gameObject.layer ==
-                LayerMask.NameToLayer("Player"))
+            int unitLayer = unit.gameObject.layer;
+            if (unitLayer == playerLayer)
             {
                 playerAlive = true;
             }
-
-            if (unit.gameObject.layer ==
-                LayerMask.NameToLayer("Enemy"))
+            else if (unitLayer == enemyLayer)
             {
                 enemyAlive = true;
             }
@@ -135,7 +155,6 @@ public class TurnManager : MonoBehaviour
 
         return false;
     }
-
     public void EndTurn()
     {
         if (currentUnit != null &&

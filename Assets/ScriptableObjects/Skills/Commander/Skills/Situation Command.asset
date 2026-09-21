@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Situation Command
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: Situation Command
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: f7c024f044aaffb4b9399ced9223b036, type: 3}
   description: 
   targetType: 5
   maxTargetDistance: 2

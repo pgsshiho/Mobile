@@ -109,6 +109,24 @@ public class PartyManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 파티 슬롯(4칸)이 모두 채워져 있는지 확인합니다. 빈 슬롯이 없으면 true를 반환합니다.
+    /// </summary>
+    public bool IsPartyFull()
+    {
+        if (partySlots == null || partySlots.Length == 0) return false;
+
+        for (int i = 0; i < partySlots.Length; i++)
+        {
+            if (partySlots[i] == null)
+            {
+                return false; // 빈 슬롯이 있으므로 가득 차지 않음
+            }
+        }
+
+        return true; // 4칸 모두 유닛이 채워짐
+    }
+
+    /// <summary>
     /// 지정된 Transform 위치 배열에 맞추어 파티 유닛들을 씬에 배치(필요시 인스턴스화)합니다.
     /// </summary>
     public void PlacePartyAtPositions(Transform[] positions)

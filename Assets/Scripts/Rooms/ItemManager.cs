@@ -101,6 +101,30 @@ public class ItemManager : MonoBehaviour
 
         SaveToData();
         Debug.Log($"아이템 획득: {item.itemName}");
+
+        // 퀘스트 아이템 획득 통지
+        if (QuestManager.Instance != null)
+        {
+            QuestNeed? need = item.effectType switch
+            {
+                ItemEffectType.HealHp             => QuestNeed.ScrapMetal,
+                ItemEffectType.RecoverEnergy      => QuestNeed.EmergencyBattery,
+                ItemEffectType.RecoverAntenna     => QuestNeed.Antenna,
+                ItemEffectType.RecoverFuse        => QuestNeed.Fuse,
+                ItemEffectType.SandpaperOxidation => QuestNeed.Sandpaper,
+                ItemEffectType.RemoveOxidation    => QuestNeed.RustRemover,
+                ItemEffectType.CoolDown           => QuestNeed.Coolant,
+                ItemEffectType.ExtinguishFire     => QuestNeed.FireExtinguisher,
+                ItemEffectType.RemovePollution    => QuestNeed.Brush,
+                ItemEffectType.RemoveShortCircuit => QuestNeed.ElectricalTape,
+                ItemEffectType.RemoveOilLeak      => QuestNeed.WaterproofTape,
+                _ => null
+            };
+            if (need.HasValue)
+            {
+                QuestManager.Instance.NotifyItemObtained(need.Value, 1);
+            }
+        }
         return true;
     }
 
@@ -109,6 +133,42 @@ public class ItemManager : MonoBehaviour
     {
         ItemRuntime runtime = inventory.Find(r => r.data == item);
         return runtime?.count ?? 0;
+    }
+
+    /// <summary>
+    /// QuestNeed에 해당하는 인벤토리 내 보유 총 수량을 반환합니다.
+    /// </summary>
+    public int GetItemCountByQuestNeed(QuestNeed needType)
+    {
+        if (inventory == null) return 0;
+
+        int total = 0;
+        foreach (var runtime in inventory)
+        {
+            if (runtime?.data == null) continue;
+
+            bool match = false;
+            switch (needType)
+            {
+                case QuestNeed.ScrapMetal:        match = runtime.data.effectType == ItemEffectType.HealHp; break;
+                case QuestNeed.EmergencyBattery:  match = runtime.data.effectType == ItemEffectType.RecoverEnergy; break;
+                case QuestNeed.Antenna:           match = runtime.data.effectType == ItemEffectType.RecoverAntenna; break;
+                case QuestNeed.Fuse:              match = runtime.data.effectType == ItemEffectType.RecoverFuse; break;
+                case QuestNeed.Sandpaper:         match = runtime.data.effectType == ItemEffectType.SandpaperOxidation; break;
+                case QuestNeed.RustRemover:       match = runtime.data.effectType == ItemEffectType.RemoveOxidation; break;
+                case QuestNeed.Coolant:           match = runtime.data.effectType == ItemEffectType.CoolDown; break;
+                case QuestNeed.FireExtinguisher:  match = runtime.data.effectType == ItemEffectType.ExtinguishFire; break;
+                case QuestNeed.Brush:             match = runtime.data.effectType == ItemEffectType.RemovePollution; break;
+                case QuestNeed.ElectricalTape:    match = runtime.data.effectType == ItemEffectType.RemoveShortCircuit; break;
+                case QuestNeed.WaterproofTape:    match = runtime.data.effectType == ItemEffectType.RemoveOilLeak; break;
+            }
+
+            if (match)
+            {
+                total += runtime.count;
+            }
+        }
+        return total;
     }
 
     // ════════════════════════════════════════════════════════════════════

@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: LimitBreak
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: "\uB9AC\uBBF8\uD2B8 \uD574\uC81C"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: befd3af0d60c65348a3a7aee48fcc4b1, type: 3}
   description: "\uCD9C\uB825 \uC81C\uD55C\uC744 \uD574\uC81C\uD558\uC5EC \uACF5\uACA9\uB825\uC744
     \uB300\uD3ED \uAC15\uD654\uD558\uC9C0\uB9CC \uBC18\uB3D9 \uD53C\uD574\uB97C \uBC1B\uC2B5\uB2C8\uB2E4."
   targetType: 4
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 0
   hitBonus: 0
   soundEffect: {fileID: 0}

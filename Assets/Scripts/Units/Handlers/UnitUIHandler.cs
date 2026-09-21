@@ -15,6 +15,7 @@ public class UnitUIHandler
     private readonly StatusIconData[] statusIconDatas;
 
     private readonly Dictionary<StatusType, GameObject> statusIcons = new Dictionary<StatusType, GameObject>();
+    private Transform dynamicIconContainer;
 
     // 생성자 1: StatusIconSet 사용
     public UnitUIHandler(
@@ -60,80 +61,127 @@ public class UnitUIHandler
         }
     }
 
+    /// <summary>
+    /// 피격, 회복, 지속 데미지 수치를 플로팅 텍스트로 화면에 표시합니다.
+    /// </summary>
     public void ShowDamageText(int damage, Unit.DamageType type)
     {
-        if (damageTextPrefab == null)
-            return;
+        if (owner == null) return;
 
         Transform spawnPoint = damageTextSpawnPoint != null ? damageTextSpawnPoint : owner.transform;
+        Vector3 spawnPos = spawnPoint.position + Vector3.up * 1.0f + new Vector3(Random.Range(-0.2f, 0.2f), 0f, 0f);
 
-        GameObject obj = Object.Instantiate(
-            damageTextPrefab,
-            spawnPoint.position,
-            Quaternion.identity
-        );
+        Color textColor;
+        string displayText = damage.ToString();
 
-        TMP_Text text = obj.GetComponentInChildren<TMP_Text>();
-        if (text != null)
+        switch (type)
         {
-            text.text = damage.ToString();
-
-            switch (type)
-            {
-                case Unit.DamageType.Bleed:
-                    text.color = Color.red;
-                    break;
-
-                case Unit.DamageType.Fire:
-                    text.color = new Color(1f, 0.45f, 0f);
-                    break;
-
-                case Unit.DamageType.Heal:
-                    text.color = Color.green;
-                    text.text = "+" + damage;
-                    break;
-
-                case Unit.DamageType.Corrosion:
-                    text.color = new Color(0.6f, 0.4f, 0.2f);
-                    break;
-
-                case Unit.DamageType.Electric:
-                    text.color = Color.yellow;
-                    break;
-
-                default:
-                    text.color = Color.white;
-                    break;
-            }
+            case Unit.DamageType.Bleed:
+                textColor = new Color(0.95f, 0.15f, 0.15f);
+                break;
+            case Unit.DamageType.Fire:
+                textColor = new Color(1f, 0.45f, 0.05f);
+                break;
+            case Unit.DamageType.Heal:
+                textColor = new Color(0.2f, 1f, 0.3f);
+                displayText = "+" + damage;
+                break;
+            case Unit.DamageType.Corrosion:
+                textColor = new Color(0.75f, 0.45f, 0.2f);
+                break;
+            case Unit.DamageType.Electric:
+                textColor = new Color(1f, 0.95f, 0.15f);
+                break;
+            default:
+                textColor = Color.white;
+                break;
         }
+
+        GameObject prefab = damageTextPrefab;
+        if (prefab == null)
+        {
+            prefab = Resources.Load<GameObject>("Prefabs/UI/Text (TMP)");
+        }
+
+        DamageTextPool.Instance.Spawn(prefab, spawnPos, displayText, textColor);
     }
 
+    /// <summary>
+    /// 상태이상 아이콘을 유닛 머리 위에 생성하고 정렬합니다.
+    /// </summary>
     public void AddStatusIcon(StatusType type)
     {
         if (statusIcons.ContainsKey(type))
             return;
 
-        if (statusIconParent == null)
-            return;
-
-        GameObject prefabToUse = (statusIconSet != null) ? statusIconSet.statusIconPrefab : statusIconPrefab;
-        if (prefabToUse == null)
+        if (owner == null)
             return;
 
         Sprite icon = GetStatusIcon(type);
         if (icon == null)
+        {
+            Debug.LogWarning($"[UnitUIHandler] {owner.Unitname}의 상태이상 [{type}] 아이콘 스프라이트를 찾을 수 없습니다.");
+            return;
+        }
+
+        Transform parent = GetOrCreateIconContainer();
+        if (parent == null)
             return;
 
-        GameObject obj = Object.Instantiate(prefabToUse, statusIconParent);
-        Image image = obj.GetComponent<Image>();
+        GameObject prefabToUse = (statusIconSet != null) ? statusIconSet.statusIconPrefab : statusIconPrefab;
+        GameObject obj;
+
+        if (prefabToUse != null)
+        {
+            obj = Object.Instantiate(prefabToUse, parent);
+        }
+        else
+        {
+            // 기본 스프라이트 렌더러 아이콘 동적 생성
+            obj = new GameObject($"StatusIcon_{type}");
+            obj.transform.SetParent(parent, false);
+
+            SpriteRenderer sr = obj.AddComponent<SpriteRenderer>();
+            sr.sprite = icon;
+
+            // 유닛 스프라이트 정렬 레이어 상속
+            SpriteRenderer unitSr = owner.GetComponent<SpriteRenderer>();
+            if (unitSr != null)
+            {
+                sr.sortingLayerID = unitSr.sortingLayerID;
+                sr.sortingOrder = unitSr.sortingOrder + 15;
+            }
+            else
+            {
+                sr.sortingOrder = 25;
+            }
+
+            obj.transform.localScale = Vector3.one * 0.15f;
+        }
+
+        // Image 컴포넌트가 있으면 스프라이트 지정
+        Image image = obj.GetComponentInChildren<Image>();
         if (image != null)
         {
             image.sprite = icon;
         }
 
+        // SpriteRenderer 컴포넌트가 있으면 스프라이트 지정
+        SpriteRenderer spriteRenderer = obj.GetComponentInChildren<SpriteRenderer>();
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.sprite = icon;
+        }
+
         statusIcons.Add(type, obj);
+        RepositionStatusIcons();
+
+        Debug.Log($"<color=cyan>[UnitUIHandler]</color> {owner.Unitname} [{type}] 상태이상 아이콘 표시 완료!");
     }
 
+    /// <summary>
+    /// 상태이상 해제 시 해당 아이콘을 제거하고 남은 아이콘들을 재정렬합니다.
+    /// </summary>
     public void RemoveStatusIcon(StatusType type)
     {
         if (!statusIcons.TryGetValue(type, out GameObject iconObj))
@@ -145,6 +193,7 @@ public class UnitUIHandler
         }
 
         statusIcons.Remove(type);
+        RepositionStatusIcons();
     }
 
     public void ClearStatusIcons()
@@ -160,22 +209,80 @@ public class UnitUIHandler
         statusIcons.Clear();
     }
 
+    private Transform GetOrCreateIconContainer()
+    {
+        if (statusIconParent != null && statusIconParent != owner.transform)
+            return statusIconParent;
+
+        if (dynamicIconContainer != null)
+        {
+            dynamicIconContainer.localPosition = new Vector3(-0.3f, 1.3f, 0f);
+            return dynamicIconContainer;
+        }
+
+        if (owner == null)
+            return null;
+
+        Transform existing = owner.transform.Find("StatusIcon_Container");
+        if (existing != null)
+        {
+            dynamicIconContainer = existing;
+            dynamicIconContainer.localPosition = new Vector3(-0.3f, 1.3f, 0f);
+            return dynamicIconContainer;
+        }
+
+        GameObject containerObj = new GameObject("StatusIcon_Container");
+        containerObj.transform.SetParent(owner.transform, false);
+        containerObj.transform.localPosition = new Vector3(-0.3f, 1.3f, 0f);
+        dynamicIconContainer = containerObj.transform;
+
+        return dynamicIconContainer;
+    }
+
+    private void RepositionStatusIcons()
+    {
+        float spacing = 0.5f;
+        int total = statusIcons.Count;
+        if (total == 0) return;
+
+        float startX = -(total - 1) * spacing * 0.5f;
+        int index = 0;
+
+        foreach (var kvp in statusIcons)
+        {
+            if (kvp.Value != null)
+            {
+                kvp.Value.transform.localPosition = new Vector3(startX + index * spacing, 0f, 0f);
+                index++;
+            }
+        }
+    }
+
     private Sprite GetStatusIcon(StatusType type)
     {
         if (statusIconSet != null)
         {
-            return statusIconSet.GetIcon(type);
+            Sprite s = statusIconSet.GetIcon(type);
+            if (s != null) return s;
         }
 
-        if (statusIconDatas == null)
-            return null;
-
-        foreach (StatusIconData data in statusIconDatas)
+        if (statusIconDatas != null)
         {
-            if (data != null && data.statusType == type)
+            foreach (StatusIconData data in statusIconDatas)
             {
-                return data.icon;
+                if (data != null && data.statusType == type && data.icon != null)
+                {
+                    return data.icon;
+                }
             }
+        }
+
+        // Resources 폴백
+        StatusIconSet defaultSet = Resources.Load<StatusIconSet>("ScriptableObjects/StatusEffects/StatusIconSet");
+        if (defaultSet != null)
+        {
+            Sprite s = defaultSet.GetIcon(type);
+            if (s != null) return s;
         }
 
         return null;

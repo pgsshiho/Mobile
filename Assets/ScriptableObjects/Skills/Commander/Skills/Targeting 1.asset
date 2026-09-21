@@ -13,9 +13,12 @@ MonoBehaviour:
   m_Name: Targeting 1
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: Targeting
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 545c0375c259f844f854decd1468a94f, type: 3}
   description: 
   targetType: 0
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 0
   hitBonus: 50
   soundEffect: {fileID: 0}

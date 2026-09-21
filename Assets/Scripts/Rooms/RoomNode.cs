@@ -7,6 +7,7 @@ public class RoomNode
 {
     public int id;
     public int floor;
+    public Vector2Int gridPos;
 
     public ZoneType zoneType;
     public RoomType roomType;
@@ -32,6 +33,7 @@ public class RoomNode
     {
         this.id = id;
         this.floor = floor;
+        this.gridPos = Vector2Int.zero;
         this.zoneType = zoneType;
         this.roomType = roomType;
         cleared = false;
@@ -40,6 +42,6 @@ public class RoomNode
 
     public override string ToString()
     {
-        return $"[Node {id} | F{floor} | {zoneType} | {roomType}]";
+        return $"[Node {id} | F{floor} | ({gridPos.x}, {gridPos.y}) | {zoneType} | {roomType}]";
     }
 }

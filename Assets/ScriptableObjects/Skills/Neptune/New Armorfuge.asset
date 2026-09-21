@@ -9,11 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 77cdbf9f4cb72ec41b74b34d58d40e7a, type: 3}
-  m_Name: Vulcan
-  m_EditorClassIdentifier: Assembly-CSharp::QuestData
-  questTitle: ReviveHim
-  questDescription: 
-  needType: 1
-  needCount: 3
-  targetTag: Enemy
+  m_Script: {fileID: 11500000, guid: 5b1a044074205724cac48fceb91d6e96, type: 3}
+  m_Name: New Armorfuge
+  m_EditorClassIdentifier: Assembly-CSharp::armorfuge
+  Armorfuge: {fileID: 11400000, guid: 73fcb30353c7c07468f23e3eb5a99010, type: 2}

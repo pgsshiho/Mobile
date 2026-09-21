@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -15,6 +16,11 @@ public class PlayerUnit :
 
     [Tooltip("이 유닛이 후열 방향으로 한 번에 이동할 수 있는 최대 칸 수")]
     [Min(0)] public int maxBackwardMoveColumns = 1;
+
+    // 전투 중 자율 행동/상태이상 처리에서 재사용한다.
+    // 매번 새 List를 만들지 않아 GC 할당을 줄인다.
+    private readonly List<Unit> aliveEnemies = new List<Unit>(4);
+    private readonly List<Unit> aliveAllies = new List<Unit>(4);
 
     protected override void Awake()
     {
@@ -81,29 +87,33 @@ public class PlayerUnit :
     private Unit GetRandomAliveEnemy()
     {
         if (TurnManager.instance == null) return null;
-        List<Unit> enemies = new List<Unit>();
+        aliveEnemies.Clear();
         foreach (Unit u in TurnManager.instance.turnList)
         {
             if (u != null && u.health > 0 && u.gameObject.layer == LayerMask.NameToLayer("Enemy"))
             {
-                enemies.Add(u);
+                aliveEnemies.Add(u);
             }
         }
-        return (enemies.Count > 0) ? enemies[Random.Range(0, enemies.Count)] : null;
+        return (aliveEnemies.Count > 0)
+            ? aliveEnemies[Random.Range(0, aliveEnemies.Count)]
+            : null;
     }
 
     private Unit GetRandomAliveAlly()
     {
         if (TurnManager.instance == null) return null;
-        List<Unit> allies = new List<Unit>();
+        aliveAllies.Clear();
         foreach (Unit u in TurnManager.instance.turnList)
         {
             if (u != null && u.health > 0 && u.gameObject.layer == LayerMask.NameToLayer("Player"))
             {
-                allies.Add(u);
+                aliveAllies.Add(u);
             }
         }
-        return (allies.Count > 0) ? allies[Random.Range(0, allies.Count)] : null;
+        return (aliveAllies.Count > 0)
+            ? aliveAllies[Random.Range(0, aliveAllies.Count)]
+            : null;
     }
 
     // 스킬 선택
@@ -134,72 +144,81 @@ public class PlayerUnit :
              !BattleManager.instance.CanPlayerTargetEnemy(
                  this,
                  enemy,
-                 selectedSkill
-             )))
+                 selectedSkill)))
         {
             Debug.Log("[전투] 현재 위치에서는 해당 적을 공격할 수 없습니다.");
             return;
         }
 
-        // 논리 오류(Logic Loop) 검사: 50% 확률로 아군을 적군으로 오인하여 아군에게 스킬 시전!
-        if (isLogicLoop && target != null && target.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+        // Logic Loop
+        if (isLogicLoop &&
+            target != null &&
+            target.gameObject.layer == LayerMask.NameToLayer("Enemy"))
         {
             if (Random.Range(0, 100) < 50)
             {
                 Unit allyTarget = GetRandomAliveAlly();
+
                 if (allyTarget != null)
                 {
-                    Debug.LogWarning($"<color=magenta>[논리 오류 발동]</color> {Unitname}이(가) 아군 {allyTarget.Unitname}을(를) 적으로 오인하여 공격합니다!");
+                    Debug.LogWarning(
+                        $"<color=magenta>[논리 오류 발동]</color> " +
+                        $"{Unitname}이(가) 아군 {allyTarget.Unitname}을(를) 적으로 오인하여 공격합니다!"
+                    );
+
                     target = allyTarget;
                 }
             }
         }
 
-        // 스킬 사용 트리거 (회로 단선 등 체크)
-        OnSkillUsed(selectedSkill);
+        if (attack != null)
+            sp.sprite = attack;
+
+        // 자기 자신을 포커스
         base.AttackFocus(this.gameObject);
+
+        OnSkillUsed(selectedSkill);
+
         switch (selectedSkill.targetType)
         {
-            // 단일 적
             case TargetType.SingleEnemy:
-                AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
-                selectedSkill.skillLogic.Use(this, target, selectedSkill);
-                break;
-
-            // 아군 대상
             case TargetType.Ally:
+
                 AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
                 selectedSkill.skillLogic.Use(this, target, selectedSkill);
                 break;
 
-            // 2인 공격
             case TargetType.TwoEnemy:
+
                 AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
                 AttackMultipleEnemies(2);
                 break;
 
-            // 3인 공격
             case TargetType.ThreeEnemy:
+
                 AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
                 AttackMultipleEnemies(3);
                 break;
 
-            // 전체 공격
             case TargetType.AllEnemy:
+
                 AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
                 AttackAllEnemies();
                 break;
 
-            // 자기 자신
             case TargetType.Self:
+
                 AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
                 selectedSkill.skillLogic.Use(this, this, selectedSkill);
                 break;
 
             case TargetType.AllAlly:
+
                 foreach (Unit unit in TurnManager.instance.turnList)
                 {
-                    if (unit != null && unit.health > 0 && unit.gameObject.layer == LayerMask.NameToLayer("Player"))
+                    if (unit != null &&
+                        unit.health > 0 &&
+                        unit.gameObject.layer == LayerMask.NameToLayer("Player"))
                     {
                         AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
                         selectedSkill.skillLogic.Use(this, unit, selectedSkill);
@@ -208,9 +227,12 @@ public class PlayerUnit :
                 break;
 
             case TargetType.DeadAlly:
+
                 foreach (Unit unit in TurnManager.instance.turnList)
                 {
-                    if (unit != null && unit.health <= 0 && unit.gameObject.layer == LayerMask.NameToLayer("Player"))
+                    if (unit != null &&
+                        unit.health <= 0 &&
+                        unit.gameObject.layer == LayerMask.NameToLayer("Player"))
                     {
                         AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
                         selectedSkill.skillLogic.Use(this, unit, selectedSkill);
@@ -219,22 +241,29 @@ public class PlayerUnit :
                 break;
         }
 
+        // ==========================
+        // 턴 종료
+        // ==========================
         BattleManager.instance.HidePlayerUI();
 
         if (TurnManager.instance != null)
         {
             TurnManager.instance.waitingForTarget = false;
+
             if (BattleManager.instance != null)
-            {
                 BattleManager.instance.ClearEnemyTargetAvailability();
-            }
-            StartCoroutine(WaitSecond(1f));
+
             TurnManager.instance.EndTurn();
         }
-        if(attack != null)
-            sp.sprite = attack;
-        StartCoroutine(base.WaitSecond(0.5f));
-        if(normal != null)
+
+        // 공격 스프라이트 유지 시간
+        StartCoroutine(ResetAttackSprite());
+    }
+    private IEnumerator ResetAttackSprite()
+    {
+        yield return WaitHalfSec;
+
+        if (sp != null && normal != null)
             sp.sprite = normal;
     }
 
@@ -242,7 +271,6 @@ public class PlayerUnit :
     void AttackMultipleEnemies(int count)
     {
         int attacked = 0;
-        base.AttackFocus(this.gameObject);
         foreach (Unit unit in TurnManager.instance.turnList)
         {
             if (unit != null && unit.health > 0 && unit.gameObject.layer == LayerMask.NameToLayer("Enemy"))
@@ -259,7 +287,6 @@ public class PlayerUnit :
     // 전체 공격
     void AttackAllEnemies()
     {
-        base.AttackFocus(this.gameObject);
         foreach (Unit unit in TurnManager.instance.turnList)
         {
             if (unit != null && unit.health > 0 && unit.gameObject.layer == LayerMask.NameToLayer("Enemy"))

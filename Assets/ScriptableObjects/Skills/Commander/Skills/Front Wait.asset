@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Front Wait
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: a6c42b1d4b57a6248a2836714895ba25, type: 3}
   description: 
   targetType: 4
   maxTargetDistance: 2

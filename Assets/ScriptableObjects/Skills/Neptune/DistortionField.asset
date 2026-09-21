@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: DistortionField
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: "\uC65C\uACE1\uC7A5"
-  icon: {fileID: 0}
+  icon: {fileID: 4786931762983651513, guid: f347afa1b05f14e4e98a55143c5c492c, type: 3}
   description: "\uC790\uC2E0 \uB4A4\uC758 \uC544\uAD70\uB4E4\uC5D0\uAC8C \uD68C\uD53C\uC728
     \uC99D\uAC00 \uC65C\uACE1\uC7A5\uC744 \uC804\uAC1C\uD569\uB2C8\uB2E4. (1~2\uC5F4)"
   targetType: 6
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 0
   hitBonus: 0
   soundEffect: {fileID: 0}

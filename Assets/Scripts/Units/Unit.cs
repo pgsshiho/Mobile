@@ -45,7 +45,7 @@ public class Unit : MonoBehaviour
         Corrosion,  // 산화 / 녹 데미지
         Electric    // 전기 / 단선 폭발
     }
-
+    protected bool turnEndedBySystem = false;
     [Header("=== 1. 체력 & 생존 (Health & Survival) ===")]
     [Tooltip("최대 체력")]
     public float maxHealth = 100f;              // MaxHp: 최대 체력
@@ -137,6 +137,10 @@ public class Unit : MonoBehaviour
     public Transform damageTextSpawnPoint;
     public GameObject HPBar;
 
+    [Header("SFX")]
+    [Tooltip("사망 시 재생할 SFX")]
+    public AudioClip deathSFX;
+
     [Header("Upgrade")]
     public int attackLevel = 0;
     public int defenseLevel = 0;
@@ -154,6 +158,8 @@ public class Unit : MonoBehaviour
     private UnitStatusHandler statusHandler;
     private UnitUIHandler uiHandler;
     private Slider healthSlider;
+    private float displayedHealth = float.NaN;
+    private float displayedMaxHealth = float.NaN;
 
     public SpriteRenderer sp;
 
@@ -218,13 +224,17 @@ public class Unit : MonoBehaviour
 
     protected virtual void LateUpdate()
     {
-        // 일부 스킬이 health 값을 직접 변경하므로,
-        // 매 프레임 UI를 동기화해 모든 피해/회복을 반영한다.
+        // 일부 스킬이 health 값을 직접 변경하므로 동기화는 유지한다.
+        // 단, 값이 달라졌을 때만 Slider를 갱신해 매 프레임 UI 재구축을 피한다.
         UpdateHealthBar();
     }
 
+    private bool healthBarSearched = false;
+
     private void CacheHealthBar()
     {
+        healthBarSearched = true;
+
         if (HPBar != null)
         {
             healthSlider = HPBar.GetComponent<Slider>();
@@ -247,19 +257,29 @@ public class Unit : MonoBehaviour
 
     public void UpdateHealthBar()
     {
-        if (healthSlider == null)
+        if (healthSlider == null && !healthBarSearched)
         {
             CacheHealthBar();
+            displayedHealth = float.NaN;
+            displayedMaxHealth = float.NaN;
         }
 
         if (healthSlider == null)
             return;
 
+        float sliderMax = Mathf.Max(1f, maxHealth);
+        float sliderValue = Mathf.Clamp(health, 0f, sliderMax);
+
+        if (Mathf.Approximately(displayedHealth, sliderValue) &&
+            Mathf.Approximately(displayedMaxHealth, sliderMax))
+            return;
+
         healthSlider.minValue = 0f;
-        healthSlider.maxValue = Mathf.Max(1f, maxHealth);
-        healthSlider.SetValueWithoutNotify(
-            Mathf.Clamp(health, 0f, healthSlider.maxValue)
-        );
+        healthSlider.maxValue = sliderMax;
+        healthSlider.SetValueWithoutNotify(sliderValue);
+
+        displayedHealth = sliderValue;
+        displayedMaxHealth = sliderMax;
     }
 
     public void EnsureInitialized()
@@ -293,40 +313,64 @@ public class Unit : MonoBehaviour
 
     public virtual void MyTurn()
     {
+        turnEndedBySystem = false;
+
         UIHandler.SetTurnUI(true);
 
         BuffHandler.BuffTurn();
         BuffHandler.DebuffTurn();
         StatusHandler.TickTurn();
 
-        // 1. 기절 검사
-        if (isStunned)
-        {
-            Debug.Log($"{Unitname} 기절로 행동 불가");
-            RemoveStatus(StatusType.Stun);
-
-            if (TurnManager.instance != null)
-            {
-                TurnManager.instance.EndTurn();
-            }
-            return;
-        }
-
-        // 2. 데이터 파편화 검사 (35% 확률로 오류 카드/행동 캔슬)
-        if (isDataFragmentation && UnityEngine.Random.Range(0, 100) < 35)
-        {
-            Debug.LogWarning($"<color=cyan>[데이터 파편화]</color> {Unitname} 시스템 오류로 행동 실패 (턴 스킵)!");
-            if (TurnManager.instance != null)
-            {
-                TurnManager.instance.EndTurn();
-            }
-            return;
-        }
-
-        // 3. 사망 검사
+        // 상태이상으로 사망
         if (health <= 0)
         {
             Die();
+            turnEndedBySystem = true;
+            return;
+        }
+
+        // 기절
+        if (isStunned)
+        {
+            Debug.Log($"{Unitname} 기절로 행동 불가");
+
+            RemoveStatus(StatusType.Stun);
+
+            turnEndedBySystem = true;
+
+            if (TurnManager.instance != null)
+            {
+                TurnManager.instance.EndTurn();
+            }
+
+            return;
+        }
+
+        // 데이터 파편화
+        if (isDataFragmentation &&
+            UnityEngine.Random.Range(0, 100) < 35)
+        {
+            Debug.LogWarning(
+                $"<color=cyan>[데이터 파편화]</color> " +
+                $"{Unitname} 시스템 오류로 행동 실패 (턴 스킵)!"
+            );
+
+            turnEndedBySystem = true;
+
+            if (TurnManager.instance != null)
+            {
+                TurnManager.instance.EndTurn();
+            }
+
+            return;
+        }
+
+        // 혹시 TickTurn() 내부에서 사망했는데
+        // health 체크를 놓치는 상황 방지
+        if (health <= 0 || !gameObject.activeInHierarchy)
+        {
+            turnEndedBySystem = true;
+            return;
         }
     }
 
@@ -364,26 +408,26 @@ public class Unit : MonoBehaviour
 
     public virtual void SelectTarget(Unit target)
     {
+        AttackFocus(target.gameObject);
     }
-    // =========================================================
-    // Focus 연출 메서드 (Action 기반 수정)
-    // =========================================================
     public virtual void AttackFocus(GameObject Self)
     {
         StartCoroutine(AttackFocusSequence(Self));
     }
+
+    public static readonly WaitForSeconds WaitOneSec = new WaitForSeconds(1.0f);
+    public static readonly WaitForSeconds WaitHalfSec = new WaitForSeconds(0.5f);
 
     private System.Collections.IEnumerator AttackFocusSequence(GameObject Self)
     {
         // 1. 포커스 인 이벤트 요청
         FocusManager.RequestFocusIn?.Invoke(Self);
 
-        // 2. FocusManager의 연출 시간(기본 1초, 필요에 따라 조정)만큼 대기
-        // (IsTweening 값을 검사하고 싶다면 FocusManager의 duration 스펙에 맞춰 대기합니다)
-        yield return new WaitForSeconds(1.0f);
+        // 2. FocusManager의 연출 시간 대기
+        yield return WaitOneSec;
 
-        // 3. 공격 연출/동작 수행 시간 추가 (필요 시)
-        yield return new WaitForSeconds(0.5f);
+        // 3. 공격 연출/동작 수행 시간 추가
+        yield return WaitHalfSec;
 
         // 4. 포커스 아웃 이벤트 요청
         FocusManager.RequestFocusOut?.Invoke();
@@ -396,8 +440,10 @@ public class Unit : MonoBehaviour
 
         if (health <= 0)
         {
-            // 체력 0 도달 시: 비상전력 확률로 1HP 생존 (비상전력 모드 가동)
-            if (emergencyPower > 0f && UnityEngine.Random.value < emergencyPower)
+            // 플레이어 태그인 경우에만 비상전력 확률로 1HP 생존 (적은 즉시 사망)
+            bool isPlayer = CompareTag("Player");
+
+            if (isPlayer && emergencyPower > 0f && !isEmergencyMode && UnityEngine.Random.value < emergencyPower)
             {
                 health = 1;
                 isEmergencyMode = true;
@@ -405,14 +451,17 @@ public class Unit : MonoBehaviour
             }
             else
             {
+                health = 0;
                 Die();
             }
         }
+
         if (health > maxHealth)
         {
             health = maxHealth;
         }
-        if(health > 1 && isEmergencyMode)
+
+        if (health > 1 && isEmergencyMode)
         {
             isEmergencyMode = false;
             Debug.Log($"<color=yellow>[비상전력 해제]</color> {Unitname} 체력 회복으로 비상전력 모드 종료!");
@@ -527,20 +576,38 @@ public class Unit : MonoBehaviour
 
     public virtual void Die()
     {
+        if (!gameObject.activeInHierarchy)
+            return;
+
         Debug.Log($"{Unitname} 사망");
 
-        if (TurnManager.instance != null)
+        // 사망 SFX 재생
+        if (AudioManager.instance != null)
+            AudioManager.instance.PlaySfx(deathSFX);
+
+        if (QuestManager.Instance != null)
         {
-            TurnManager.instance.RemoveUnit(this);
+            QuestManager.Instance.NotifyKill(gameObject);
         }
+
+        UIHandler.SetTurnUI(false);
+
+        gameObject.SetActive(false);
 
         if (PartyManager.instance != null)
         {
             PartyManager.instance.Remove(this);
         }
 
-        UIHandler.SetTurnUI(false);
-        gameObject.SetActive(false);
+        if (BattleManager.instance != null)
+        {
+            BattleManager.instance.RearrangeEnemies();
+        }
+
+        if (TurnManager.instance != null)
+        {
+            TurnManager.instance.OnUnitDeath(this);
+        }
     }
 
     // ==========================

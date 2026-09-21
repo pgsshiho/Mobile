@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: DualShot
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: "\uC591\uC190 \uC0AC\uACA9"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 01ec526790060cd48a65e65fda3a49a2, type: 3}
   description: "\uC801 \uB458\uC744 \uC870\uC900\uD558\uC5EC \uC591\uC190 \uD3EC\uACA9\uC744
     \uAC00\uD569\uB2C8\uB2E4. (3~4\uC5F4 \uAD8C\uC7A5)"
   targetType: 1
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 10
   hitBonus: 0
   soundEffect: {fileID: 0}
