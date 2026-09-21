@@ -428,10 +428,12 @@ public class Unit : MonoBehaviour
 
         health -= damage;
 
-        if (health <= 0 && gameObject.tag == "Player")
+        if (health <= 0)
         {
-            // 체력 0 도달 시: 비상전력 확률로 1HP 생존 (비상전력 모드 가동)
-            if (emergencyPower > 0f && UnityEngine.Random.value < emergencyPower)
+            // 플레이어 태그인 경우에만 비상전력 확률로 1HP 생존 (적은 즉시 사망)
+            bool isPlayer = CompareTag("Player");
+
+            if (isPlayer && emergencyPower > 0f && !isEmergencyMode && UnityEngine.Random.value < emergencyPower)
             {
                 health = 1;
                 isEmergencyMode = true;
@@ -439,14 +441,17 @@ public class Unit : MonoBehaviour
             }
             else
             {
+                health = 0;
                 Die();
             }
         }
+
         if (health > maxHealth)
         {
             health = maxHealth;
         }
-        if(health > 1 && isEmergencyMode)
+
+        if (health > 1 && isEmergencyMode)
         {
             isEmergencyMode = false;
             Debug.Log($"<color=yellow>[비상전력 해제]</color> {Unitname} 체력 회복으로 비상전력 모드 종료!");
