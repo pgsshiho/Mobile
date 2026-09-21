@@ -81,10 +81,13 @@ public class FocusManagerQuest : MonoBehaviour, IPointerClickHandler
         seq.SetEase(Ease.OutCubic)
            .OnComplete(() => IsTweening = false);
 
-        if (quest.currentCount >= quest.data.needCount)
+        if (quest != null)
         {
-            quest.CheckQuestCompletion();
-            return;
+            quest.RefreshProgress();
+            if (quest.isCompleted)
+            {
+                return;
+            }
         }
         DialogueManager.instance.StartDialogue(Dialoguekey);
 

@@ -135,6 +135,42 @@ public class ItemManager : MonoBehaviour
         return runtime?.count ?? 0;
     }
 
+    /// <summary>
+    /// QuestNeed에 해당하는 인벤토리 내 보유 총 수량을 반환합니다.
+    /// </summary>
+    public int GetItemCountByQuestNeed(QuestNeed needType)
+    {
+        if (inventory == null) return 0;
+
+        int total = 0;
+        foreach (var runtime in inventory)
+        {
+            if (runtime?.data == null) continue;
+
+            bool match = false;
+            switch (needType)
+            {
+                case QuestNeed.ScrapMetal:        match = runtime.data.effectType == ItemEffectType.HealHp; break;
+                case QuestNeed.EmergencyBattery:  match = runtime.data.effectType == ItemEffectType.RecoverEnergy; break;
+                case QuestNeed.Antenna:           match = runtime.data.effectType == ItemEffectType.RecoverAntenna; break;
+                case QuestNeed.Fuse:              match = runtime.data.effectType == ItemEffectType.RecoverFuse; break;
+                case QuestNeed.Sandpaper:         match = runtime.data.effectType == ItemEffectType.SandpaperOxidation; break;
+                case QuestNeed.RustRemover:       match = runtime.data.effectType == ItemEffectType.RemoveOxidation; break;
+                case QuestNeed.Coolant:           match = runtime.data.effectType == ItemEffectType.CoolDown; break;
+                case QuestNeed.FireExtinguisher:  match = runtime.data.effectType == ItemEffectType.ExtinguishFire; break;
+                case QuestNeed.Brush:             match = runtime.data.effectType == ItemEffectType.RemovePollution; break;
+                case QuestNeed.ElectricalTape:    match = runtime.data.effectType == ItemEffectType.RemoveShortCircuit; break;
+                case QuestNeed.WaterproofTape:    match = runtime.data.effectType == ItemEffectType.RemoveOilLeak; break;
+            }
+
+            if (match)
+            {
+                total += runtime.count;
+            }
+        }
+        return total;
+    }
+
     // ════════════════════════════════════════════════════════════════════
     //  아이템 사용 (전투 중)
     // ════════════════════════════════════════════════════════════════════

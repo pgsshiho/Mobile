@@ -131,6 +131,13 @@ public class RobotFactory : MonoBehaviour, IPointerClickHandler
         seq.SetEase(Ease.OutCubic)
            .OnComplete(() => IsTweening = false);
 
+        // 퀘스트 진행 상황 소급 검사 (이미 조건을 만족했다면 즉시 클리어)
+        Quest targetQuest = factoryQuest != null ? factoryQuest : GetComponent<Quest>() ?? FindObjectOfType<Quest>();
+        if (targetQuest != null && !targetQuest.isCompleted)
+        {
+            targetQuest.RefreshProgress();
+        }
+
         // 다이얼로그 + 선택지 표시
         if (DialogueManager.instance != null)
         {

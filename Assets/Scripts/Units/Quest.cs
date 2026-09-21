@@ -20,10 +20,14 @@ public class Quest : MonoBehaviour
         {
             QuestManager.Instance.RegisterQuest(this);
         }
+
+        // 시작 시 기존 인벤토리 보유 상황 검사 (소급 적용)
+        RefreshProgress();
     }
 
     /// <summary>
     /// 새로운 퀘스트 데이터를 설정하고 진행 상황을 초기화하여 퀘스트를 수주/시작합니다.
+    /// (수주 전 이미 보유하고 있던 아이템도 소급 적용되어 즉시 완료 가능)
     /// </summary>
     public void GiveQuest(QuestData newQuestData = null)
     {
@@ -41,6 +45,28 @@ public class Quest : MonoBehaviour
         }
 
         Debug.Log($"<color=yellow>[Quest]</color> 퀘스트 수주: '{data?.questTitle}' (목표: {data?.needType} x{data?.needCount})");
+
+        // 수주 즉시 기존 보유 아이템 확인 및 완료 검사 (소급 적용)
+        RefreshProgress();
+    }
+
+    /// <summary>
+    /// 현재 인벤토리 보유 상황을 조회하여 퀘스트 진행도 갱신 및 즉시 완료 검사를 수행합니다.
+    /// (퀘스트 받기 전 이미 획득한 아이템이 있거나 대화 시 즉시 소급 완료 처리)
+    /// </summary>
+    public void RefreshProgress()
+    {
+        if (isCompleted || data == null) return;
+
+        // 아이템 수집 퀘스트인 경우 인벤토리 내 현재 보유 총량을 소급 적용
+        if (data.needType != QuestNeed.Kill && ItemManager.Instance != null)
+        {
+            int owned = ItemManager.Instance.GetItemCountByQuestNeed(data.needType);
+            currentCount = Mathf.Max(currentCount, owned);
+            Debug.Log($"[{data.questTitle}] 보유 아이템 확인: {data.needType} ({currentCount} / {data.needCount})");
+        }
+
+        CheckQuestCompletion();
     }
 
     public void CheckKill(GameObject killedEnemy)
