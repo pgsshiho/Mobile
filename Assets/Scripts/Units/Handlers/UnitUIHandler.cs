@@ -195,7 +195,7 @@ public class UnitUIHandler
                 sr.sortingOrder = 25;
             }
 
-            obj.transform.localScale = Vector3.one * 0.45f;
+            obj.transform.localScale = Vector3.one * 0.15f;
         }
 
         // Image 컴포넌트가 있으면 스프라이트 지정
@@ -268,7 +268,7 @@ public class UnitUIHandler
 
         GameObject containerObj = new GameObject("StatusIcon_Container");
         containerObj.transform.SetParent(owner.transform, false);
-        containerObj.transform.localPosition = new Vector3(0f, 1.4f, 0f);
+        containerObj.transform.localPosition = new Vector3(0f, 1.9f, 0f);
         dynamicIconContainer = containerObj.transform;
 
         return dynamicIconContainer;
@@ -276,7 +276,7 @@ public class UnitUIHandler
 
     private void RepositionStatusIcons()
     {
-        float spacing = 0.5f;
+        float spacing = 0.17f;
         int total = statusIcons.Count;
         if (total == 0) return;
 
