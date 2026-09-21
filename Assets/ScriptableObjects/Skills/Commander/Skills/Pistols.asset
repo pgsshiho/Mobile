@@ -13,9 +13,13 @@ MonoBehaviour:
   m_Name: Pistols
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: Pistol
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 9f8c68ef4e270f44a8c99d1ebc36b7da, type: 3}
   description: 
   targetType: 0
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 30
   hitBonus: -20
+  soundEffect: {fileID: 0}
   skillLogic: {fileID: 11400000, guid: d97726f08a743d84886ec0809ddc65fa, type: 2}

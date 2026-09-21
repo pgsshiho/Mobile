@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4148de06aa3f6fc4fb8b87538ee7aabc, type: 3}
   m_Name: Reorganize
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
-  skillName: 
-  icon: {fileID: 0}
+  skillName: Reorganize
+  icon: {fileID: 21300000, guid: 657b336567954c5449e9ce1cc957e433, type: 3}
   description: 
   targetType: 5
   maxTargetDistance: 2

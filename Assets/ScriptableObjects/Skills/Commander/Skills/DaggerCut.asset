@@ -13,9 +13,13 @@ MonoBehaviour:
   m_Name: DaggerCut
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: Dagger Cut
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 2f957cc1bae160a48b935b2a8a76c953, type: 3}
   description: 
   targetType: 0
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 20
   hitBonus: 0
+  soundEffect: {fileID: 0}
   skillLogic: {fileID: 11400000, guid: da41b7e604ad50f4c94170cac1eecd09, type: 2}
