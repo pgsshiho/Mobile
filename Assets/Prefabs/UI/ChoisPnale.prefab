@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 761156508642899825}
+  - component: {fileID: 910000000000000001}
   m_Layer: 5
   m_Name: ChoisPnale
   m_TagString: Untagged
@@ -635,3 +636,20 @@ MonoBehaviour:
   references:
     version: 2
     RefIds: []
+
+--- !u!114 &910000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 782122579406330134}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b297e5f346967744b80b222f2b34fd53, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueChoiceController
+  choicePanel: {fileID: 782122579406330134}
+  choiceButtons:
+  - {fileID: 2963531762962320847}
+  - {fileID: 1635776272968644565}

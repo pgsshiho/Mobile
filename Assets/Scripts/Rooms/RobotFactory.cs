@@ -133,9 +133,12 @@ public class RobotFactory : MonoBehaviour, IPointerClickHandler
         // 다이얼로그 + 선택지(구매한다 / 나간다) 표시
         if (DialogueManager.instance != null)
         {
-            DialogueManager.instance.StartDialogue(Dialoguekey);
+            string[] keysToUse = (Dialoguekey != null && Dialoguekey.Length > 0)
+                ? Dialoguekey
+                : new string[] { "NPC_B_01" };
+
             DialogueManager.instance.StartDialogueWithChoices(
-                new string[] { "NPC_B_01" },
+                keysToUse,
                 new DialogueChoice[]
                 {
                     new DialogueChoice

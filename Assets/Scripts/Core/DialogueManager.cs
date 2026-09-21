@@ -38,12 +38,51 @@ public class DialogueManager : MonoBehaviour
     private void Awake()
     {
         instance = this;
+        EnsureChoiceController();
+    }
+
+    private void Start()
+    {
+        EnsureChoiceController();
+    }
+
+    /// <summary>
+    /// choiceController가 인스펙터에 미연결 상태일 경우 씬에서 자동 탐색하여 연결합니다.
+    /// </summary>
+    public void EnsureChoiceController()
+    {
+        if (choiceController == null)
+        {
+            choiceController = FindObjectOfType<DialogueChoiceController>(true);
+        }
+
+        if (choiceController == null)
+        {
+            GameObject choiceObj = GameObject.Find("ChoisPnale") ?? GameObject.Find("ChoicePanel") ?? GameObject.Find("Choice Panel");
+            if (choiceObj == null)
+            {
+                var allTransforms = Resources.FindObjectsOfTypeAll<Transform>();
+                foreach (var t in allTransforms)
+                {
+                    if (t.gameObject.scene.IsValid() && (t.name == "ChoisPnale" || t.name == "ChoicePanel" || t.name == "Choice Panel"))
+                    {
+                        choiceObj = t.gameObject;
+                        break;
+                    }
+                }
+            }
+
+            if (choiceObj != null)
+            {
+                choiceController = choiceObj.GetComponent<DialogueChoiceController>() ?? choiceObj.AddComponent<DialogueChoiceController>();
+            }
+        }
     }
 
     private void Update()
     {
         // 로딩 중이거나 타이핑 중일 때 클릭 이벤트 처리
-        if (dialoguePanel.activeSelf &&
+        if (dialoguePanel != null && dialoguePanel.activeSelf &&
             (choiceController == null || !choiceController.IsShowing) &&
             Input.GetMouseButtonDown(0))
         {
@@ -94,8 +133,11 @@ public class DialogueManager : MonoBehaviour
     private IEnumerator PreloadAndStartDialogue(string[] keys)
     {
         isLoading = true;
-        dialoguePanel.SetActive(true);
-        dialogueText.text = "";
+        if (dialoguePanel != null)
+            dialoguePanel.SetActive(true);
+
+        if (dialogueText != null)
+            dialogueText.text = "";
 
         cachedDialogueTexts = new string[keys.Length];
 
@@ -125,21 +167,26 @@ public class DialogueManager : MonoBehaviour
             StopCoroutine(typingCoroutine);
         }
 
-        typingCoroutine = StartCoroutine(TypeDialogueText(cachedDialogueTexts[pageIndex]));
+        if (cachedDialogueTexts != null && pageIndex >= 0 && pageIndex < cachedDialogueTexts.Length)
+        {
+            typingCoroutine = StartCoroutine(TypeDialogueText(cachedDialogueTexts[pageIndex]));
+        }
     }
 
     IEnumerator TypeDialogueText(string text)
     {
         isTyping = true;
-        dialogueText.text = text;
-        dialogueText.maxVisibleCharacters = 0;
-
-        // 문자열을 글자마다 다시 연결하지 않고 TMP의 표시 글자 수만 늘린다.
-        // 화면 결과는 기존 타이핑 연출과 동일하지만 GC 할당을 만들지 않는다.
-        for (int i = 1; i <= text.Length; i++)
+        if (dialogueText != null)
         {
-            dialogueText.maxVisibleCharacters = i;
-            yield return new WaitForSeconds(typingSpeed);
+            dialogueText.text = text;
+            dialogueText.maxVisibleCharacters = 0;
+
+            // 문자열을 글자마다 다시 연결하지 않고 TMP의 표시 글자 수만 늘린다.
+            for (int i = 1; i <= text.Length; i++)
+            {
+                dialogueText.maxVisibleCharacters = i;
+                yield return new WaitForSeconds(typingSpeed);
+            }
         }
 
         isTyping = false;
@@ -153,8 +200,11 @@ public class DialogueManager : MonoBehaviour
             StopCoroutine(typingCoroutine);
         }
 
-        dialogueText.text = cachedDialogueTexts[currentPage];
-        dialogueText.maxVisibleCharacters = int.MaxValue;
+        if (dialogueText != null && cachedDialogueTexts != null && currentPage < cachedDialogueTexts.Length)
+        {
+            dialogueText.text = cachedDialogueTexts[currentPage];
+            dialogueText.maxVisibleCharacters = int.MaxValue;
+        }
         isTyping = false;
     }
 
@@ -163,11 +213,12 @@ public class DialogueManager : MonoBehaviour
     {
         currentPage++;
 
-        // 대화 종료
-        if (currentPage >= cachedDialogueTexts.Length)
+        // 대화 종료 지점 도달
+        if (cachedDialogueTexts == null || currentPage >= cachedDialogueTexts.Length)
         {
-            if (pendingChoices != null && pendingChoices.Length > 0 &&
-                choiceController != null && choiceController.CanShowChoices)
+            EnsureChoiceController();
+
+            if (pendingChoices != null && pendingChoices.Length > 0 && choiceController != null)
             {
                 choiceController.ShowChoices(pendingChoices, SelectChoice);
                 return;
@@ -196,7 +247,10 @@ public class DialogueManager : MonoBehaviour
 
     public void CloseDialogue()
     {
-        dialoguePanel.SetActive(false);
+        if (dialoguePanel != null)
+            dialoguePanel.SetActive(false);
+
+        EnsureChoiceController();
         if (choiceController != null)
             choiceController.HideChoices();
 
