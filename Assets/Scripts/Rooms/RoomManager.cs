@@ -198,6 +198,7 @@ public class RoomManager : MonoBehaviour
             string info =
                 $"Node {node.id,2} " +
                 $"(F{node.floor,2}) " +
+                $"({node.gridPos.x,2},{node.gridPos.y,2}) " +
                 $"[{node.roomType,-12}] -> 연결: " +
                 $"{(string.IsNullOrEmpty(connections) ? "없음" : connections)}";
 
@@ -385,14 +386,19 @@ public class RoomManager : MonoBehaviour
     // 맵 연결
     // ============================================================
 
-    private void BuildBranchingConnections(
-        List<RoomNode> nodes)
+    private static readonly Vector2Int[] GridDirections = new Vector2Int[]
+    {
+        new Vector2Int(0, 1),   // Forward (전방/위)
+        new Vector2Int(0, -1),  // Backward (후방/아래)
+        new Vector2Int(-1, 0),  // Left (좌측)
+        new Vector2Int(1, 0)    // Right (우측)
+    };
+
+    private void BuildBranchingConnections(List<RoomNode> nodes)
     {
         if (nodes == null || nodes.Count == 0)
             return;
 
-        // 모든 방을 한 번만 부모에 붙여 순환이 없는 랜덤 트리를 만든다.
-        // 어떤 방향으로 들어왔든 반대 방향은 반드시 원래 방을 가리킨다.
         foreach (RoomNode node in nodes)
         {
             node.nextRooms.Clear();
@@ -403,117 +409,277 @@ public class RoomManager : MonoBehaviour
             node.rightRoom = null;
         }
 
+        // 2D 그리드 맵: 각 좌표당 유일한 방 노드만 존재
+        Dictionary<Vector2Int, RoomNode> grid = new Dictionary<Vector2Int, RoomNode>();
+
         RoomNode startNode = nodes[0];
+        startNode.gridPos = Vector2Int.zero;
         startNode.floor = 0;
+        grid[Vector2Int.zero] = startNode;
 
-        // 보스는 마지막에 가장 깊은 말단에 붙여, 여러 갈래를 탐험한 뒤
-        // 도달하는 최종 방으로 유지한다.
+        List<RoomNode> placedNodes = new List<RoomNode> { startNode };
         int bossIndex = nodes.Count - 1;
-        List<RoomNode> expandableNodes = new List<RoomNode> { startNode };
 
+        // 1. 중간 방들을 2D 그리드에 배치 (서로 다른 좌표에 1개씩만 배치)
         for (int i = 1; i < bossIndex; i++)
         {
             RoomNode child = nodes[i];
-            RoomNode parent = ChooseRandomBranchParent(expandableNodes);
-            ConnectTreeNodes(parent, child);
+            Vector2Int chosenPos = ChooseGridPositionForChild(placedNodes, grid);
 
-            if (GetFreeDirectionCount(parent) == 0)
-            {
-                expandableNodes.Remove(parent);
-            }
-
-            expandableNodes.Add(child);
+            child.gridPos = chosenPos;
+            grid[chosenPos] = child;
+            placedNodes.Add(child);
         }
 
-        RoomNode bossParent = ChooseDeepestBranchParent(expandableNodes);
-        ConnectTreeNodes(bossParent, nodes[bossIndex]);
+        // 2. 보스 방을 가장 깊고 단일 진입로를 가진 외곽에 배치
+        RoomNode bossNode = nodes[bossIndex];
+        Vector2Int bossPos = ChooseGridPositionForBoss(placedNodes, grid);
+        bossNode.gridPos = bossPos;
+        grid[bossPos] = bossNode;
+        placedNodes.Add(bossNode);
+
+        // 3. 2D 그리드 좌표를 기준으로 인접한 방들끼리 4방향 양방향 연결 설정
+        // (오른쪽 위방과 위 오른쪽방이 동일한 좌표 (x, y)의 동일 방을 공유)
+        ConnectAllAdjacentRooms(nodes, grid);
+
+        // 4. 시작 방 기준 BFS 거리(floor) 및 nextRooms / previousRoom 설정
+        CalculateFloorsAndPathReferences(startNode, nodes);
     }
 
-    private RoomNode ChooseRandomBranchParent(
-        List<RoomNode> expandableNodes)
+    private Vector2Int ChooseGridPositionForChild(
+        List<RoomNode> placedNodes,
+        Dictionary<Vector2Int, RoomNode> grid)
     {
-        // 최근에 생성된 방을 조금 더 자주 뽑아 가지 안에 또 가지가
-        // 생성되도록 하되, 이전 방들도 후보로 남겨 매번 다른 나무가 된다.
-        int recentCount = Mathf.Min(4, expandableNodes.Count);
-        int startIndex = expandableNodes.Count - recentCount;
-        return expandableNodes[
-            Random.Range(startIndex, expandableNodes.Count)
-        ];
-    }
+        // 최근에 배치된 방들을 우선하여 나뭇가지 형태로 뻗어나가도록 유도
+        int recentCount = Mathf.Min(4, placedNodes.Count);
+        int startIndex = placedNodes.Count - recentCount;
 
-    private RoomNode ChooseDeepestBranchParent(
-        List<RoomNode> expandableNodes)
-    {
-        int deepestFloor = -1;
-        List<RoomNode> candidates = new List<RoomNode>();
-
-        foreach (RoomNode node in expandableNodes)
+        for (int attempt = 0; attempt < 30; attempt++)
         {
-            if (node.floor > deepestFloor)
+            RoomNode parent = placedNodes[Random.Range(startIndex, placedNodes.Count)];
+            List<Vector2Int> freeNeighbors = GetFreeNeighbors(parent.gridPos, grid);
+
+            if (freeNeighbors.Count > 0)
             {
-                deepestFloor = node.floor;
-                candidates.Clear();
-                candidates.Add(node);
-            }
-            else if (node.floor == deepestFloor)
-            {
-                candidates.Add(node);
+                // 인접 방 개수가 2개 이하인 곳을 우선하여 과도한 덩어리 형성 방지
+                List<Vector2Int> nonCrowded = new List<Vector2Int>();
+                foreach (var pos in freeNeighbors)
+                {
+                    if (CountOccupiedNeighbors(pos, grid) <= 2)
+                    {
+                        nonCrowded.Add(pos);
+                    }
+                }
+
+                List<Vector2Int> candidates = nonCrowded.Count > 0 ? nonCrowded : freeNeighbors;
+                return candidates[Random.Range(0, candidates.Count)];
             }
         }
 
-        return candidates[Random.Range(0, candidates.Count)];
-    }
+        // Fallback: 모든 배치된 노드 주변 탐색
+        List<Vector2Int> allFree = new List<Vector2Int>();
+        List<Vector2Int> allNonCrowded = new List<Vector2Int>();
 
-    private void ConnectTreeNodes(RoomNode parent, RoomNode child)
-    {
-        List<int> freeDirections = new List<int>();
-
-        if (parent.forwardRoom == null) freeDirections.Add(0);
-        if (parent.leftRoom == null) freeDirections.Add(1);
-        if (parent.rightRoom == null) freeDirections.Add(2);
-        // 시작 방의 뒤쪽은 비워 둔다. 시작부터 뒤로 가는 길이 생기면
-        // 플레이어가 출발 방향을 혼동하기 쉽기 때문이다.
-        if (parent.backwardRoom == null && parent.previousRoom != null)
-            freeDirections.Add(3);
-
-        int direction = freeDirections[
-            Random.Range(0, freeDirections.Count)
-        ];
-
-        switch (direction)
+        for (int i = placedNodes.Count - 1; i >= 0; i--)
         {
-            case 0:
-                parent.forwardRoom = child;
-                child.backwardRoom = parent;
-                break;
-            case 1:
-                parent.leftRoom = child;
-                child.rightRoom = parent;
-                break;
-            case 2:
-                parent.rightRoom = child;
-                child.leftRoom = parent;
-                break;
-            default:
-                parent.backwardRoom = child;
-                child.forwardRoom = parent;
-                break;
+            List<Vector2Int> free = GetFreeNeighbors(placedNodes[i].gridPos, grid);
+            foreach (var pos in free)
+            {
+                if (!allFree.Contains(pos))
+                {
+                    allFree.Add(pos);
+                    if (CountOccupiedNeighbors(pos, grid) <= 2)
+                    {
+                        allNonCrowded.Add(pos);
+                    }
+                }
+            }
         }
 
-        child.previousRoom = parent;
-        child.floor = parent.floor + 1;
-        parent.nextRooms.Add(child);
+        List<Vector2Int> pool = allNonCrowded.Count > 0 ? allNonCrowded : allFree;
+        return pool[Random.Range(0, pool.Count)];
     }
 
-    private int GetFreeDirectionCount(RoomNode node)
+    private Vector2Int ChooseGridPositionForBoss(
+        List<RoomNode> placedNodes,
+        Dictionary<Vector2Int, RoomNode> grid)
+    {
+        List<Vector2Int> allCandidates = new List<Vector2Int>();
+
+        foreach (RoomNode node in placedNodes)
+        {
+            List<Vector2Int> free = GetFreeNeighbors(node.gridPos, grid);
+            foreach (var pos in free)
+            {
+                if (!allCandidates.Contains(pos))
+                {
+                    allCandidates.Add(pos);
+                }
+            }
+        }
+
+        // 보스는 문이 1개만 있는 막다른 골목(Dead-end)을 1순위로 선호
+        List<Vector2Int> singleEntranceCandidates = new List<Vector2Int>();
+        foreach (var pos in allCandidates)
+        {
+            if (CountOccupiedNeighbors(pos, grid) == 1)
+            {
+                singleEntranceCandidates.Add(pos);
+            }
+        }
+
+        List<Vector2Int> searchPool = singleEntranceCandidates.Count > 0
+            ? singleEntranceCandidates
+            : allCandidates;
+
+        // 시작점으로부터 가장 먼 거리(X축 거리 + Y축 가중치)를 가진 위치 선택
+        int maxScore = -1;
+        List<Vector2Int> bestCandidates = new List<Vector2Int>();
+
+        foreach (var pos in searchPool)
+        {
+            int score = Mathf.Abs(pos.x) + pos.y * 2;
+            if (score > maxScore)
+            {
+                maxScore = score;
+                bestCandidates.Clear();
+                bestCandidates.Add(pos);
+            }
+            else if (score == maxScore)
+            {
+                bestCandidates.Add(pos);
+            }
+        }
+
+        return bestCandidates[Random.Range(0, bestCandidates.Count)];
+    }
+
+    private List<Vector2Int> GetFreeNeighbors(
+        Vector2Int pos,
+        Dictionary<Vector2Int, RoomNode> grid)
+    {
+        List<Vector2Int> result = new List<Vector2Int>();
+
+        foreach (Vector2Int dir in GridDirections)
+        {
+            Vector2Int next = pos + dir;
+
+            if (grid.ContainsKey(next))
+                continue;
+
+            // 시작 방 뒤쪽(y < 0)은 방을 배치하지 않아 시작 시 후방으로 이동하는 혼란 방지
+            if (next.y < 0)
+                continue;
+
+            result.Add(next);
+        }
+
+        return result;
+    }
+
+    private int CountOccupiedNeighbors(
+        Vector2Int pos,
+        Dictionary<Vector2Int, RoomNode> grid)
     {
         int count = 0;
-        if (node.forwardRoom == null) count++;
-        if (node.backwardRoom == null && node.previousRoom != null)
-            count++;
-        if (node.leftRoom == null) count++;
-        if (node.rightRoom == null) count++;
+        foreach (Vector2Int dir in GridDirections)
+        {
+            if (grid.ContainsKey(pos + dir))
+            {
+                count++;
+            }
+        }
         return count;
+    }
+
+    private void ConnectAllAdjacentRooms(
+        List<RoomNode> nodes,
+        Dictionary<Vector2Int, RoomNode> grid)
+    {
+        foreach (RoomNode node in nodes)
+        {
+            Vector2Int pos = node.gridPos;
+
+            // 전방: (x, y + 1)
+            if (grid.TryGetValue(pos + new Vector2Int(0, 1), out RoomNode upNode))
+            {
+                node.forwardRoom = upNode;
+            }
+
+            // 후방: (x, y - 1)
+            if (grid.TryGetValue(pos + new Vector2Int(0, -1), out RoomNode downNode))
+            {
+                node.backwardRoom = downNode;
+            }
+
+            // 좌측: (x - 1, y)
+            if (grid.TryGetValue(pos + new Vector2Int(-1, 0), out RoomNode leftNode))
+            {
+                node.leftRoom = leftNode;
+            }
+
+            // 우측: (x + 1, y)
+            if (grid.TryGetValue(pos + new Vector2Int(1, 0), out RoomNode rightNode))
+            {
+                node.rightRoom = rightNode;
+            }
+        }
+    }
+
+    private void CalculateFloorsAndPathReferences(
+        RoomNode startNode,
+        List<RoomNode> nodes)
+    {
+        // 시작 방 기준 BFS 거리(floor) 계산
+        Queue<RoomNode> queue = new Queue<RoomNode>();
+        HashSet<RoomNode> visited = new HashSet<RoomNode>();
+
+        startNode.floor = 0;
+        visited.Add(startNode);
+        queue.Enqueue(startNode);
+
+        while (queue.Count > 0)
+        {
+            RoomNode current = queue.Dequeue();
+
+            RoomNode[] neighbors = {
+                current.forwardRoom,
+                current.backwardRoom,
+                current.leftRoom,
+                current.rightRoom
+            };
+
+            foreach (RoomNode neighbor in neighbors)
+            {
+                if (neighbor != null && !visited.Contains(neighbor))
+                {
+                    neighbor.floor = current.floor + 1;
+                    neighbor.previousRoom = current;
+                    visited.Add(neighbor);
+                    queue.Enqueue(neighbor);
+                }
+            }
+        }
+
+        // nextRooms 리스트에 인접한 방 연결 등록
+        foreach (RoomNode node in nodes)
+        {
+            node.nextRooms.Clear();
+            RoomNode[] neighbors = {
+                node.forwardRoom,
+                node.rightRoom,
+                node.leftRoom,
+                node.backwardRoom
+            };
+
+            foreach (RoomNode neighbor in neighbors)
+            {
+                if (neighbor != null)
+                {
+                    node.nextRooms.Add(neighbor);
+                }
+            }
+        }
     }
 
     // ============================================================
