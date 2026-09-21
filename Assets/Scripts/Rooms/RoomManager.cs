@@ -220,32 +220,35 @@ public class RoomManager : MonoBehaviour
         ZoneType zone,
         int totalCount)
     {
-        // 시작, 보스, 전투 3개, 로봇 공장, 보상 2개, 상점 2개, 빈 방을
+        // 시작, 보스(1개), 엘리트(1개), 일반 적방(3개), 로봇 공장, 보상 2개, 상점 2개, 빈 방을
         // 필수 방을 포함해 항상 13개 이상 생성한다.
         totalCount = Mathf.Max(13, totalCount);
 
         List<RoomType> types = new List<RoomType>();
 
-        // 시작 방
+        // 시작 방 (1개)
         types.Add(RoomType.Start);
 
-        // 보스 방
+        // 보스 방 (1개)을 제외한 중간 방 총 개수
         int middleCount = totalCount - 2;
 
-        List<RoomType> middleRooms =
-            new List<RoomType>();
+        List<RoomType> middleRooms = new List<RoomType>();
 
-        // 전투 방 최소 3개
+        // 1. 일반 적방 정확히 3개
         for (int i = 0; i < 3; i++)
         {
             middleRooms.Add(
-                GetRandomEnemyRoomType(zone)
+                GetRandomNormalEnemyRoomType(zone)
             );
         }
-        // AddRobot은 일반 방으로 남기되 필수 생성에서는 제외한다.
-        // RobotFactory는 매 맵에 정확히 하나 이상 포함한다.
+
+        // 2. 엘리트 적방 정확히 1개
+        middleRooms.Add(RoomType.EliteEnemy);
+
+        // 3. 로봇 공장 1개
         middleRooms.Add(RoomType.RobotFactory);
-        // 보상 방 3종 중 서로 다른 2개를 필수로 넣는다.
+
+        // 4. 보상 방 3종 중 서로 다른 2개
         List<RoomType> requiredRewards = new List<RoomType>
         {
             RoomType.Fountain,
@@ -256,7 +259,7 @@ public class RoomManager : MonoBehaviour
         middleRooms.Add(requiredRewards[0]);
         middleRooms.Add(requiredRewards[1]);
 
-        // 상점 방 3종 중 서로 다른 2개를 필수로 넣는다.
+        // 5. 상점 방 3종 중 서로 다른 2개
         List<RoomType> requiredShops = new List<RoomType>
         {
             RoomType.ItemShop,
@@ -267,35 +270,29 @@ public class RoomManager : MonoBehaviour
         middleRooms.Add(requiredShops[0]);
         middleRooms.Add(requiredShops[1]);
 
-        // 아무것도 없는 방도 최소 1개 포함한다.
+        // 6. 아무것도 없는 방(None) 최소 1개
         middleRooms.Add(RoomType.None);
 
-        // 남은 방 랜덤 생성
+        // 7. 남은 방 랜덤 생성 (적방 3개, 엘리트방 1개 고정을 위해 비전투 방에서만 보충)
         while (middleRooms.Count < middleCount)
         {
-            int r = Random.Range(0, 4);
+            int r = Random.Range(0, 3);
 
             switch (r)
             {
                 case 0:
                     middleRooms.Add(
-                        GetRandomEnemyRoomType(zone)
+                        GetRandomRewardRoomType()
                     );
                     break;
 
                 case 1:
                     middleRooms.Add(
-                        GetRandomRewardRoomType()
-                    );
-                    break;
-
-                case 2:
-                    middleRooms.Add(
                         GetRandomVillageRoomType()
                     );
                     break;
 
-                case 3:
+                case 2:
                     middleRooms.Add(RoomType.None);
                     break;
             }
@@ -304,14 +301,14 @@ public class RoomManager : MonoBehaviour
         // 셔플
         ShuffleList(middleRooms);
 
-        // Start -> Middle -> Boss
+        // Start -> Middle -> Boss (보스 방 정확히 1개)
         types.AddRange(middleRooms);
         types.Add(RoomType.Boss);
 
         return types;
     }
 
-    private RoomType GetRandomEnemyRoomType(
+    private RoomType GetRandomNormalEnemyRoomType(
         ZoneType zone)
     {
         List<RoomType> list =
@@ -334,8 +331,6 @@ public class RoomManager : MonoBehaviour
                 list.Add(RoomType.PollutedRoom);
                 break;
         }
-
-        list.Add(RoomType.EliteEnemy);
 
         return list[
             Random.Range(0, list.Count)
@@ -951,6 +946,17 @@ public class RoomManager : MonoBehaviour
                 zone,
                 RoomType.Start
             );
+        }
+
+        // EliteEnemy 전용 프리팹이 없을 경우 일반 Enemy 프리팹으로 폴백
+        if (type == RoomType.EliteEnemy)
+        {
+            Room enemyPrefab = GetRandomRoomPrefab(
+                zone,
+                RoomType.Enemy
+            );
+            if (enemyPrefab != null)
+                return enemyPrefab;
         }
 
         return null;
