@@ -101,6 +101,30 @@ public class ItemManager : MonoBehaviour
 
         SaveToData();
         Debug.Log($"아이템 획득: {item.itemName}");
+
+        // 퀘스트 아이템 획득 통지
+        if (QuestManager.Instance != null)
+        {
+            QuestNeed? need = item.effectType switch
+            {
+                ItemEffectType.HealHp             => QuestNeed.ScrapMetal,
+                ItemEffectType.RecoverEnergy      => QuestNeed.EmergencyBattery,
+                ItemEffectType.RecoverAntenna     => QuestNeed.Antenna,
+                ItemEffectType.RecoverFuse        => QuestNeed.Fuse,
+                ItemEffectType.SandpaperOxidation => QuestNeed.Sandpaper,
+                ItemEffectType.RemoveOxidation    => QuestNeed.RustRemover,
+                ItemEffectType.CoolDown           => QuestNeed.Coolant,
+                ItemEffectType.ExtinguishFire     => QuestNeed.FireExtinguisher,
+                ItemEffectType.RemovePollution    => QuestNeed.Brush,
+                ItemEffectType.RemoveShortCircuit => QuestNeed.ElectricalTape,
+                ItemEffectType.RemoveOilLeak      => QuestNeed.WaterproofTape,
+                _ => null
+            };
+            if (need.HasValue)
+            {
+                QuestManager.Instance.NotifyItemObtained(need.Value, 1);
+            }
+        }
         return true;
     }
 

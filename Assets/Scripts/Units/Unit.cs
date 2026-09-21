@@ -566,6 +566,11 @@ public class Unit : MonoBehaviour
 
         Debug.Log($"{Unitname} 사망");
 
+        if (QuestManager.Instance != null)
+        {
+            QuestManager.Instance.NotifyKill(gameObject);
+        }
+
         UIHandler.SetTurnUI(false);
 
         gameObject.SetActive(false);

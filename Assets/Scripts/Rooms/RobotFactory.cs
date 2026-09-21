@@ -13,6 +13,16 @@ public class RobotFactory : MonoBehaviour, IPointerClickHandler
     [Tooltip("구매에 필요한 재료")]
     public int requiredMaterial = 0;
 
+    [Header("퀘스트 연동 (구매 시 퀘스트 부여)")]
+    [Tooltip("구매 시 플레이어에게 부여할 퀘스트 데이터 (ScriptableObject)")]
+    public QuestData factoryQuestData;
+
+    [Tooltip("씬 내의 Quest 컴포넌트 (미지정 시 자동 탐색)")]
+    public Quest factoryQuest;
+
+    [Tooltip("퀘스트 부여 시 출력할 다이얼로그 키 (선택 사항)")]
+    public string questStartDialogueKey = "";
+
     [Header("다이얼로그 키 설정")]
     [Tooltip("로컬라이제이션 테이블의 '돈이 더 필요해' 키")]
     public string noMoneyDialogueKey = "FACTORY_NO_MONEY";
@@ -154,7 +164,7 @@ public class RobotFactory : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// 구매 조건 확인 (파티 정원 4명 검사 -> 재화 검사 -> Action으로 모든 FactoryAddUnit의 CanClick 활성화)
+    /// 구매 조건 확인 (파티 정원 4명 검사 -> 재화 검사 -> 퀘스트 부여 -> 퀘스트 완료 시 CanClick 활성화)
     /// </summary>
     private void TryPurchase()
     {
@@ -195,15 +205,49 @@ public class RobotFactory : MonoBehaviour, IPointerClickHandler
                 CurrencyManager.instance.SpendCurrency(CurrencyType.Material, requiredMaterial);
         }
 
-        Debug.Log($"<color=cyan>[RobotFactory]</color> 구매 완료! (골드 -{requiredGold}, 재료 -{requiredMaterial}) 원하는 로봇을 클릭/선택하세요.");
+        Debug.Log($"<color=cyan>[RobotFactory]</color> 구매 완료! (골드 -{requiredGold}, 재료 -{requiredMaterial})");
 
-        // 4. Action을 통해 씬 내의 모든 FactoryAddUnit의 CanClick을 true로 갱신
-        FactoryAddUnit.UnlockAll();
+        // 4. 퀘스트 부여 처리
+        Quest targetQuest = factoryQuest != null ? factoryQuest : GetComponent<Quest>() ?? FindObjectOfType<Quest>();
 
-        // 5. 다이얼로그 종료
-        if (DialogueManager.instance != null)
+        if (targetQuest != null && factoryQuestData != null)
         {
-            DialogueManager.instance.CloseDialogue();
+            // 새로운 퀘스트 데이터로 퀘스트 부여 (완료 시 Quest.cs에서 FactoryAddUnit.UnlockAll() 호출)
+            targetQuest.GiveQuest(factoryQuestData);
+            Debug.Log($"<color=yellow>[RobotFactory]</color> 퀘스트 '{factoryQuestData.questTitle}' 부여 완료! 퀘스트를 달성하면 로봇을 선택할 수 있습니다.");
+
+            if (DialogueManager.instance != null)
+            {
+                if (!string.IsNullOrEmpty(questStartDialogueKey))
+                    DialogueManager.instance.StartDialogue(new string[] { questStartDialogueKey });
+                else
+                    DialogueManager.instance.CloseDialogue();
+            }
+        }
+        else if (targetQuest != null && targetQuest.data != null)
+        {
+            // 기존 할당된 QuestData로 퀘스트 시작
+            targetQuest.GiveQuest(targetQuest.data);
+            Debug.Log($"<color=yellow>[RobotFactory]</color> 퀘스트 '{targetQuest.data.questTitle}' 부여 완료! 퀘스트를 달성하면 로봇을 선택할 수 있습니다.");
+
+            if (DialogueManager.instance != null)
+            {
+                if (!string.IsNullOrEmpty(questStartDialogueKey))
+                    DialogueManager.instance.StartDialogue(new string[] { questStartDialogueKey });
+                else
+                    DialogueManager.instance.CloseDialogue();
+            }
+        }
+        else
+        {
+            // 퀘스트 에셋이 지정되지 않은 경우 즉시 로봇 선택 활성화
+            FactoryAddUnit.UnlockAll();
+            Debug.Log("<color=cyan>[RobotFactory]</color> 퀘스트 미설정: 즉시 로봇 선택이 활성화되었습니다.");
+
+            if (DialogueManager.instance != null)
+            {
+                DialogueManager.instance.CloseDialogue();
+            }
         }
     }
 
