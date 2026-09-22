@@ -96,17 +96,47 @@ public class PartyManager : MonoBehaviour
     {
         if (unit == null) return false;
 
+        bool removed = false;
         for (int i = 0; i < partySlots.Length; i++)
         {
             if (partySlots[i] == unit)
             {
                 partySlots[i] = null;
-                return true;
+                removed = true;
+                break;
             }
         }
 
-        return false;
+        if (removed)
+        {
+            ShiftPartyForward();
+        }
+
+        return removed;
     }
+
+    /// <summary>
+    /// 빈 슬롯(null 또는 비활성화/사망 유닛)을 건너뛰고 살아있는 파티원들을 0번 슬롯부터 순서대로 앞으로 당겨 정렬합니다.
+    /// </summary>
+    public void ShiftPartyForward()
+    {
+        if (partySlots == null) return;
+
+        Unit[] compact = new Unit[partySlots.Length];
+        int writeIdx = 0;
+
+        for (int i = 0; i < partySlots.Length; i++)
+        {
+            Unit u = partySlots[i];
+            if (u != null && u.gameObject.activeInHierarchy && u.health > 0)
+            {
+                compact[writeIdx++] = u;
+            }
+        }
+
+        partySlots = compact;
+    }
+
 
     /// <summary>
     /// 파티 슬롯(4칸)이 모두 채워져 있는지 확인합니다. 빈 슬롯이 없으면 true를 반환합니다.

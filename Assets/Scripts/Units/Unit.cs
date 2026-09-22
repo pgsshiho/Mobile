@@ -692,6 +692,7 @@ public class Unit : MonoBehaviour
         if (BattleManager.instance != null)
         {
             BattleManager.instance.RearrangeEnemies();
+            BattleManager.instance.RearrangeParty();
         }
 
         if (TurnManager.instance != null)

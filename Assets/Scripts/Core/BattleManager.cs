@@ -33,6 +33,11 @@ public class BattleManager : MonoBehaviour
     [Tooltip("누른 뒤 아군을 선택하면 해당 아군의 열로 교대 이동하는 버튼")]
     public Button formationMoveButton;
 
+    [Header("Game Over")]
+    [Tooltip("아군이 전멸했을 때 활성화할 GameOver UI 또는 오브젝트")]
+    public GameObject gameOverObject;
+
+
     [Header("Audio")]
     public AudioSource sfxSource;
     public AudioSource bgmSource;
@@ -871,6 +876,58 @@ public class BattleManager : MonoBehaviour
         else
         {
             Debug.Log("패배!");
+            StartCoroutine(ActivateGameOverRoutine());
+        }
+    }
+
+    private IEnumerator ActivateGameOverRoutine()
+    {
+        // 마지막 유닛의 사망 연출(0.8초)이 자연스럽게 마무리되도록 잠시 대기
+        yield return new WaitForSeconds(0.6f);
+
+        if (gameOverObject != null)
+        {
+            gameOverObject.SetActive(true);
+            Debug.Log($"<color=red>[BattleManager]</color> 지정된 게임오버 오브젝트 '{gameOverObject.name}' 활성화 완료!");
+            yield break;
+        }
+
+        // 씬 내에서 "GameOver", "GameOverUI", "Game Over" 등의 이름을 가진 오브젝트 자동 탐색
+        GameObject found = GameObject.Find("GameOver");
+        if (found == null) found = GameObject.Find("GameOverUI");
+        if (found == null) found = GameObject.Find("GameOverCanvas");
+        if (found == null) found = GameObject.Find("Game Over");
+
+        if (found == null)
+        {
+            // 비활성화된 오브젝트까지 포함하여 탐색
+            GameObject[] allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+            foreach (GameObject go in allObjects)
+            {
+                if (go.hideFlags == HideFlags.None &&
+                    (go.name.Equals("GameOver", System.StringComparison.OrdinalIgnoreCase) ||
+                     go.name.Equals("GameOverUI", System.StringComparison.OrdinalIgnoreCase) ||
+                     go.name.Equals("GameOverCanvas", System.StringComparison.OrdinalIgnoreCase) ||
+                     go.name.Equals("Game Over", System.StringComparison.OrdinalIgnoreCase)))
+                {
+                    if (go.scene.IsValid() && go.scene.isLoaded)
+                    {
+                        found = go;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (found != null)
+        {
+            found.SetActive(true);
+            gameOverObject = found;
+            Debug.Log($"<color=red>[BattleManager]</color> 자동 탐색된 게임오버 오브젝트 '{found.name}' 활성화 완료!");
+        }
+        else
+        {
+            Debug.LogWarning("[BattleManager] 활성화할 GameOver 오브젝트를 찾을 수 없습니다. 인스펙터의 BattleManager -> GameOver Object 슬롯에 할당하거나 씬에 'GameOver' 오브젝트를 배치해주세요.");
         }
     }
 
@@ -952,4 +1009,43 @@ public class BattleManager : MonoBehaviour
             enemyColumns[enemy] = i;
         }
     }
+
+    // =========================================================
+    // Rearrange Party (아군 사망 시 앞으로 당겨 재정렬)
+    // =========================================================
+
+    public void RearrangeParty()
+    {
+        if (Party == null ||
+            Party.Length == 0)
+        {
+            return;
+        }
+
+        if (PartyManager.instance == null ||
+            PartyManager.instance.partySlots == null)
+        {
+            return;
+        }
+
+        // 빈 슬롯 정리 및 앞으로 당김
+        PartyManager.instance.ShiftPartyForward();
+
+        for (int i = 0; i < PartyManager.instance.partySlots.Length; i++)
+        {
+            Unit unit = PartyManager.instance.partySlots[i];
+
+            if (unit != null &&
+                unit.gameObject.activeInHierarchy &&
+                unit.health > 0)
+            {
+                if (i < Party.Length && Party[i] != null)
+                {
+                    unit.transform.position = Party[i].position;
+                    unit.transform.rotation = Party[i].rotation;
+                }
+            }
+        }
+    }
 }
+
