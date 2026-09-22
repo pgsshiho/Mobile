@@ -38,6 +38,14 @@ public class BattleManager : MonoBehaviour
     public GameObject gameOverObject;
 
 
+    [Header("Turn Button Colors")]
+    [Tooltip("내 턴이 아닐 때 버튼들에 적용할 약간 어두운 검은색 (비활성 표현)")]
+    public Color notMyTurnColor = new Color(0.32f, 0.32f, 0.32f, 0.9f);
+    [Tooltip("내 턴일 때 정상 사용 가능한 버튼 색상")]
+    public Color normalTurnColor = Color.white;
+    [Tooltip("내 턴이지만 현재 거리/열 제한으로 사용 불가능한 스킬 색상")]
+    public Color disabledSkillColor = new Color(0.48f, 0.48f, 0.48f, 0.9f);
+
     [Header("Audio")]
     public AudioSource sfxSource;
     public AudioSource bgmSource;
@@ -49,11 +57,16 @@ public class BattleManager : MonoBehaviour
         public Button button;
         public TMP_Text label;
         public Image iconImage;
+        public Image[] allImages;
+        public TMP_Text[] allTexts;
     }
 
     private CachedSkillButton[] cachedButtons;
 
     private TMP_Text[] battleUIEXTexts;
+
+    private Image[] formationMoveImages;
+    private TMP_Text[] formationMoveTexts;
 
     private bool isSelectingFormationMove;
 
@@ -117,7 +130,9 @@ public class BattleManager : MonoBehaviour
                 root = btn,
                 button = button,
                 label = btn.GetComponentInChildren<TMP_Text>(true),
-                iconImage = btn.GetComponent<Image>()
+                iconImage = btn.GetComponent<Image>(),
+                allImages = btn.GetComponentsInChildren<Image>(true),
+                allTexts = btn.GetComponentsInChildren<TMP_Text>(true)
             };
 
             SkillButtonLongPress longPress =
@@ -476,12 +491,88 @@ public class BattleManager : MonoBehaviour
     }
 
 
+    private void SetButtonVisualState(CachedSkillButton btn, bool interactable, Color color)
+    {
+        if (btn.button != null)
+        {
+            btn.button.interactable = interactable;
+        }
+
+        if (btn.allImages != null)
+        {
+            for (int i = 0; i < btn.allImages.Length; i++)
+            {
+                if (btn.allImages[i] != null)
+                {
+                    btn.allImages[i].color = color;
+                }
+            }
+        }
+
+        if (btn.allTexts != null)
+        {
+            Color txtColor = new Color(color.r, color.g, color.b, color.a);
+            for (int i = 0; i < btn.allTexts.Length; i++)
+            {
+                if (btn.allTexts[i] != null)
+                {
+                    btn.allTexts[i].color = txtColor;
+                }
+            }
+        }
+    }
+
+    private void SetFormationMoveButtonVisual(bool interactable, Color color)
+    {
+        if (formationMoveButton == null) return;
+
+        formationMoveButton.interactable = interactable;
+
+        if (formationMoveImages != null)
+        {
+            for (int i = 0; i < formationMoveImages.Length; i++)
+            {
+                if (formationMoveImages[i] != null)
+                {
+                    formationMoveImages[i].color = color;
+                }
+            }
+        }
+
+        if (formationMoveTexts != null)
+        {
+            Color txtColor = new Color(color.r, color.g, color.b, color.a);
+            for (int i = 0; i < formationMoveTexts.Length; i++)
+            {
+                if (formationMoveTexts[i] != null)
+                {
+                    formationMoveTexts[i].color = txtColor;
+                }
+            }
+        }
+    }
+
+    private void EnsureButtonsCached()
+    {
+        if (cachedButtons == null || cachedButtons.Length == 0)
+        {
+            CacheSkillButtons();
+        }
+
+        if (formationMoveImages == null || formationMoveImages.Length == 0)
+        {
+            CacheFormationMoveButtons();
+        }
+    }
+
     // =========================================================
     // Player UI
     // =========================================================
 
     public void ShowPlayerUI(PlayerUnit player)
     {
+        EnsureButtonsCached();
+
         if (player == null ||
             cachedButtons == null)
         {
@@ -530,14 +621,10 @@ public class BattleManager : MonoBehaviour
                         skill.icon != null;
                 }
 
-                // 현재 열에서 사용 가능한지
-                if (cached.button != null)
-                {
-                    cached.button.interactable =
-                        CanUseSkillAtCurrentColumn(
-                            player,
-                            skill);
-                }
+                // 현재 열에서 사용 가능한지 확인 후 시각 상태(밝은 색상 / 딤드) 적용
+                bool canUse = CanUseSkillAtCurrentColumn(player, skill);
+                Color targetColor = canUse ? normalTurnColor : disabledSkillColor;
+                SetButtonVisualState(cached, canUse, targetColor);
             }
             else
             {
@@ -551,29 +638,70 @@ public class BattleManager : MonoBehaviour
 
     public void HidePlayerUI()
     {
-        if (cachedButtons != null)
-        {
-            for (int i = 0;
-                 i < cachedButtons.Length;
-                 i++)
-            {
-                if (cachedButtons[i].root != null)
-                {
-                    cachedButtons[i]
-                        .root
-                        .SetActive(false);
-                }
-            }
-        }
+        EnsureButtonsCached();
 
         HideBattleUIEX();
 
         isSelectingFormationMove = false;
 
-        if (formationMoveButton != null)
+        // 전투 진행 중: 내 턴이 아닐 때는 버튼들을 끄지 않고 약간 검은색으로 변경하여 사용할 수 없음을 표현
+        if (isBattle && cachedButtons != null)
         {
-            formationMoveButton.gameObject
-                .SetActive(false);
+            bool anyActive = false;
+            for (int i = 0;
+                 i < cachedButtons.Length;
+                 i++)
+            {
+                if (cachedButtons[i].root != null && cachedButtons[i].root.activeSelf)
+                {
+                    anyActive = true;
+                    SetButtonVisualState(cachedButtons[i], false, notMyTurnColor);
+                }
+            }
+
+            // 아직 아무 버튼도 켜지지 않은 상태(전투 시작 직후 적 턴인 경우)라면 기본 4개 버튼을 켜서 검은색으로 표시
+            if (!anyActive)
+            {
+                int defaultCount = Mathf.Min(4, cachedButtons.Length);
+                for (int i = 0; i < defaultCount; i++)
+                {
+                    if (cachedButtons[i].root != null)
+                    {
+                        cachedButtons[i].root.SetActive(true);
+                        SetButtonVisualState(cachedButtons[i], false, notMyTurnColor);
+                    }
+                }
+            }
+
+            if (formationMoveButton != null)
+            {
+                formationMoveButton.gameObject.SetActive(true);
+                SetFormationMoveButtonVisual(false, notMyTurnColor);
+            }
+        }
+        else if (!isBattle)
+        {
+            // 전투가 완전히 종료되었을 때는 버튼을 완전히 비활성화
+            if (cachedButtons != null)
+            {
+                for (int i = 0;
+                     i < cachedButtons.Length;
+                     i++)
+                {
+                    if (cachedButtons[i].root != null)
+                    {
+                        cachedButtons[i]
+                            .root
+                            .SetActive(false);
+                    }
+                }
+            }
+
+            if (formationMoveButton != null)
+            {
+                formationMoveButton.gameObject
+                    .SetActive(false);
+            }
         }
     }
 
@@ -586,6 +714,9 @@ public class BattleManager : MonoBehaviour
     {
         if (formationMoveButton != null)
         {
+            formationMoveImages = formationMoveButton.GetComponentsInChildren<Image>(true);
+            formationMoveTexts = formationMoveButton.GetComponentsInChildren<TMP_Text>(true);
+
             formationMoveButton.onClick
                 .AddListener(BeginFormationMove);
 
@@ -603,8 +734,9 @@ public class BattleManager : MonoBehaviour
             formationMoveButton.gameObject
                 .SetActive(true);
 
-            formationMoveButton.interactable =
-                CanStartFormationMove(player);
+            bool canMove = CanStartFormationMove(player);
+            Color targetColor = canMove ? normalTurnColor : disabledSkillColor;
+            SetFormationMoveButtonVisual(canMove, targetColor);
         }
     }
 

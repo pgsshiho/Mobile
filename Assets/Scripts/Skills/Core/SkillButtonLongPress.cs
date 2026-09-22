@@ -93,7 +93,13 @@ public class SkillButtonLongPress :
             return;
         }
 
-        // 짧게 누른 경우에만 스킬 선택
+        // 짧게 누른 경우에만 스킬 선택 (단, 버튼이 비활성화 상태면 선택 불가)
+        var btn = GetComponent<UnityEngine.UI.Button>();
+        if (btn != null && !btn.interactable)
+        {
+            return;
+        }
+
         if (BattleManager.instance != null)
         {
             BattleManager.instance.SelectSkill(skillIndex);
