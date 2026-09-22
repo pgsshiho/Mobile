@@ -324,10 +324,22 @@ public class Unit : MonoBehaviour
         // 상태이상으로 사망
         if (health <= 0)
         {
-            Die();
-            turnEndedBySystem = true;
-            return;
+            bool isPlayer = CompareTag("Player");
+            if (isPlayer && emergencyPower > 0f && !isEmergencyMode && UnityEngine.Random.value < emergencyPower)
+            {
+                health = 1;
+                isEmergencyMode = true;
+                Debug.Log($"<color=yellow>[비상전력 가동!]</color> {Unitname} 상태이상 치명타에서 1HP로 생존!");
+            }
+            else
+            {
+                health = 0;
+                Die();
+                turnEndedBySystem = true;
+                return;
+            }
         }
+
 
         // 기절
         if (isStunned)
@@ -608,8 +620,25 @@ public class Unit : MonoBehaviour
 
             sp.color = Color.red;
             yield return new WaitForSeconds(0.2f);
+
+            // 비상전력으로 살아났으면 중단
+            if (health > 0)
+            {
+                sp.color = originalColor;
+                isDying = false;
+                yield break;
+            }
+
             sp.color = originalColor;
             yield return new WaitForSeconds(0.1f);
+
+            // 비상전력으로 살아났으면 중단
+            if (health > 0)
+            {
+                sp.color = originalColor;
+                isDying = false;
+                yield break;
+            }
 
             // 0.5초 동안 페이드 아웃
             float elapsed = 0f;
@@ -625,6 +654,13 @@ public class Unit : MonoBehaviour
         else
         {
             yield return new WaitForSeconds(0.8f);
+
+            // 비상전력으로 살아났으면 중단
+            if (health > 0)
+            {
+                isDying = false;
+                yield break;
+            }
         }
 
         gameObject.SetActive(false);
