@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: FIre
   m_EditorClassIdentifier: Assembly-CSharp::StatusIconData
   statusType: 9
-  icon: {fileID: 1098286324429101383, guid: 3b6bfce6b9e698640a90957b8b2bbf34, type: 3}
+  icon: {fileID: 21300000, guid: 3b6bfce6b9e698640a90957b8b2bbf34, type: 3}

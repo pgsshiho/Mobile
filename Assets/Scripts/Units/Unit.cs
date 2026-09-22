@@ -282,8 +282,27 @@ public class Unit : MonoBehaviour
         displayedMaxHealth = sliderMax;
     }
 
+    private static StatusIconSet defaultStatusIconSet;
+
     public void EnsureInitialized()
     {
+        if (statusIconSet == null)
+        {
+            if (defaultStatusIconSet == null)
+            {
+                defaultStatusIconSet = Resources.Load<StatusIconSet>("StatusEffects/StatusIconSet");
+                if (defaultStatusIconSet == null)
+                {
+                    defaultStatusIconSet = Resources.Load<StatusIconSet>("ScriptableObjects/StatusEffects/StatusIconSet");
+                }
+                if (defaultStatusIconSet == null)
+                {
+                    defaultStatusIconSet = Resources.Load<StatusIconSet>("StatusIconSet");
+                }
+            }
+            statusIconSet = defaultStatusIconSet;
+        }
+
         if (uiHandler == null)
         {
             uiHandler = new UnitUIHandler(

@@ -258,6 +258,8 @@ public class UnitUIHandler
         }
     }
 
+    private static StatusIconSet cachedResourcesSet;
+
     private Sprite GetStatusIcon(StatusType type)
     {
         if (statusIconSet != null)
@@ -277,11 +279,23 @@ public class UnitUIHandler
             }
         }
 
-        // Resources 폴백
-        StatusIconSet defaultSet = Resources.Load<StatusIconSet>("ScriptableObjects/StatusEffects/StatusIconSet");
-        if (defaultSet != null)
+        // Resources 폴백 (캐싱)
+        if (cachedResourcesSet == null)
         {
-            Sprite s = defaultSet.GetIcon(type);
+            cachedResourcesSet = Resources.Load<StatusIconSet>("StatusEffects/StatusIconSet");
+            if (cachedResourcesSet == null)
+            {
+                cachedResourcesSet = Resources.Load<StatusIconSet>("ScriptableObjects/StatusEffects/StatusIconSet");
+            }
+            if (cachedResourcesSet == null)
+            {
+                cachedResourcesSet = Resources.Load<StatusIconSet>("StatusIconSet");
+            }
+        }
+
+        if (cachedResourcesSet != null)
+        {
+            Sprite s = cachedResourcesSet.GetIcon(type);
             if (s != null) return s;
         }
 

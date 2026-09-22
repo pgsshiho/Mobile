@@ -1183,7 +1183,7 @@ MonoBehaviour:
   accuracyupgrade: 0
   Unitname: Enemy
   statusIconParent: {fileID: 0}
-  statusIconSet: {fileID: 0}
+  statusIconSet: {fileID: 11400000, guid: d1e54b7e3b3164b4b9ae45b7b986cfa2, type: 2}
   sp: {fileID: 0}
   targetMode: 0
   attackDelay: 1.5
@@ -1402,7 +1402,7 @@ MonoBehaviour:
   accuracyupgrade: 0
   Unitname: 
   statusIconParent: {fileID: 0}
-  statusIconSet: {fileID: 0}
+  statusIconSet: {fileID: 11400000, guid: d1e54b7e3b3164b4b9ae45b7b986cfa2, type: 2}
   sp: {fileID: 0}
   normal: {fileID: 0}
   attack: {fileID: 0}
@@ -2463,7 +2463,7 @@ MonoBehaviour:
   accuracyupgrade: 0
   Unitname: 
   statusIconParent: {fileID: 0}
-  statusIconSet: {fileID: 0}
+  statusIconSet: {fileID: 11400000, guid: d1e54b7e3b3164b4b9ae45b7b986cfa2, type: 2}
   sp: {fileID: 0}
   targetMode: 0
   attackDelay: 1.5
