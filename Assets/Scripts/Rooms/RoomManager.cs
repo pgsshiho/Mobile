@@ -122,6 +122,11 @@ public class RoomManager : MonoBehaviour
 
     public void StartRun()
     {
+        if (ChapterManager.instance != null)
+        {
+            currentZone = ChapterManager.instance.GetCurrentZone();
+        }
+
         GenerateMap();
 
         if (allNodes.Count > 0)
@@ -863,6 +868,40 @@ public class RoomManager : MonoBehaviour
                 currentNode
             );
         }
+
+        // 보스방 클리어 시 챕터 다음 지역으로 이동 또는 챕터 클리어 처리
+        if (currentNode != null && currentNode.roomType == RoomType.Boss)
+        {
+            OnBossRoomCleared();
+        }
+    }
+
+    private void OnBossRoomCleared()
+    {
+        if (ChapterManager.instance != null)
+        {
+            bool hasNextZone = ChapterManager.instance.AdvanceNextZone();
+            if (hasNextZone)
+            {
+                Debug.Log($"<color=cyan>[RoomManager]</color> 보스 격파! 다음 지역({ChapterManager.instance.GetCurrentZone()})으로 이동합니다.");
+                StartCoroutine(TransitionToNextZoneRoutine());
+            }
+            else
+            {
+                Debug.Log("<color=yellow>★ [RoomManager] 챕터의 모든 지역을 클리어했습니다! ★</color>");
+            }
+        }
+    }
+
+    private System.Collections.IEnumerator TransitionToNextZoneRoutine()
+    {
+        // 보상 획득 및 연출을 볼 수 있도록 1.5초 대기 후 다음 지역으로 이동
+        yield return new WaitForSeconds(1.5f);
+        StartRun();
+        if (Save.instance != null)
+        {
+            Save.instance.SaveGame();
+        }
     }
 
     private void ClearSpawnedRooms()
@@ -957,6 +996,12 @@ public class RoomManager : MonoBehaviour
             );
             if (enemyPrefab != null)
                 return enemyPrefab;
+        }
+
+        // 해당 Zone에 프리팹 풀이 아직 없는 경우 Forest 풀로 안전 폴백
+        if (zone != ZoneType.Forest)
+        {
+            return GetRandomRoomPrefab(ZoneType.Forest, type);
         }
 
         return null;
@@ -1061,6 +1106,12 @@ public class RoomManager : MonoBehaviour
             {
                 return pool;
             }
+        }
+
+        // 해당 Zone에 적 풀이 아직 등록되지 않은 경우 Forest 적 풀로 폴백
+        if (zone != ZoneType.Forest)
+        {
+            return GetEnemyPool(ZoneType.Forest);
         }
 
         return null;

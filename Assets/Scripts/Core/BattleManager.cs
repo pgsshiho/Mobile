@@ -839,9 +839,12 @@ public class BattleManager : MonoBehaviour
 
         if (battleUI != null)
             battleUI.SetActive(false);
-
+        
         HidePlayerUI();
-
+        if(AudioManager.instance != null)
+        {
+            AudioManager.instance.StopBgm();
+        }
         if (TurnManager.instance != null)
         {
             TurnManager.instance.waitingForTarget =
@@ -876,6 +879,7 @@ public class BattleManager : MonoBehaviour
         else
         {
             Debug.Log("패배!");
+            Save.EndCurrentRun();
             StartCoroutine(ActivateGameOverRoutine());
         }
     }

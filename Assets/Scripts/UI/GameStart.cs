@@ -1,18 +1,17 @@
 using UnityEngine;
 
+/// <summary>
+/// 메인 메뉴 진입점 스크립트.
+/// MainMenuController를 통해 이어하기 및 새로 시작(챕터 선택)을 관리합니다.
+/// </summary>
 public class GameStart : MonoBehaviour 
 { 
-    void Update()
+    private void Start()
     {
-        if (Input.GetMouseButtonDown(0))
+        // MainMenuController가 없으면 현재 오브젝트에 추가
+        if (GetComponent<MainMenuController>() == null)
         {
-            string sceneToLoad = Save.GetSavedScene("Factory");
-            if (Save.instance != null)
-            {
-                Save.instance.LoadGame();
-            }
-            SceneChanger.BG(sceneToLoad);
-            Debug.Log("게임이 시작되었습니다!");
+            gameObject.AddComponent<MainMenuController>();
         }
     }
 }

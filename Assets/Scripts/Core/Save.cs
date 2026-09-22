@@ -23,6 +23,13 @@ public class SaveData
     public string savedScene = "Factory";
     public List<string> partySlotUnitNames = new List<string>();
     public List<SavedItemEntry> inventory = new List<SavedItemEntry>();
+
+    // ── 챕터 & 런 진행 데이터 ──
+    public int highestClearedChapter = 0; // 클리어한 최고 챕터 (0: 없음, 1: 1챕 클리어, ...)
+    public int unlockedChapter = 1;       // 해금된 최고 챕터 (기본: 1챕터 해금)
+    public int currentChapter = 1;        // 현재 진행 챕터
+    public int currentZoneIndex = 0;      // 현재 챕터 내 진행 중인 Zone 인덱스
+    public bool hasActiveRun = false;     // 현재 진행 중인 런 세이브가 존재하는가 (이어하기 가능 여부)
 }
 
 public class Save : MonoBehaviour
@@ -142,11 +149,74 @@ public class Save : MonoBehaviour
         return string.IsNullOrEmpty(data.savedScene) ? defaultScene : data.savedScene;
     }
 
+    public static bool HasActiveRunSave()
+    {
+        SaveData data = GetSaveData();
+        return data != null && data.hasActiveRun;
+    }
+
+    public static void StartNewRun(int chapter)
+    {
+        SaveData data = GetSaveData();
+        data.hasActiveRun = true;
+        data.currentChapter = Mathf.Clamp(chapter, 1, 5);
+        data.currentZoneIndex = 0;
+        data.currentNodeId = -1;
+        data.savedScene = "Factory";
+
+        if (ChapterManager.instance != null)
+        {
+            ChapterManager.instance.StartChapter(data.currentChapter);
+            data.currentZone = (int)ChapterManager.instance.GetCurrentZone();
+        }
+        else
+        {
+            data.currentZone = (int)ZoneType.Forest;
+        }
+
+        CommitSave();
+        Debug.Log($"<color=green>[Save]</color> 제 {data.currentChapter}챕터 신규 런 시작 세이브 저장 완료");
+    }
+
+    public static void SaveChapterClear(int chapter)
+    {
+        SaveData data = GetSaveData();
+        if (chapter > data.highestClearedChapter)
+        {
+            data.highestClearedChapter = chapter;
+        }
+
+        int nextUnlock = Mathf.Min(chapter + 1, 5);
+        if (nextUnlock > data.unlockedChapter)
+        {
+            data.unlockedChapter = nextUnlock;
+        }
+
+        CommitSave();
+        Debug.Log($"<color=gold>[Save]</color> 제 {chapter}챕터 클리어 완료 저장! (최고 클리어: {data.highestClearedChapter}, 해금 챕터: {data.unlockedChapter})");
+    }
+
+    public static void EndCurrentRun()
+    {
+        SaveData data = GetSaveData();
+        data.hasActiveRun = false;
+        data.currentNodeId = -1;
+        CommitSave();
+        Debug.Log("<color=orange>[Save]</color> 현재 런 종료 처리 완료");
+    }
+
     public void SaveGame()
     {
         SaveData data = GetSaveData();
 
         data.language = GetCurrentLanguageIndex();
+
+        if (ChapterManager.instance != null)
+        {
+            data.currentChapter = ChapterManager.instance.currentChapter;
+            data.currentZoneIndex = ChapterManager.instance.currentZoneIndex;
+            data.hasActiveRun = true;
+        }
 
         if (RoomManager.instance != null)
         {
@@ -204,6 +274,12 @@ public class Save : MonoBehaviour
         SaveData data = GetSaveData();
 
         ChangeLanguage(data.language);
+
+        if (ChapterManager.instance != null)
+        {
+            ChapterManager.instance.currentChapter = data.currentChapter;
+            ChapterManager.instance.currentZoneIndex = data.currentZoneIndex;
+        }
 
         if (RoomManager.instance != null)
         {
