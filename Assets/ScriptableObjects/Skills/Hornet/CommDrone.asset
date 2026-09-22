@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: CommDrone
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: "\uD1B5\uC2E0 \uB4DC\uB860"
-  icon: {fileID: 0}
+  icon: {fileID: 2274233988628888181, guid: 0a73b7a9f3661da46ab1c1f880bc01b9, type: 3}
   description: "\uD1B5\uC2E0 \uC2E0\uD638\uB97C \uAC15\uD654\uD558\uC5EC \uC544\uAD70
     \uC804\uCCB4\uC758 \uACF5\uACA9\uB825\uACFC \uBA85\uC911\uB960\uC744 \uB192\uC785\uB2C8\uB2E4."
   targetType: 6
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 0
   hitBonus: 0
   soundEffect: {fileID: 0}

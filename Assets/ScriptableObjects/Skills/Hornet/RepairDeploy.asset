@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: RepairDeploy
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: "\uC218\uB9AC \uBC30\uCE58"
-  icon: {fileID: 0}
+  icon: {fileID: 8430608133729611653, guid: c8e8e87a465c9af4889d07e2ef1dcbbf, type: 3}
   description: "\uC544\uAD70\uC5D0\uAC8C \uC9C0\uC18D \uD68C\uBCF5 \uB4DC\uB860\uC744
     \uBC30\uCE58\uD569\uB2C8\uB2E4."
   targetType: 5
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 0
   hitBonus: 0
   soundEffect: {fileID: 0}

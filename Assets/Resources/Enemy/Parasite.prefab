@@ -432,6 +432,7 @@ MonoBehaviour:
   damageTextPrefab: {fileID: 3432776059765830471, guid: 7d3631656ebbd604aa80f9e945222ebc, type: 3}
   damageTextSpawnPoint: {fileID: 7284542131567827613}
   HPBar: {fileID: 8759068627910526035}
+  deathSFX: {fileID: 0}
   attackLevel: 0
   defenseLevel: 0
   maxAttackLevel: 10
@@ -488,7 +489,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 3, y: 3}
+  m_Size: {x: 2.5, y: 2.5}
   m_EdgeRadius: 0
 --- !u!1 &8007727923452382985
 GameObject:

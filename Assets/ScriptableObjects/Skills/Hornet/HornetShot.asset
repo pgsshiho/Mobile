@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: HornetShot
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: "\uC0AC\uACA9"
-  icon: {fileID: 0}
+  icon: {fileID: -7078601026092770259, guid: 7e093f13000de8f479723576ec27c2c7, type: 3}
   description: "\uB2E8\uC77C \uB300\uC0C1\uC5D0\uAC8C \uC815\uBC00 \uC0AC\uACA9\uC744
     \uAC00\uD569\uB2C8\uB2E4."
   targetType: 0
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 14
   hitBonus: 5
   soundEffect: {fileID: 0}

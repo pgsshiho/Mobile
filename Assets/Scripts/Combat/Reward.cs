@@ -58,6 +58,10 @@ public class Reward : MonoBehaviour
     {
         if (Rewardpanel != null)
             Rewardpanel.SetActive(false);
+        if (RoomNavigationUI.instance != null)
+        {
+            RoomNavigationUI.instance.SetNavigationActive(true);
+        }
     }
 
     // ────────────────────────────────────────────────────────────────

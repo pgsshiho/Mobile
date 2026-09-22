@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: DroneCharge
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillName: "\uB4DC\uB860 \uCDA9\uC804"
-  icon: {fileID: 0}
+  icon: {fileID: -2462861032125660878, guid: 97db46949884f634b8e5da8934048880, type: 3}
   description: "\uC790\uC2E0\uC5D0\uAC8C \uB4DC\uB860 \uD65C\uC131\uD654 \uBC84\uD504\uB97C
     \uBD80\uC5EC\uD569\uB2C8\uB2E4."
   targetType: 4
+  maxTargetDistance: 2
+  minUserColumn: 0
+  maxUserColumn: 3
   power: 0
   hitBonus: 0
   soundEffect: {fileID: 0}
