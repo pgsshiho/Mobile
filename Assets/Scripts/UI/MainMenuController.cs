@@ -145,10 +145,20 @@ public class MainMenuController : MonoBehaviour
 
                 entry.button.interactable = isUnlocked;
 
+                // 시각적 스타일 (배경색 및 텍스트 밝기)
+                var img = entry.button.GetComponent<Image>();
+                if (img != null)
+                {
+                    img.color = isUnlocked 
+                        ? new Color(0.18f, 0.22f, 0.28f, 0.95f) 
+                        : new Color(0.08f, 0.08f, 0.1f, 0.6f);
+                }
+
                 // 타이틀 텍스트
                 if (entry.titleText != null)
                 {
                     entry.titleText.text = $"제 {ch}챕터";
+                    entry.titleText.color = isUnlocked ? Color.white : new Color(0.45f, 0.45f, 0.45f, 0.6f);
                 }
 
                 // 지역 목록 텍스트
@@ -158,6 +168,7 @@ public class MainMenuController : MonoBehaviour
                     {
                         entry.zonesText.text = string.Join(" → ", zones);
                     }
+                    entry.zonesText.color = isUnlocked ? new Color(0.75f, 0.75f, 0.75f, 1f) : new Color(0.35f, 0.35f, 0.35f, 0.5f);
                 }
 
                 // 상태 텍스트
@@ -165,15 +176,15 @@ public class MainMenuController : MonoBehaviour
                 {
                     if (isCleared)
                     {
-                        entry.statusText.text = "<color=yellow>★ 클리어 (CLEARED)</color>";
+                        entry.statusText.text = "<color=#FFD700>[클리어 완료]</color>";
                     }
                     else if (isUnlocked)
                     {
-                        entry.statusText.text = "<color=cyan>● 해금됨 (UNLOCKED)</color>";
+                        entry.statusText.text = "<color=#44FF88>[입장 가능]</color>";
                     }
                     else
                     {
-                        entry.statusText.text = "<color=red>🔒 잠김 (LOCKED)</color>";
+                        entry.statusText.text = $"<color=#FF5555>[잠김] ({ch - 1}챕터 클리어 필요)</color>";
                     }
                 }
 
