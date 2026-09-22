@@ -574,10 +574,14 @@ public class Unit : MonoBehaviour
         Debug.Log($"{Unitname} 회복 {finalHealAmount}");
     }
 
+    private bool isDying = false;
+
     public virtual void Die()
     {
-        if (!gameObject.activeInHierarchy)
+        if (!gameObject.activeInHierarchy || isDying)
             return;
+
+        isDying = true;
 
         Debug.Log($"{Unitname} 사망");
 
@@ -591,6 +595,37 @@ public class Unit : MonoBehaviour
         }
 
         UIHandler.SetTurnUI(false);
+
+        StartCoroutine(DieRoutine());
+    }
+
+    private IEnumerator DieRoutine()
+    {
+        // 빨간 빛으로 깜빡임 후 페이드 아웃
+        if (sp != null)
+        {
+            Color originalColor = sp.color;
+
+            sp.color = Color.red;
+            yield return new WaitForSeconds(0.2f);
+            sp.color = originalColor;
+            yield return new WaitForSeconds(0.1f);
+
+            // 0.5초 동안 페이드 아웃
+            float elapsed = 0f;
+            float fadeDuration = 0.5f;
+            while (elapsed < fadeDuration)
+            {
+                elapsed += Time.deltaTime;
+                float alpha = Mathf.Lerp(1f, 0f, elapsed / fadeDuration);
+                sp.color = new Color(originalColor.r, originalColor.g, originalColor.b, alpha);
+                yield return null;
+            }
+        }
+        else
+        {
+            yield return new WaitForSeconds(0.8f);
+        }
 
         gameObject.SetActive(false);
 
@@ -609,6 +644,7 @@ public class Unit : MonoBehaviour
             TurnManager.instance.OnUnitDeath(this);
         }
     }
+
 
     // ==========================
     // Buff & Debuff Delegation
