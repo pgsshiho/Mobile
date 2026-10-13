@@ -154,6 +154,26 @@ public class UnitStatusHandler
         uiHandler?.ClearStatusIcons();
     }
 
+    /// <summary>세이브 시스템에서 상태이상과 남은 턴을 보존하기 위한 읽기 전용 사본입니다.</summary>
+    public Dictionary<StatusType, int> GetActiveStatuses()
+    {
+        return new Dictionary<StatusType, int>(statusTurns);
+    }
+
+    /// <summary>로드된 상태이상 목록을 UI 아이콘까지 포함해 복원합니다.</summary>
+    public void RestoreStatuses(List<SavedStatusEntry> savedStatuses)
+    {
+        ClearStates();
+        if (savedStatuses == null) return;
+
+        foreach (SavedStatusEntry status in savedStatuses)
+        {
+            if (status == null || status.type == StatusType.None || status.remainingTurns == 0)
+                continue;
+            AddStatus(status.type, status.remainingTurns);
+        }
+    }
+
     // ────────────────────────────────────────────
     // 매 턴 처리 (MyTurn에서 호출)
     // ────────────────────────────────────────────

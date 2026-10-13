@@ -38,6 +38,33 @@ MonoBehaviour:
     m_Localized: "\uB300\uC7A5\uAC04\uC5D0 \uC5B4\uC11C\uC624\uC2DC\uAC8C"
     m_Metadata:
       m_Items: []
+  - m_Id: 55514236658876416
+    m_Localized: Save file 1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55514257592647680
+    m_Localized: Save file 2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55514267046608896
+    m_Localized: Save file 3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55910292961853440
+    m_Localized: 'Are you sure you want to delete the save data?
+
+      Once deleted,
+      it cannot be restored.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55931906613018624
+    m_Localized: Delete
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55931970366439424
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

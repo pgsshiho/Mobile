@@ -35,6 +35,30 @@ MonoBehaviour:
     m_Key: Blacksmithwelcome
     m_Metadata:
       m_Items: []
+  - m_Id: 55514236658876416
+    m_Key: SaveF1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55514257592647680
+    m_Key: SaveF2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55514267046608896
+    m_Key: SaveF3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55910292961853440
+    m_Key: SaveDel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55931906613018624
+    m_Key: Del
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55931970366439424
+    m_Key: Can
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
