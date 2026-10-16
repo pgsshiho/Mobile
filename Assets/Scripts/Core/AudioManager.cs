@@ -33,11 +33,17 @@ public class AudioManager : MonoBehaviour
 
     private void Awake()
     {
+        if (instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
         instance = this;
-
-        nowMasterVolume = PlayerPrefs.GetFloat("Master", 1f);
-        nowBGMVolume = PlayerPrefs.GetFloat("BGM", 1f);
-        nowSFXVolume = PlayerPrefs.GetFloat("SFX", 1f);
+        DontDestroyOnLoad(gameObject);
+        SaveData saveData = Save.GetSaveData();
+        nowMasterVolume = saveData != null ? saveData.masterVolume : PlayerPrefs.GetFloat("Master", 1f);
+        nowBGMVolume = saveData != null ? saveData.bgmVolume : PlayerPrefs.GetFloat("BGM", 1f);
+        nowSFXVolume = saveData != null ? saveData.sfxVolume : PlayerPrefs.GetFloat("SFX", 1f);
 
         // 복원용 초기값 세팅 (0 미만이면 기본 1로 지정)
         prevMasterVolume = nowMasterVolume > 0.001f ? nowMasterVolume : 1f;
@@ -51,6 +57,7 @@ public class AudioManager : MonoBehaviour
         SetMaster(nowMasterVolume);
         SetBGM(nowBGMVolume);
         SetSFX(nowSFXVolume);
+
     }
 
     public void SetMaster(float value)
@@ -60,7 +67,7 @@ public class AudioManager : MonoBehaviour
 
         float dB = Mathf.Log10(Mathf.Clamp(value, 0.0001f, 1f)) * 20;
         audioMixer.SetFloat("Master", dB);
-        PlayerPrefs.SetFloat("Master", value);
+        SaveAudioSetting(data => data.masterVolume = value);
     }
 
     public void SetBGM(float value)
@@ -70,7 +77,7 @@ public class AudioManager : MonoBehaviour
 
         float dB = Mathf.Log10(Mathf.Clamp(value, 0.0001f, 1f)) * 20;
         audioMixer.SetFloat("BGM", dB);
-        PlayerPrefs.SetFloat("BGM", value);
+        SaveAudioSetting(data => data.bgmVolume = value);
     }
 
     public void SetSFX(float value)
@@ -80,7 +87,7 @@ public class AudioManager : MonoBehaviour
 
         float dB = Mathf.Log10(Mathf.Clamp(value, 0.0001f, 1f)) * 20;
         audioMixer.SetFloat("SFX", dB);
-        PlayerPrefs.SetFloat("SFX", value);
+        SaveAudioSetting(data => data.sfxVolume = value);
     }
 
     // 토글 처리 (0: Master, 1: BGM, 2: SFX) - 반환값: 현재 음소거 상태 여부 (true = Muted)
@@ -115,4 +122,41 @@ public class AudioManager : MonoBehaviour
 
     public void StopBgm() { if (bgmSource != null) bgmSource.Stop(); }
     public void PlaySfx(AudioClip clip) { if (sfxSource != null && clip != null) sfxSource.PlayOneShot(clip); }
+
+    private static void SaveAudioSetting(System.Action<SaveData> apply)
+    {
+        SaveData data = Save.GetSaveData();
+        if (data == null) return;
+        apply(data);
+        Save.CommitSave();
+    }
+
+    public void OnChild()
+    {
+        Canvas canvas = GetComponentInChildren<Canvas>(true);
+
+        if (canvas == null)
+        {
+            Debug.LogError("Canvas를 찾을 수 없음");
+            return;
+        }
+
+        canvas.gameObject.SetActive(true);
+        canvas.enabled = true;
+    }
+
+    public void OffChild()
+    {
+        Debug.Log("OffChild 실행");
+
+        Canvas canvas = GetComponentInChildren<Canvas>(true);
+
+        if (canvas == null)
+        {
+            Debug.LogError($"{gameObject.name}에서 Canvas를 찾지 못함");
+            return;
+        }
+
+        canvas.enabled = false;
+    }
 }

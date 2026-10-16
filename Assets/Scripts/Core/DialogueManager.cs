@@ -117,6 +117,30 @@ public class DialogueManager : MonoBehaviour
         StartDialogueInternal(keys);
     }
 
+    /// <summary>
+    /// 로컬라이즈 키 없이 즉시 표시할 안내 문구와 선택지입니다.
+    /// 보스 진입 경고처럼 런타임에 조합되는 확인 UI에 사용합니다.
+    /// </summary>
+    public void ShowMessageWithChoices(string message, DialogueChoice[] choices)
+    {
+        if (string.IsNullOrEmpty(message)) return;
+
+        if (typingCoroutine != null)
+            StopCoroutine(typingCoroutine);
+
+        pendingChoices = choices;
+        cachedDialogueTexts = new[] { message };
+        currentPage = 0;
+        isLoading = false;
+
+        if (dialoguePanel != null)
+            dialoguePanel.SetActive(true);
+
+        ShowDialogue(0);
+        EnsureChoiceController();
+        choiceController?.ShowChoices(pendingChoices, SelectChoice);
+    }
+
     private void StartDialogueInternal(string[] keys)
     {
         if (keys == null || keys.Length == 0) return;

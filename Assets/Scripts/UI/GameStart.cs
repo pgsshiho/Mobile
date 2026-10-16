@@ -1,18 +1,24 @@
+using TMPro;
 using UnityEngine;
 
-public class GameStart : MonoBehaviour 
-{ 
+public class GameStart : MonoBehaviour
+{
+    public GameObject OpenUI;
+    public TextMeshProUGUI OpenText;
+
+    private bool isStarted = false;
+
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (isStarted)
+            return;
+
+        if (Input.GetMouseButtonDown(0) && isStarted == false)
         {
-            string sceneToLoad = Save.GetSavedScene("Factory");
-            if (Save.instance != null)
-            {
-                Save.instance.LoadGame();
-            }
-            SceneChanger.BG(sceneToLoad);
-            Debug.Log("게임이 시작되었습니다!");
+            isStarted = true;
+
+            OpenUI.SetActive(true);
+            OpenText.gameObject.SetActive(false);
         }
     }
 }

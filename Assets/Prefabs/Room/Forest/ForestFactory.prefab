@@ -2232,7 +2232,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 995ee3dbe51f07946bdc6b9cdd8b6b9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
-  roomType: 4
+  roomType: 16
   zoneType: 0
   roomName: ForestEnemy1
   enemySpawnPoints: []
@@ -2247,6 +2247,7 @@ MonoBehaviour:
   node:
     id: 0
     floor: 0
+    gridPos: {x: 0, y: 0}
     zoneType: 0
     roomType: 0
     cleared: 0

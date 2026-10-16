@@ -24,7 +24,7 @@ public class BattleManager : MonoBehaviour
 
     [Header("Skill Buttons")]
     public GameObject[] skillButtons;
-
+    public GameObject BattleButtonsFrame;
     [Header("Skill EX UI")]
     [Tooltip("각 스킬 버튼을 길게 눌렀을 때 표시할 UI")]
     public GameObject[] battleUIEX;

@@ -98,9 +98,9 @@ public class Unit : MonoBehaviour
 
     [Header("=== 4. 에너지 (Energy) ===")]
     [Tooltip("최대 에너지")]
-    public int energyMax = 100;                 // 최대 에너지
+    public int energyMax = 10;                 // 최대 에너지 치유 가능한 횟수
     [Tooltip("현재 에너지")]
-    public int energyCurrent = 100;             // 현재 에너지
+    public int energyCurrent = 10;             // 현재 에너지 현재 치유 가능한 횟수
 
     [Header("=== 5. 녹 / 산화 (Rust & Oxidation) ===")]
     [Tooltip("녹 확률 (%): 공격/스킬 시 상대에게 녹(산화)을 부여할 확률")]

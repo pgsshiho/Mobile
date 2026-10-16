@@ -122,7 +122,17 @@ public class RoomManager : MonoBehaviour
 
     public void StartRun()
     {
+        if (ChapterManager.instance != null)
+        {
+            currentZone = ChapterManager.instance.GetCurrentZone();
+        }
+
+        // 저장된 시드로 맵을 다시 생성해, 앱을 재실행해도 방의 구조와 종류가 바뀌지 않는다.
+        UnityEngine.Random.State previousRandomState = UnityEngine.Random.state;
+        int mapSeed = Save.GetOrCreateMapSeed(currentZone);
+        UnityEngine.Random.InitState(mapSeed);
         GenerateMap();
+        UnityEngine.Random.state = previousRandomState;
 
         if (allNodes.Count > 0)
         {
@@ -437,6 +447,10 @@ public class RoomManager : MonoBehaviour
         // (오른쪽 위방과 위 오른쪽방이 동일한 좌표 (x, y)의 동일 방을 공유)
         ConnectAllAdjacentRooms(nodes, grid);
 
+        // 보스는 맵의 종단 방이다. 그리드상 여러 방과 인접해도 단 하나의
+        // 진입구만 남겨, 보스 이후에 다른 방으로 진행할 수 없게 만든다.
+        ForceBossDeadEnd(bossNode);
+
         // 4. 시작 방 기준 BFS 거리(floor) 및 nextRooms / previousRoom 설정
         CalculateFloorsAndPathReferences(startNode, nodes);
     }
@@ -621,6 +635,66 @@ public class RoomManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 보스 노드를 단일 진입구를 가진 막다른 방으로 정규화한다.
+    /// 배치 단계에서 단일 진입 좌표를 찾지 못한 경우에도 이 규칙은 유지된다.
+    /// </summary>
+    private void ForceBossDeadEnd(RoomNode boss)
+    {
+        if (boss == null)
+            return;
+
+        RoomNode entrance = boss.forwardRoom ?? boss.backwardRoom ??
+                            boss.leftRoom ?? boss.rightRoom;
+        if (entrance == null)
+            return;
+
+        // 보스와 연결된 다른 인접 방에서 보스 참조를 모두 제거한다.
+        RemoveConnectionToBoss(boss.forwardRoom, boss);
+        RemoveConnectionToBoss(boss.backwardRoom, boss);
+        RemoveConnectionToBoss(boss.leftRoom, boss);
+        RemoveConnectionToBoss(boss.rightRoom, boss);
+
+        boss.forwardRoom = null;
+        boss.backwardRoom = null;
+        boss.leftRoom = null;
+        boss.rightRoom = null;
+
+        // 남긴 진입구의 실제 방향만 다시 양방향으로 연결한다.
+        Vector2Int offset = entrance.gridPos - boss.gridPos;
+        if (offset == Vector2Int.up)
+        {
+            boss.forwardRoom = entrance;
+            entrance.backwardRoom = boss;
+        }
+        else if (offset == Vector2Int.down)
+        {
+            boss.backwardRoom = entrance;
+            entrance.forwardRoom = boss;
+        }
+        else if (offset == Vector2Int.left)
+        {
+            boss.leftRoom = entrance;
+            entrance.rightRoom = boss;
+        }
+        else
+        {
+            boss.rightRoom = entrance;
+            entrance.leftRoom = boss;
+        }
+    }
+
+    private void RemoveConnectionToBoss(RoomNode node, RoomNode boss)
+    {
+        if (node == null || node == boss)
+            return;
+
+        if (node.forwardRoom == boss) node.forwardRoom = null;
+        if (node.backwardRoom == boss) node.backwardRoom = null;
+        if (node.leftRoom == boss) node.leftRoom = null;
+        if (node.rightRoom == boss) node.rightRoom = null;
+    }
+
     private void CalculateFloorsAndPathReferences(
         RoomNode startNode,
         List<RoomNode> nodes)
@@ -694,7 +768,7 @@ public class RoomManager : MonoBehaviour
                 $"Node {currentNode.forwardRoom.id}"
             );
 
-            EnterNode(currentNode.forwardRoom);
+            TryMoveTo(currentNode.forwardRoom);
         }
         MoveSound();
     }
@@ -719,8 +793,7 @@ public class RoomManager : MonoBehaviour
             $"Node {target.id}"
         );
 
-        EnterNode(target);
-        MoveSound();
+        TryMoveTo(target);
     }
 
     public void MoveLeft()
@@ -736,7 +809,7 @@ public class RoomManager : MonoBehaviour
                 $"Node {currentNode.leftRoom.id}"
             );
 
-            EnterNode(currentNode.leftRoom);
+            TryMoveTo(currentNode.leftRoom);
         }
         MoveSound();
     }
@@ -754,7 +827,7 @@ public class RoomManager : MonoBehaviour
                 $"Node {currentNode.rightRoom.id}"
             );
 
-            EnterNode(currentNode.rightRoom);
+            TryMoveTo(currentNode.rightRoom);
         }
         MoveSound();
     }
@@ -768,7 +841,60 @@ public class RoomManager : MonoBehaviour
             index >= currentNode.nextRooms.Count)
             return;
 
-        EnterNode(currentNode.nextRooms[index]);
+        TryMoveTo(currentNode.nextRooms[index]);
+    }
+
+    /// <summary>
+    /// 일반 방은 즉시 이동하고, 보스방은 경고 확인 후에만 진입한다.
+    /// </summary>
+    private void TryMoveTo(RoomNode target)
+    {
+        if (target == null)
+            return;
+
+        if (target.roomType == RoomType.Boss)
+        {
+            ShowBossEntryWarning(target);
+            return;
+        }
+
+        EnterNode(target);
+        MoveSound();
+    }
+
+    /// <summary>
+    /// 기존 DialogueManager와 DialogueChoiceController를 이용해 보스 진입을 확인한다.
+    /// </summary>
+    private void ShowBossEntryWarning(RoomNode bossNode)
+    {
+        if (DialogueManager.instance == null)
+        {
+            Debug.LogWarning("[RoomManager] DialogueManager가 없어 보스방 진입을 보류했습니다.");
+            return;
+        }
+
+        DialogueChoice enterChoice = new DialogueChoice
+        {
+            text = "들어간다",
+            onSelected = new UnityEngine.Events.UnityEvent()
+        };
+        enterChoice.onSelected.AddListener(() =>
+        {
+            EnterNode(bossNode);
+            MoveSound();
+        });
+
+        DialogueManager.instance.ShowMessageWithChoices(
+            "앞은 강한 몬스터가 있는 것 같으며 다시 돌이킬 수 없다.",
+            new[]
+            {
+                enterChoice,
+                new DialogueChoice
+                {
+                    text = "아직이다",
+                    onSelected = new UnityEngine.Events.UnityEvent()
+                }
+            });
     }
 
     public void MoveSound()
@@ -853,6 +979,7 @@ public class RoomManager : MonoBehaviour
         if (currentNode != null)
         {
             currentNode.cleared = true;
+            Save.instance?.SaveGame();
         }
 
         // 전투 종료 후 화살표 갱신
@@ -862,6 +989,40 @@ public class RoomManager : MonoBehaviour
             RoomNavigationUI.instance.Refresh(
                 currentNode
             );
+        }
+
+        // 보스방 클리어 시 챕터 다음 지역으로 이동 또는 챕터 클리어 처리
+        if (currentNode != null && currentNode.roomType == RoomType.Boss)
+        {
+            OnBossRoomCleared();
+        }
+    }
+
+    private void OnBossRoomCleared()
+    {
+        if (ChapterManager.instance != null)
+        {
+            bool hasNextZone = ChapterManager.instance.AdvanceNextZone();
+            if (hasNextZone)
+            {
+                Debug.Log($"<color=cyan>[RoomManager]</color> 보스 격파! 다음 지역({ChapterManager.instance.GetCurrentZone()})으로 이동합니다.");
+                StartCoroutine(TransitionToNextZoneRoutine());
+            }
+            else
+            {
+                Debug.Log("<color=yellow>★ [RoomManager] 챕터의 모든 지역을 클리어했습니다! ★</color>");
+            }
+        }
+    }
+
+    private System.Collections.IEnumerator TransitionToNextZoneRoutine()
+    {
+        // 보상 획득 및 연출을 볼 수 있도록 1.5초 대기 후 다음 지역으로 이동
+        yield return new WaitForSeconds(1.5f);
+        StartRun();
+        if (Save.instance != null)
+        {
+            Save.instance.SaveGame();
         }
     }
 
@@ -957,6 +1118,12 @@ public class RoomManager : MonoBehaviour
             );
             if (enemyPrefab != null)
                 return enemyPrefab;
+        }
+
+        // 해당 Zone에 프리팹 풀이 아직 없는 경우 Forest 풀로 안전 폴백
+        if (zone != ZoneType.Forest)
+        {
+            return GetRandomRoomPrefab(ZoneType.Forest, type);
         }
 
         return null;
@@ -1061,6 +1228,12 @@ public class RoomManager : MonoBehaviour
             {
                 return pool;
             }
+        }
+
+        // 해당 Zone에 적 풀이 아직 등록되지 않은 경우 Forest 적 풀로 폴백
+        if (zone != ZoneType.Forest)
+        {
+            return GetEnemyPool(ZoneType.Forest);
         }
 
         return null;
