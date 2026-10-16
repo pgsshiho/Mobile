@@ -33,8 +33,13 @@ public class AudioManager : MonoBehaviour
 
     private void Awake()
     {
+        if (instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
         instance = this;
-
+        DontDestroyOnLoad(gameObject);
         SaveData saveData = Save.GetSaveData();
         nowMasterVolume = saveData != null ? saveData.masterVolume : PlayerPrefs.GetFloat("Master", 1f);
         nowBGMVolume = saveData != null ? saveData.bgmVolume : PlayerPrefs.GetFloat("BGM", 1f);
@@ -52,6 +57,7 @@ public class AudioManager : MonoBehaviour
         SetMaster(nowMasterVolume);
         SetBGM(nowBGMVolume);
         SetSFX(nowSFXVolume);
+
     }
 
     public void SetMaster(float value)
@@ -123,5 +129,34 @@ public class AudioManager : MonoBehaviour
         if (data == null) return;
         apply(data);
         Save.CommitSave();
+    }
+
+    public void OnChild()
+    {
+        Canvas canvas = GetComponentInChildren<Canvas>(true);
+
+        if (canvas == null)
+        {
+            Debug.LogError("Canvas를 찾을 수 없음");
+            return;
+        }
+
+        canvas.gameObject.SetActive(true);
+        canvas.enabled = true;
+    }
+
+    public void OffChild()
+    {
+        Debug.Log("OffChild 실행");
+
+        Canvas canvas = GetComponentInChildren<Canvas>(true);
+
+        if (canvas == null)
+        {
+            Debug.LogError($"{gameObject.name}에서 Canvas를 찾지 못함");
+            return;
+        }
+
+        canvas.enabled = false;
     }
 }

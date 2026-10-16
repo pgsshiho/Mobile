@@ -54,7 +54,7 @@ public class MainmenuManager : MonoBehaviour
         if (data == null)
         {
             Debug.LogWarning("저장 데이터가 없습니다. 슬롯: " + savefile);
-            return;
+            SceneChanger.BG("Forest");
         }
 
         if (string.IsNullOrEmpty(data.savedScene))

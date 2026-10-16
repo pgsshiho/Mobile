@@ -54,7 +54,7 @@ public class SaveData
     public List<int> clearedNodeIds = new List<int>();
     public int money = 0;
     public int material = 0;
-    public string savedScene = "Factory";
+    public string savedScene = "Forest";
     public List<string> partySlotUnitNames = new List<string>();
     public List<SavedItemEntry> inventory = new List<SavedItemEntry>();
     public List<SavedUnitEntry> partyUnitStates = new List<SavedUnitEntry>();
@@ -92,6 +92,7 @@ public class Save : MonoBehaviour
         instance = this;
         DontDestroyOnLoad(gameObject);
         EnsureDataLoaded();
+        EnsureChapterManager();
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
@@ -99,6 +100,19 @@ public class Save : MonoBehaviour
     {
         if (instance == this)
             SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    /// <summary>
+    /// 모든 플레이 씬에서 챕터 진행 관리자가 항상 존재하도록 보장한다.
+    /// 씬에 별도로 배치된 ChapterManager가 있으면 그 인스턴스를 그대로 사용한다.
+    /// </summary>
+    private static void EnsureChapterManager()
+    {
+        if (ChapterManager.instance != null)
+            return;
+
+        GameObject managerObject = new GameObject("ChapterManager");
+        managerObject.AddComponent<ChapterManager>();
     }
 
     private void OnApplicationPause(bool paused)

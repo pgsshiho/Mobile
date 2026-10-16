@@ -299,10 +299,9 @@ public class PlayerUnit :
     // 아군 클릭
     public void OnPointerClick(PointerEventData eventData)
     {
-        base.AttackFocus(this.gameObject);
         if (TurnManager.instance == null || !TurnManager.instance.waitingForTarget)
             return;
-
+        base.AttackFocus(this.gameObject);
         Unit current = TurnManager.instance.currentUnit;
         if (!(current is PlayerUnit) || health <= 0)
             return;

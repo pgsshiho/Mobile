@@ -13,7 +13,7 @@ public class GameStart : MonoBehaviour
         if (isStarted)
             return;
 
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && isStarted == false)
         {
             isStarted = true;
 

@@ -59,6 +59,58 @@ MonoBehaviour:
     m_Key: Can
     m_Metadata:
       m_Items: []
+  - m_Id: 56276386583117824
+    m_Key: MoveTuto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56314693711003648
+    m_Key: FightTuto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56493937409884160
+    m_Key: CanSkillTuto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56494019131703296
+    m_Key: CanMoveTuto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56663110379339776
+    m_Key: EP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56663934077730816
+    m_Key: AP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56670912963379200
+    m_Key: DP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56675404429623296
+    m_Key: SAM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56675567915204608
+    m_Key: CC
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56675630603272192
+    m_Key: AC
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56675683891904512
+    m_Key: DC
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56675765097824256
+    m_Key: Speed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56855418970275840
+    m_Key: Left Fuel
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

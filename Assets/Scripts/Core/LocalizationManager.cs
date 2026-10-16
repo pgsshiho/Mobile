@@ -14,7 +14,7 @@ public static class LocalizationManager
         if (string.IsNullOrEmpty(key))
             return string.Empty;
 
-        var table = LocalizationSettings.StringDatabase.GetTable("UI");
+        var table = LocalizationSettings.StringDatabase.GetTable("En");
 
         if (table == null)
         {

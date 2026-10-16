@@ -27,7 +27,10 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 42894728614084608
-    m_Localized: 
+    m_Localized: 'You can move to the room in that direction by clicking the arrow
+      shown nearby.
+
+'
     m_Metadata:
       m_Items: []
   - m_Id: 43611436949667840
@@ -63,6 +66,76 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 55931970366439424
     m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56276386583117824
+    m_Localized: 'You can move to the room in that direction by clicking the arrow
+      shown nearby.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56314693711003648
+    m_Localized: 'Once battle begins, you cannot flee you must defeat all enemies
+      by utilizing the skills listed below.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56493937409884160
+    m_Localized: Please note that each skill has specific usable positions and attack
+      ranges.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56494019131703296
+    m_Localized: 'As the number of party members increases, you will need to move
+      them to positions from which they can attack.
+
+      Press this button and
+      then select a location to move a unit.
+
+      Please note that each unit has
+      its own movement limitations.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56663110379339776
+    m_Localized: Emergency Power
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56663934077730816
+    m_Localized: Attack Power
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56670912963379200
+    m_Localized: Defence Power
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56675404429623296
+    m_Localized: Special Armor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56675567915204608
+    m_Localized: Critical Chance
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56675630603272192
+    m_Localized: Accuracy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56675683891904512
+    m_Localized: Dodge Chance
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56675765097824256
+    m_Localized: Speed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56855418970275840
+    m_Localized: 'Remaining number of possible healings
+
+'
     m_Metadata:
       m_Items: []
   references:

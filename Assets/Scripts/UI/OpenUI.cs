@@ -11,7 +11,9 @@ public class OpenUI : MonoBehaviour
 
         foreach (GameObject ui in uiObjects)
         {
-            if (ui != null) ui.SetActive(true);
+            if (ui == null) continue;
+            ui.SetActive(true);
+            PartymenuSpawn.NotifyPanelState(ui);
         }
     }
 
@@ -22,7 +24,9 @@ public class OpenUI : MonoBehaviour
 
         foreach (GameObject ui in uiObjects)
         {
-            if (ui != null) ui.SetActive(false);
+            if (ui == null) continue;
+            ui.SetActive(false);
+            PartymenuSpawn.NotifyPanelState(ui);
         }
     }
 
@@ -33,7 +37,27 @@ public class OpenUI : MonoBehaviour
 
         foreach (GameObject ui in uiObjects)
         {
-            if (ui != null) ui.SetActive(!ui.activeSelf);
+            if (ui == null) continue;
+            ui.SetActive(!ui.activeSelf);
+            PartymenuSpawn.NotifyPanelState(ui);
         }
+    }
+
+    public void OnSetting()
+    {
+        Debug.Log("OnSetting called");
+        if (AudioManager.instance != null)
+            AudioManager.instance.OnChild();
+        else
+            Debug.LogWarning("AudioManager instance is null. Cannot call OnChild().");
+    }
+    public void OffSetting()
+    {
+        Debug.Log("OffSetting called");
+        if (AudioManager.instance != null)
+            AudioManager.instance.OffChild();
+        else
+            Debug.LogWarning("AudioManager instance is null. Cannot call OffChild().");
+
     }
 }
