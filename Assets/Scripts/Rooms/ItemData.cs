@@ -20,9 +20,10 @@ public class ItemData : ScriptableObject
 {
     [Header("Info")]
     public string itemName;
-    public string description;
     public Sprite icon;
 
+    [Header("보유량")]
+    public int currentCount;
     [Header("Effect")]
     public ItemEffectType effectType;
 

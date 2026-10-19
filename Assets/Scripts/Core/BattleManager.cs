@@ -51,6 +51,10 @@ public class BattleManager : MonoBehaviour
     private TMP_Text[] battleUIEXTexts;
 
     private bool isSelectingFormationMove;
+    private BackpackUIManager itemTargetSelector;
+
+    /// <summary>인벤토리 아이템의 아군 대상을 고르는 중인지 여부입니다.</summary>
+    public bool IsSelectingItemTarget => itemTargetSelector != null;
 
     // 전투 규칙은 UI/씬 참조 없이 별도 객체에 둔다.
     private readonly BattleTargetingRules targetingRules =
@@ -349,6 +353,65 @@ public class BattleManager : MonoBehaviour
                 enemyColumns[enemy] = i;
             }
         }
+    }
+
+    // =========================================================
+    // Inventory Item Targeting
+    // =========================================================
+
+    /// <summary>
+    /// 아이템 선택 후 현재 파티를 전투 슬롯에 배치하고, 아군 클릭을 기다립니다.
+    /// 아이템 사용은 턴/스킬 선택과 분리되어 있어 기존 타겟 선택 로직을 덮어쓰지 않습니다.
+    /// </summary>
+    public bool BeginItemTargetSelection(BackpackUIManager selector)
+    {
+        if (selector == null || PartyManager.instance == null || PartyManager.instance.partySlots == null)
+            return false;
+
+        if (Party == null || Party.Length == 0)
+        {
+            Debug.LogWarning("[BattleManager] 아이템 대상 선택용 파티 스폰 위치가 설정되어 있지 않습니다.");
+            return false;
+        }
+
+        PartyManager.instance.PlacePartyAtPositions(Party);
+        itemTargetSelector = selector;
+        Debug.Log("[아이템] 사용할 아군 로봇을 선택하세요.");
+        return true;
+    }
+
+    /// <summary>PlayerUnit 클릭에서 호출됩니다. 아이템 선택을 처리했으면 true를 반환합니다.</summary>
+    public bool TryHandleItemTarget(Unit target)
+    {
+        if (itemTargetSelector == null)
+            return false;
+
+        if (target == null || target.health <= 0 || !IsCurrentPartyMember(target))
+            return true;
+
+        if (itemTargetSelector.ApplySelectedItemTo(target))
+            itemTargetSelector = null;
+
+        return true;
+    }
+
+    public void CancelItemTargetSelection()
+    {
+        itemTargetSelector = null;
+    }
+
+    private bool IsCurrentPartyMember(Unit target)
+    {
+        if (PartyManager.instance == null || PartyManager.instance.partySlots == null)
+            return false;
+
+        foreach (Unit unit in PartyManager.instance.partySlots)
+        {
+            if (unit == target)
+                return true;
+        }
+
+        return false;
     }
 
 
@@ -827,6 +890,7 @@ public class BattleManager : MonoBehaviour
     public void EndBattle(bool win)
     {
         isBattle = false;
+        CancelItemTargetSelection();
 
         HideBattleUIEX();
 

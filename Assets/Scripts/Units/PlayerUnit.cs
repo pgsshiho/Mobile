@@ -299,6 +299,11 @@ public class PlayerUnit :
     // 아군 클릭
     public void OnPointerClick(PointerEventData eventData)
     {
+        // 인벤토리 아이템의 아군 대상 선택은 턴 대기 상태와 무관하게 먼저 처리한다.
+        if (BattleManager.instance != null &&
+            BattleManager.instance.TryHandleItemTarget(this))
+            return;
+
         if (TurnManager.instance == null || !TurnManager.instance.waitingForTarget)
             return;
         base.AttackFocus(this.gameObject);

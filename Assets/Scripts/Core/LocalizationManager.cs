@@ -18,7 +18,7 @@ public static class LocalizationManager
 
         if (table == null)
         {
-            Debug.LogWarning("Localization Table 'UI'를 찾을 수 없습니다.");
+            Debug.LogWarning("Localization Table 'En'를 찾을 수 없습니다.");
             return key;
         }
 
@@ -31,5 +31,28 @@ public static class LocalizationManager
         }
 
         return entry.GetLocalizedString();
+    }
+    public static string GetLocalizedString(string key, params object[] arguments)
+    {
+        if (string.IsNullOrEmpty(key))
+            return string.Empty;
+
+        var table = LocalizationSettings.StringDatabase.GetTable("En");
+
+        if (table == null)
+        {
+            Debug.LogWarning("Localization Table 'En'를 찾을 수 없습니다.");
+            return key;
+        }
+
+        var entry = table.GetEntry(key);
+
+        if (entry == null)
+        {
+            Debug.LogWarning($"Localization Key '{key}'를 찾을 수 없습니다.");
+            return key;
+        }
+
+        return entry.GetLocalizedString(arguments);
     }
 }

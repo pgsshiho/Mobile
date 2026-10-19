@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
-
+using System;
 /// <summary>
 /// 아이템 인벤토리 및 아이템 효과 적용을 관리합니다. 재화(골드·재료)는 CurrencyManager에서 담당합니다.
 /// </summary>
 public class ItemManager : MonoBehaviour
 {
+    public event Action OnInventoryChanged;
     public static ItemManager Instance;
 
     [Header("Inventory")]
@@ -47,6 +48,7 @@ public class ItemManager : MonoBehaviour
                 }
             }
         }
+        OnInventoryChanged?.Invoke();
     }
 
     public void SaveToData()
@@ -125,6 +127,10 @@ public class ItemManager : MonoBehaviour
                 QuestManager.Instance.NotifyItemObtained(need.Value, 1);
             }
         }
+        SaveToData();
+        OnInventoryChanged?.Invoke();
+
+        Debug.Log($"아이템 획득: {item.itemName}");
         return true;
     }
 
@@ -201,7 +207,7 @@ public class ItemManager : MonoBehaviour
             SaveToData();
             Debug.Log($"{item.itemName} 사용 완료 → {target.Unitname}");
         }
-
+        OnInventoryChanged?.Invoke();
         return success;
     }
 

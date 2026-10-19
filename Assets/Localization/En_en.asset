@@ -54,10 +54,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 55910292961853440
-    m_Localized: 'Are you sure you want to delete the save data?
-
-      Once deleted,
-      it cannot be restored.'
+    m_Localized: Once deleted, it cannot be restored.
     m_Metadata:
       m_Items: []
   - m_Id: 55931906613018624
@@ -134,6 +131,12 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 56855418970275840
     m_Localized: 'Remaining number of possible healings
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 57958859838816256
+    m_Localized: 'Do you want to delete the save data?
 
 '
     m_Metadata:
