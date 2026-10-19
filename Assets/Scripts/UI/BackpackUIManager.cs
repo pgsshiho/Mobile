@@ -230,30 +230,45 @@ public class BackpackUIManager : MonoBehaviour, ICurrencyHolder
             DialogueManager.instance.choiceController?.HideChoices();
     }
 
+
     private void ShowChoiceMenu(RectTransform sourceButton)
     {
+        Debug.Log("[BackpackUI] ShowChoiceMenu 진입");
+
         if (DialogueManager.instance == null)
         {
-            Debug.LogWarning("[BackpackUI] DialogueManager가 없어 아이템 선택지를 표시할 수 없습니다.");
+            Debug.LogError("[BackpackUI] DialogueManager.instance가 null");
             return;
         }
 
         DialogueManager.instance.EnsureChoiceController();
-        DialogueChoiceController controller = DialogueManager.instance.choiceController;
+
+        DialogueChoiceController controller =
+            DialogueManager.instance.choiceController;
+
         if (controller == null)
+        {
+            Debug.LogError("[BackpackUI] choiceController가 null");
             return;
+        }
+
+        Debug.Log(
+            $"[BackpackUI] Controller={controller.name}, " +
+            $"Active={controller.gameObject.activeInHierarchy}, " +
+            $"Buttons={controller.choiceButtons?.Length}"
+        );
 
         RectTransform choiceRect = controller.choicePanel != null
             ? controller.choicePanel.GetComponent<RectTransform>()
             : controller.GetComponent<RectTransform>();
+
         if (choiceRect != null && sourceButton != null)
         {
             Canvas.ForceUpdateCanvases();
+
             Vector3[] corners = new Vector3[4];
             sourceButton.GetWorldCorners(corners);
 
-            // 아이템 버튼의 우측 중앙을 기준점으로 사용한다.
-            // 기존 ChoicePanel의 세로 버튼 배치가 그대로 유지된다.
             choiceRect.position = (corners[2] + corners[3]) * 0.5f;
         }
 
@@ -271,12 +286,16 @@ public class BackpackUIManager : MonoBehaviour, ICurrencyHolder
         };
         cancelChoice.onSelected.AddListener(CancelItemUse);
 
-        controller.ShowChoices(new[] { useChoice, cancelChoice }, choice =>
-        {
-            choice?.onSelected?.Invoke();
-            controller.HideChoices();
-        });
+        controller.ShowChoices(
+            new[] { useChoice, cancelChoice },
+            choice =>
+            {
+                choice?.onSelected?.Invoke();
+                controller.HideChoices();
+            }
+        );
     }
+
 
     private void BindItemButtons()
     {

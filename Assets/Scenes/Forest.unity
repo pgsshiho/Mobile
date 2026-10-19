@@ -11837,6 +11837,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 761156508642899825, guid: ac6872aeecccee84ea572e21f185bfeb, type: 3}
   m_PrefabInstance: {fileID: 1887164026302388573}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1522377653 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 910000000000000001, guid: ac6872aeecccee84ea572e21f185bfeb, type: 3}
+  m_PrefabInstance: {fileID: 1887164026302388573}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1522377651}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b297e5f346967744b80b222f2b34fd53, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueChoiceController
 --- !u!1 &1525462382
 GameObject:
   m_ObjectHideFlags: 0
@@ -15842,6 +15853,10 @@ PrefabInstance:
       propertyPath: dialoguePanel
       value: 
       objectReference: {fileID: 427792357}
+    - target: {fileID: 5481276736103425363, guid: 92c73c42e85268e49b2d8f7eb459818c, type: 3}
+      propertyPath: choiceController
+      value: 
+      objectReference: {fileID: 1522377653}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

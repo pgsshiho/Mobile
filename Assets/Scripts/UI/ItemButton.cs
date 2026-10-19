@@ -14,11 +14,14 @@ public class ItemButton : MonoBehaviour
     public void OnClick()
     {
         if (backpackUI == null || item == null)
+        {
+            Debug.Log("BackpackUI or Item is not set.");
             return;
-
+        }
         backpackUI.UsdeItemCheck(
             item,
             GetComponent<RectTransform>()
         );
+        Debug.Log($"ItemButton clicked: {item.data.itemName}");
     }
 }
