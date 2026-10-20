@@ -58,4 +58,25 @@ public class RoomRewardData : ScriptableObject
 
         return (rolledMoney, rolledMaterial, rolledItems);
     }
+
+    /// <summary>전투 승리 보상 규칙을 적용합니다: 0~3종, 각 종류당 1~3개.</summary>
+    public (int money, int material, List<ItemData> items) RollBattleRewards()
+    {
+        int rolledMoney = maxMoney >= minMoney
+            ? UnityEngine.Random.Range(minMoney, maxMoney + 1)
+            : minMoney;
+
+        int rolledMaterial = maxMaterial >= minMaterial
+            ? UnityEngine.Random.Range(minMaterial, maxMaterial + 1)
+            : minMaterial;
+        List<ItemData> candidates = new List<ItemData>();
+
+        foreach (ItemDropEntry entry in dropItems)
+        {
+            if (entry?.item != null)
+                candidates.Add(entry.item);
+        }
+
+        return (rolledMoney, rolledMaterial, BattleItemRewardGenerator.Roll(candidates));
+    }
 }

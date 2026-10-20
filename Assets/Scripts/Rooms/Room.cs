@@ -205,6 +205,35 @@ public class Room : MonoBehaviour
         }
     }
 
+    /// <summary>전투 승리 보상용 롤입니다. 일반 방 보상 확률 롤과 구분됩니다.</summary>
+    public void GenerateAndOpenBattleReward()
+    {
+        (int money, int material, List<ItemData> items) rewards;
+        if (rewardData != null)
+        {
+            rewards = rewardData.RollBattleRewards();
+        }
+        else
+        {
+            List<ItemData> candidates = new List<ItemData>();
+            foreach (ItemDropEntry entry in dropItems)
+            {
+                if (entry?.item != null)
+                    candidates.Add(entry.item);
+            }
+
+            int money = maxMoney >= minMoney ? Random.Range(minMoney, maxMoney + 1) : minMoney;
+            int material = maxMaterial >= minMaterial ? Random.Range(minMaterial, maxMaterial + 1) : minMaterial;
+            rewards = (money, material, BattleItemRewardGenerator.Roll(candidates));
+        }
+
+        if (Reward.Instance != null)
+        {
+            Reward.Instance.SetRewards(rewards.money, rewards.material, rewards.items);
+            Reward.Instance.RewardOpen();
+        }
+    }
+
     private void HealAllParty(float percent)
     {
         if (PartyManager.instance == null || PartyManager.instance.partySlots == null) return;

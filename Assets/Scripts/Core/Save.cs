@@ -365,7 +365,7 @@ public class Save : MonoBehaviour
         return "";
     }
 
-    public static string GetSavedScene(string defaultScene = "Factory")
+    public static string GetSavedScene(string defaultScene = "Forest")
     {
         SaveData data = GetSaveData();
         return string.IsNullOrEmpty(data.savedScene) ? defaultScene : data.savedScene;

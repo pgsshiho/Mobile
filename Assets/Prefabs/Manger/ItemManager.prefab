@@ -44,4 +44,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0fe0fb3c2bbf63e47870f5d5bc7e54ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemManager
-  inventory: []
+  inventory:
+  - data: {fileID: 0}
+    count: 0
+    usedCount: 0
+  - data: {fileID: 0}
+    count: 0
+    usedCount: 0
+  - data: {fileID: 0}
+    count: 0
+    usedCount: 0
+  - data: {fileID: 0}
+    count: 0
+    usedCount: 0
+  - data: {fileID: 0}
+    count: 0
+    usedCount: 0
+  - data: {fileID: 0}
+    count: 0
+    usedCount: 0
+  - data: {fileID: 0}
+    count: 0
+    usedCount: 0
+  - data: {fileID: 0}
+    count: 0
+    usedCount: 0
+  - data: {fileID: 0}
+    count: 0
+    usedCount: 0
+  - data: {fileID: 0}
+    count: 0
+    usedCount: 0
+  - data: {fileID: 0}
+    count: 0
+    usedCount: 0

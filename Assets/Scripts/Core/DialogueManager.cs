@@ -51,31 +51,10 @@ public class DialogueManager : MonoBehaviour
     /// </summary>
     public void EnsureChoiceController()
     {
+        // Inspector에서 연결한 choiceController를 그대로 사용
         if (choiceController == null)
         {
-            choiceController = FindObjectOfType<DialogueChoiceController>(true);
-        }
-
-        if (choiceController == null)
-        {
-            GameObject choiceObj = GameObject.Find("ChoisPnale") ?? GameObject.Find("ChoicePanel") ?? GameObject.Find("Choice Panel");
-            if (choiceObj == null)
-            {
-                var allTransforms = Resources.FindObjectsOfTypeAll<Transform>();
-                foreach (var t in allTransforms)
-                {
-                    if (t.gameObject.scene.IsValid() && (t.name == "ChoisPnale" || t.name == "ChoicePanel" || t.name == "Choice Panel"))
-                    {
-                        choiceObj = t.gameObject;
-                        break;
-                    }
-                }
-            }
-
-            if (choiceObj != null)
-            {
-                choiceController = choiceObj.GetComponent<DialogueChoiceController>() ?? choiceObj.AddComponent<DialogueChoiceController>();
-            }
+            Debug.LogWarning("DialogueChoiceController가 연결되지 않았습니다.", this);
         }
     }
 

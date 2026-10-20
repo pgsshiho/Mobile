@@ -177,11 +177,24 @@ public class BackpackUIManager : MonoBehaviour, ICurrencyHolder
 
     public void UsdeItemCheck(ItemRuntime item, RectTransform buttonRect)
     {
+        Debug.Log(
+            $"[아이템 검사] item={item != null}, " +
+            $"data={item?.data != null}, " +
+            $"count={item?.count}, " +
+            $"buttonRect={buttonRect != null}"
+        );
+
         if (item == null || item.data == null || item.count <= 0)
+        {
+            Debug.LogWarning("[아이템 검사] 아이템이 없거나 개수가 0입니다.");
             return;
+        }
 
         if (buttonRect == null)
+        {
+            Debug.LogWarning("[아이템 검사] 버튼의 RectTransform이 없습니다.");
             return;
+        }
 
         current = item;
         ShowChoiceMenu(buttonRect);
@@ -233,11 +246,9 @@ public class BackpackUIManager : MonoBehaviour, ICurrencyHolder
 
     private void ShowChoiceMenu(RectTransform sourceButton)
     {
-        Debug.Log("[BackpackUI] ShowChoiceMenu 진입");
-
         if (DialogueManager.instance == null)
         {
-            Debug.LogError("[BackpackUI] DialogueManager.instance가 null");
+            Debug.LogError("[BackpackUI] DialogueManager.instance가 null입니다.");
             return;
         }
 
@@ -248,16 +259,11 @@ public class BackpackUIManager : MonoBehaviour, ICurrencyHolder
 
         if (controller == null)
         {
-            Debug.LogError("[BackpackUI] choiceController가 null");
+            Debug.LogError("[BackpackUI] choiceController가 연결되지 않았습니다.");
             return;
         }
 
-        Debug.Log(
-            $"[BackpackUI] Controller={controller.name}, " +
-            $"Active={controller.gameObject.activeInHierarchy}, " +
-            $"Buttons={controller.choiceButtons?.Length}"
-        );
-
+        // 선택지 UI 위치 설정
         RectTransform choiceRect = controller.choicePanel != null
             ? controller.choicePanel.GetComponent<RectTransform>()
             : controller.GetComponent<RectTransform>();
@@ -272,31 +278,33 @@ public class BackpackUIManager : MonoBehaviour, ICurrencyHolder
             choiceRect.position = (corners[2] + corners[3]) * 0.5f;
         }
 
+        // Localization Key로 번역된 선택지 생성
         DialogueChoice useChoice = new DialogueChoice
         {
-            text = "사용한다",
-            onSelected = new UnityEvent()
+            text = LocalizationManager.GetLocalizedString("한다"),
+            onSelected = new UnityEngine.Events.UnityEvent()
         };
+
         useChoice.onSelected.AddListener(UsdeItem);
 
         DialogueChoice cancelChoice = new DialogueChoice
         {
-            text = "안한다",
-            onSelected = new UnityEvent()
+            text = LocalizationManager.GetLocalizedString("안한다"),
+            onSelected = new UnityEngine.Events.UnityEvent()
         };
+
         cancelChoice.onSelected.AddListener(CancelItemUse);
 
         controller.ShowChoices(
             new[] { useChoice, cancelChoice },
             choice =>
             {
-                choice?.onSelected?.Invoke();
+                // 선택한 뒤 UI를 닫고 선택 동작 실행
                 controller.HideChoices();
+                choice?.onSelected?.Invoke();
             }
         );
     }
-
-
     private void BindItemButtons()
     {
         if (itemManager == null || itemManager.inventory == null)

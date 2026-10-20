@@ -83,6 +83,14 @@ public class BattleManager : MonoBehaviour
         HideBattleUIEX();
     }
 
+    private void Update()
+    {
+        if (IsSelectingItemTarget && Input.GetKeyDown(KeyCode.Escape))
+        {
+            itemTargetSelector.CancelItemUse();
+        }
+    }
+
 
     // =========================================================
     // Skill Button Cache
@@ -918,7 +926,7 @@ public class BattleManager : MonoBehaviour
                 {
                     RoomManager.instance
                         .currentRoom
-                        .GenerateAndOpenReward();
+                        .GenerateAndOpenBattleReward();
                 }
                 else if (Reward.Instance != null)
                 {

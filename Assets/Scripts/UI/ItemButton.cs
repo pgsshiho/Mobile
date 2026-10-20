@@ -1,5 +1,6 @@
 using UnityEngine;
 
+/// <summary>아이템 슬롯 UI와 인벤토리 런타임 데이터를 연결하는 얇은 어댑터입니다.</summary>
 public class ItemButton : MonoBehaviour
 {
     public BackpackUIManager backpackUI;
@@ -13,15 +14,24 @@ public class ItemButton : MonoBehaviour
 
     public void OnClick()
     {
-        if (backpackUI == null || item == null)
+        Debug.Log(
+            $"[ItemButton] backpackUI={backpackUI != null}, " +
+            $"item={item != null}, " +
+            $"itemData={item?.data != null}"
+        );
+
+        if (backpackUI == null)
         {
-            Debug.Log("BackpackUI or Item is not set.");
+            Debug.LogError("[ItemButton] backpackUI가 연결되지 않았습니다.");
             return;
         }
-        backpackUI.UsdeItemCheck(
-            item,
-            GetComponent<RectTransform>()
-        );
-        Debug.Log($"ItemButton clicked: {item.data.itemName}");
+
+        if (item == null)
+        {
+            Debug.LogError("[ItemButton] item이 연결되지 않았습니다.");
+            return;
+        }
+
+        backpackUI.UsdeItemCheck(item, GetComponent<RectTransform>());
     }
 }

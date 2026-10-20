@@ -86,6 +86,8 @@ public class TurnManager : MonoBehaviour
 
         currentUnit = turnList[currentTurnIndex];
 
+        ItemManager.Instance?.BeginTurn();
+
         if (currentUnit == null ||
             currentUnit.health <= 0)
         {
