@@ -97,7 +97,16 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
 
     public void OnEnable()
     {
-        FocusManager.RequestFocusOut += FocusOut;
+        FocusManager.RequestFocusOut += OnRequestFocusOut;
+    }
+
+    private void OnRequestFocusOut()
+    {
+        // 로봇 선택 중일 때는 다이얼로그 닫힘 등으로 인한 외부 FocusOut 요청을 무시합니다.
+        if (BattleManager.instance != null && BattleManager.instance.IsSelectingFixerTarget)
+            return;
+
+        FocusOut();
     }
     /// <summary>
     /// 현재 파티 로봇을 Fixer 전용 위치에 배치
@@ -149,7 +158,7 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
     }
     public void OnDisable()
     {
-        FocusManager.RequestFocusOut -= FocusOut;
+        FocusManager.RequestFocusOut -= OnRequestFocusOut;
 
         if (BattleManager.instance != null && BattleManager.instance.IsSelectingFixerTarget)
         {
@@ -321,19 +330,18 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
             return;
         }
 
-        // 파티원 선택 모드 시작
-        // BattleManager에서 수리용 파티원을 배치하도록 처리
-        if (!BattleManager.instance.BeginFixerSelector(this))
-        {
-            Debug.LogWarning("[Fixer] 수리할 파티원을 선택할 수 없습니다.");
-            return;
-        }
-
         if (DialogueManager.instance != null)
             DialogueManager.instance.CloseDialogue();
 
-        Debug.Log("[Fixer] 수리할 로봇을 선택하세요.");
         HideInteractionUI();
+
+        // 파티원 선택 모드 시작 및 배치
+        if (!BattleManager.instance.BeginFixerSelector(this))
+        {
+            Debug.LogWarning("[Fixer] 수리할 파티원을 선택할 수 없습니다.");
+            RestoreInteractionUI();
+            return;
+        }
     }
     /// <summary>
     /// 구매 조건 확인 (파티 정원 4명 검사 -> 재화 검사 -> Action으로 모든 FactoryAddUnit의 CanClick 활성화)
@@ -381,11 +389,6 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
     public void FocusOut()
     {
         if (IsTweening || currentFocusedTarget == null) return;
-
-        if (BattleManager.instance != null && BattleManager.instance.IsSelectingFixerTarget)
-        {
-            BattleManager.instance.CancelFixerTargetSelection();
-        }
 
         IsTweening = true;
         FocusableObject focusable = currentFocusedTarget;

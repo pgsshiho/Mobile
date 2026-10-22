@@ -488,6 +488,8 @@ public class BattleManager : MonoBehaviour
 
         selectedFixer.RecallRepairParty();
         selectedFixer.RestoreInteractionUI();
+        selectedFixer.FocusOut();
+        Debug.Log("[Fixer] 수리 대상 선택이 취소되었습니다.");
     }
     /// <summary>PlayerUnit 클릭에서 호출됩니다. 아이템 선택을 처리했으면 true를 반환합니다.</summary>
     public bool TryHandleItemTarget(Unit target)
