@@ -120,9 +120,6 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
             return;
         }
 
-        // 기존 수리용 소환 유닛이 남아 있다면 먼저 회수
-        RecallRepairParty();
-
         PartyManager.instance.PlacePartyAtPositions(
             repairSpawnPositions
         );
@@ -186,15 +183,15 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
     /// <summary>
     /// 플레이어가 선택한 로봇을 전달받아 Inspector 이벤트를 실행합니다.
     /// </summary>
-    public void OnRobotSelected(Unit target)
+    public bool OnRobotSelected(Unit target)
     {
         if (target == null)
-            return;
+            return false;
 
         if (CurrencyManager.instance == null)
         {
             Debug.LogWarning("[Fixer] CurrencyManager가 없습니다.");
-            return;
+            return false;
         }
 
         bool hasGold =
@@ -214,7 +211,7 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
                 DialogueManager.instance.StartDialogue(
                     new string[] { noMoneyDialogueKey });
 
-            return;
+            return false;
         }
 
         // 수리 비용 결제
@@ -226,19 +223,17 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
             CurrencyManager.instance.SpendCurrency(
                 CurrencyType.Material, requiredMaterial);
 
-        // 선택한 로봇 완전 회복
+        // 선택한 로봇 최대체력까지 치유
         current = target;
         current.health = current.maxHealth;
 
         Debug.Log(
-            $"[Fixer] {current.Unitname} 수리 완료 " +
-            $"({current.health}/{current.maxHealth})");
+            $"[Fixer] {current.Unitname} 수리 완료 - 최대체력({current.health}/{current.maxHealth})까지 치유되었습니다.");
 
         // Inspector 이벤트 실행
         onRobotSelected?.Invoke(current);
 
-        // 수리 완료 후 상호작용 종료 및 포커스 아웃
-        FocusOut();
+        return true;
     }
     private void FocusIn(GameObject target)
     {
@@ -383,7 +378,7 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    private void FocusOut()
+    public void FocusOut()
     {
         if (IsTweening || currentFocusedTarget == null) return;
 

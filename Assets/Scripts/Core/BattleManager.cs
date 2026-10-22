@@ -422,10 +422,11 @@ public class BattleManager : MonoBehaviour
         // 다른 대상 선택 작업과 중복되지 않도록 정리
         itemTargetSelector = null;
         fixerTargetSelector = selector;
+
+        Debug.Log("[Fixer] 수리할 로봇을 선택하세요.");
+
         // 파티원 소환 및 배치
         selector.PlacePartyAtRepairPositions();
-
-        Debug.Log("[Fixer] 대상을 선택하세요.");
 
         return true;
     }
@@ -460,12 +461,20 @@ public class BattleManager : MonoBehaviour
             rc.myUI.SetActive(false);
         }
 
-        // 1. 소환된 파티 유닛 회수
+        // 1. 선택된 로봇 수리 (최대체력까지 치유)
+        bool repairSuccess = selectedFixer.OnRobotSelected(target);
+
+        // 2. 파티 유닛 회수
         selectedFixer.RecallRepairParty();
-        // 2. 숨겼던 UI 복구
+
+        // 3. 원래 있던 UI 다시 켜기 (복구)
         selectedFixer.RestoreInteractionUI();
-        // 3. 선택된 로봇 수리 처리
-        selectedFixer.OnRobotSelected(target);
+
+        // 4. 수리 완료 후 상호작용 포커스 아웃
+        if (repairSuccess)
+        {
+            selectedFixer.FocusOut();
+        }
 
         return true;
     }
