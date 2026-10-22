@@ -193,4 +193,20 @@ public class PartyManager : MonoBehaviour
             partySlots[i].gameObject.SetActive(true);
         }
     }
+
+    /// <summary>
+    /// 필드에 배치된 파티 유닛들을 비활성화하여 회수합니다.
+    /// </summary>
+    public void RecallParty()
+    {
+        if (partySlots == null) return;
+
+        for (int i = 0; i < partySlots.Length; i++)
+        {
+            if (partySlots[i] != null && partySlots[i].gameObject.scene.IsValid())
+            {
+                partySlots[i].gameObject.SetActive(false);
+            }
+        }
+    }
 }

@@ -38,6 +38,15 @@ public class BattleManager : MonoBehaviour
     public AudioSource bgmSource;
     public AudioClip battleBgm;
 
+    private Fixer fixerTargetSelector;
+    private int lastTargetHandledFrame = -1;
+
+    public bool IsSelectingFixerTarget =>
+        fixerTargetSelector != null;
+
+    /// <summary>아이템이나 Fixer 등 대상을 선택 중이거나 이번 프레임에 막 선택을 완료했는지 여부입니다.</summary>
+    public bool IsSelectingAnyTarget =>
+        IsSelectingItemTarget || IsSelectingFixerTarget || (Time.frameCount == lastTargetHandledFrame);
     private struct CachedSkillButton
     {
         public GameObject root;
@@ -85,9 +94,16 @@ public class BattleManager : MonoBehaviour
 
     private void Update()
     {
-        if (IsSelectingItemTarget && Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(KeyCode.Escape))
         {
-            itemTargetSelector.CancelItemUse();
+            if (IsSelectingItemTarget)
+            {
+                itemTargetSelector.CancelItemUse();
+            }
+            else if (IsSelectingFixerTarget)
+            {
+                CancelFixerTargetSelection();
+            }
         }
     }
 
@@ -387,7 +403,83 @@ public class BattleManager : MonoBehaviour
         Debug.Log("[아이템] 사용할 아군 로봇을 선택하세요.");
         return true;
     }
+    public bool BeginFixerSelector(Fixer selector)
+    {
+        if (selector == null ||
+            PartyManager.instance == null ||
+            PartyManager.instance.partySlots == null)
+        {
+            return false;
+        }
 
+        if (Party == null || Party.Length == 0)
+        {
+            Debug.LogWarning(
+                "[BattleManager] 파티 스폰 위치가 설정되어 있지 않습니다.");
+            return false;
+        }
+
+        // 다른 대상 선택 작업과 중복되지 않도록 정리
+        itemTargetSelector = null;
+        fixerTargetSelector = selector;
+        // 파티원 소환 및 배치
+        selector.PlacePartyAtRepairPositions();
+
+        Debug.Log("[Fixer] 대상을 선택하세요.");
+
+        return true;
+    }
+    /// <summary>
+    /// 아군 로봇 클릭 시 Fixer 대상 선택을 처리합니다.
+    /// PlayerUnit의 클릭 이벤트에서 호출해야 합니다.
+    /// </summary>
+    public bool TryHandleFixerTarget(Unit target)
+    {
+        if (fixerTargetSelector == null)
+            return false;
+
+        if (target == null ||
+            target.health <= 0 ||
+            !IsCurrentPartyMember(target))
+        {
+            // 유효하지 않은 대상 클릭 — 선택 모드 유지 (소비하지 않음)
+            return true;
+        }
+
+        // 이번 프레임에 선택 처리가 완료되었음을 기록 (스탯창 등이 열리지 않도록 방어)
+        lastTargetHandledFrame = Time.frameCount;
+
+        // 선택 상태 먼저 해제 후 처리 (중복 호출 방지)
+        Fixer selectedFixer = fixerTargetSelector;
+        fixerTargetSelector = null;
+
+        // 같은 프레임에서 스탯창이 켜지지 않도록 즉시 닫기
+        RobotClick rc = target.GetComponent<RobotClick>();
+        if (rc != null && rc.myUI != null)
+        {
+            rc.myUI.SetActive(false);
+        }
+
+        // 1. 소환된 파티 유닛 회수
+        selectedFixer.RecallRepairParty();
+        // 2. 숨겼던 UI 복구
+        selectedFixer.RestoreInteractionUI();
+        // 3. 선택된 로봇 수리 처리
+        selectedFixer.OnRobotSelected(target);
+
+        return true;
+    }
+    public void CancelFixerTargetSelection()
+    {
+        if (fixerTargetSelector == null)
+            return;
+
+        Fixer selectedFixer = fixerTargetSelector;
+        fixerTargetSelector = null;
+
+        selectedFixer.RecallRepairParty();
+        selectedFixer.RestoreInteractionUI();
+    }
     /// <summary>PlayerUnit 클릭에서 호출됩니다. 아이템 선택을 처리했으면 true를 반환합니다.</summary>
     public bool TryHandleItemTarget(Unit target)
     {
@@ -396,6 +488,14 @@ public class BattleManager : MonoBehaviour
 
         if (target == null || target.health <= 0 || !IsCurrentPartyMember(target))
             return true;
+
+        lastTargetHandledFrame = Time.frameCount;
+
+        RobotClick rc = target.GetComponent<RobotClick>();
+        if (rc != null && rc.myUI != null)
+        {
+            rc.myUI.SetActive(false);
+        }
 
         if (itemTargetSelector.ApplySelectedItemTo(target))
             itemTargetSelector = null;
@@ -897,6 +997,7 @@ public class BattleManager : MonoBehaviour
 
     public void EndBattle(bool win)
     {
+        CancelFixerTargetSelection();
         isBattle = false;
         CancelItemTargetSelection();
 
