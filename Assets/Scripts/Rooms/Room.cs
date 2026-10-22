@@ -112,8 +112,7 @@ public class Room : MonoBehaviour
 
             // ── 회복 ────────────────────────────────────────────────
             case RoomType.RepairShop:
-                Debug.Log("수리점 입장 - 전원 체력 일부 회복");
-                HealAllParty(0.3f);
+                Debug.Log("수리점 입장 (Fixer NPC를 통해 수리 진행)");
                 break;
 
             // ── 보상방 ──────────────────────────────────────────────

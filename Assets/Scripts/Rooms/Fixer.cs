@@ -55,8 +55,13 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
 
     private bool[] originalUIStates;
 
+    TurnOffUIForPrefabs TO;
+
     private void Awake()
     {
+        TO = FindAnyObjectByType<TurnOffUIForPrefabs>();
+        hideUIObjects = TO.TurnOffs;
+
         if (hideUIObjects == null)
             return;
 
@@ -122,17 +127,55 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
             return;
         }
 
-        if (repairSpawnPositions == null ||
-            repairSpawnPositions.Length == 0)
+        Transform[] spawnPoints = null;
+        Camera cam = mainCamera != null ? mainCamera : Camera.main;
+
+        // 1. 설정된 repairSpawnPositions가 현재 카메라 시야 내에 유효한지 검사
+        if (repairSpawnPositions != null && repairSpawnPositions.Length > 0 && repairSpawnPositions[0] != null)
         {
-            Debug.LogWarning("[Fixer] 수리 전용 소환 위치가 설정되지 않았습니다.");
+            if (cam != null)
+            {
+                Vector3 vp = cam.WorldToViewportPoint(repairSpawnPositions[0].position);
+                // 화면 시야 범위(0~1) 내에 들어오고 카메라 앞쪽(z > 0)인지 확인
+                if (vp.z > 0 && vp.x >= -0.2f && vp.x <= 1.2f && vp.y >= -0.2f && vp.y <= 1.2f)
+                {
+                    spawnPoints = repairSpawnPositions;
+                }
+                else
+                {
+                    Debug.LogWarning($"[Fixer] repairSpawnPositions가 카메라 시야 밖({repairSpawnPositions[0].position})에 있습니다. 카메라 정면 파티 위치로 자동 전환합니다.");
+                }
+            }
+            else
+            {
+                spawnPoints = repairSpawnPositions;
+            }
+        }
+
+        // 2. repairSpawnPositions가 카메라 밖 엉뚱한 곳에 있거나 설정되지 않은 경우:
+        // 카메라가 정면으로 비추는 BattleManager.instance.Party 위치를 우선 사용
+        if (spawnPoints == null)
+        {
+            if (BattleManager.instance != null &&
+                BattleManager.instance.Party != null &&
+                BattleManager.instance.Party.Length > 0 &&
+                BattleManager.instance.Party[0] != null)
+            {
+                spawnPoints = BattleManager.instance.Party;
+            }
+            else
+            {
+                spawnPoints = repairSpawnPositions;
+            }
+        }
+
+        if (spawnPoints == null || spawnPoints.Length == 0)
+        {
+            Debug.LogWarning("[Fixer] 수리 전용 소환 위치를 찾을 수 없습니다.");
             return;
         }
 
-        PartyManager.instance.PlacePartyAtPositions(
-            repairSpawnPositions
-        );
-
+        PartyManager.instance.PlacePartyAtPositions(spawnPoints);
         Debug.Log("[Fixer] 수리실 파티원 배치 완료");
     }
     /// <summary>
