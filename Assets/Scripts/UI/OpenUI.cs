@@ -1,63 +1,130 @@
+
+using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
 public class OpenUI : MonoBehaviour
 {
     [SerializeField] private GameObject[] uiObjects;
 
-    // 지정된 모든 UI 활성화
+    [Header("팝업 애니메이션")]
+    [SerializeField] private float popupDuration = 0.25f;
+
+    [SerializeField, Range(0.01f, 1f)]
+    private float startScale = 0.7f;
+
+    // 각 오브젝트의 원래 크기 저장
+    private readonly Dictionary<Transform, Vector3> originalScales = new();
+
+    private void Awake()
+    {
+        if (uiObjects == null) return;
+
+        foreach (GameObject obj in uiObjects)
+        {
+            if (obj == null) continue;
+
+            Transform target = obj.transform;
+
+            if (!originalScales.ContainsKey(target))
+                originalScales.Add(target, target.localScale);
+        }
+    }
+
     public void OpenAll()
     {
         if (uiObjects == null) return;
 
-        foreach (GameObject ui in uiObjects)
+        foreach (GameObject obj in uiObjects)
         {
-            if (ui == null) continue;
-            ui.SetActive(true);
-            PartymenuSpawn.NotifyPanelState(ui);
+            if (obj == null) continue;
+
+            Transform target = obj.transform;
+
+            target.DOKill();
+            obj.SetActive(true);
+
+            PartymenuSpawn.NotifyPanelState(obj);
+
+            Vector3 originalScale = GetOriginalScale(target);
+
+            target.localScale = originalScale * startScale;
+
+            target.DOScale(originalScale, popupDuration)
+                .SetEase(Ease.OutBack)
+                .SetUpdate(true);
         }
     }
 
-    // 지정된 모든 UI 비활성화
     public void CloseAll()
     {
         if (uiObjects == null) return;
 
-        foreach (GameObject ui in uiObjects)
+        foreach (GameObject obj in uiObjects)
         {
-            if (ui == null) continue;
-            ui.SetActive(false);
-            PartymenuSpawn.NotifyPanelState(ui);
+            if (obj == null) continue;
+
+            obj.transform.DOKill();
+            obj.SetActive(false);
+
+            PartymenuSpawn.NotifyPanelState(obj);
         }
     }
 
-    // 현재 상태를 반전 (켜져있으면 끄고, 꺼져있으면 켬)
     public void ToggleAll()
     {
         if (uiObjects == null) return;
 
-        foreach (GameObject ui in uiObjects)
+        foreach (GameObject obj in uiObjects)
         {
-            if (ui == null) continue;
-            ui.SetActive(!ui.activeSelf);
-            PartymenuSpawn.NotifyPanelState(ui);
+            if (obj == null) continue;
+
+            if (obj.activeSelf)
+            {
+                obj.transform.DOKill();
+                obj.SetActive(false);
+                PartymenuSpawn.NotifyPanelState(obj);
+            }
+            else
+            {
+                Transform target = obj.transform;
+
+                target.DOKill();
+                obj.SetActive(true);
+
+                PartymenuSpawn.NotifyPanelState(obj);
+
+                Vector3 originalScale = GetOriginalScale(target);
+
+                target.localScale = originalScale * startScale;
+
+                target.DOScale(originalScale, popupDuration)
+                    .SetEase(Ease.OutBack)
+                    .SetUpdate(true);
+            }
         }
+    }
+
+    private Vector3 GetOriginalScale(Transform target)
+    {
+        if (!originalScales.TryGetValue(target, out Vector3 scale))
+        {
+            scale = target.localScale;
+            originalScales[target] = scale;
+        }
+
+        return scale;
     }
 
     public void OnSetting()
     {
-        Debug.Log("OnSetting called");
         if (AudioManager.instance != null)
             AudioManager.instance.OnChild();
-        else
-            Debug.LogWarning("AudioManager instance is null. Cannot call OnChild().");
     }
+
     public void OffSetting()
     {
-        Debug.Log("OffSetting called");
         if (AudioManager.instance != null)
             AudioManager.instance.OffChild();
-        else
-            Debug.LogWarning("AudioManager instance is null. Cannot call OffChild().");
-
     }
 }

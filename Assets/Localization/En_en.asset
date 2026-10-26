@@ -163,6 +163,89 @@ MonoBehaviour:
     m_Localized: Master
     m_Metadata:
       m_Items: []
+  - m_Id: 60498846958452736
+    m_Localized: Searching
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60498926583119872
+    m_Localized: Leaving
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60499077208965120
+    m_Localized: "There is a collapsed building. It looks like I might be able to
+      find some useful equipment there, \nbut it also looks like it could collapse
+      further at any moment.\r\n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60499501198573568
+    m_Localized: 'Nothing else seems useful anymore.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60501276714565632
+    m_Localized: 'I found some useful materials.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60501562048872448
+    m_Localized: 'The building collapsed and sustained damage.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60510599570227200
+    m_Localized: 'Go to main menu
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60510621091201024
+    m_Localized: Quit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60513535033573376
+    m_Localized: 'Do you want to exit the game?
+
+      Your current progress will
+      be saved.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60514019773480960
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60616078195654656
+    m_Localized: Speed + 2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60616090967310336
+    m_Localized: Attack + 5
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60616092401762304
+    m_Localized: MaxHP + 5
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60616235003904000
+    m_Localized: Wash the aircraft
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60616236727762944
+    m_Localized: Leaving
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60616699497906176
+    m_Localized: 'It''s dirty water.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60616597412741120
+    m_Localized: There's a fountain. It looks like I can wash my machine here.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

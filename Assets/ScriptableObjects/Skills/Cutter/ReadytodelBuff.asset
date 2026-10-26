@@ -16,7 +16,7 @@ MonoBehaviour:
   duration: 3
   attackBonus: 0
   defenseBonus: 0
-  speedBonus: 5
+  speedBonus: 3
   hitBonus: 0
   critBonus: 20
   damageMultiplier: 1

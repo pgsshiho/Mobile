@@ -42,7 +42,10 @@ public enum RoomType
 public class RoomManager : MonoBehaviour
 {
     public static RoomManager instance;
+    [Header("방 이동 포커스 연출")]
+    [SerializeField] private float focusViewDuration = 1.0f;
 
+    private bool isMoving;
     [Header("Zone & Room Settings")]
     [Tooltip("한 Zone당 생성할 총 방의 개수 (항상 최소 13개)")]
     [Min(13)]
@@ -755,83 +758,83 @@ public class RoomManager : MonoBehaviour
     // 방 이동
     // ============================================================
 
+    public void FocusMove()
+    {
+        CameraFocus.Instance?.FocusOn(gameObject);
+    }
+
     public void MoveForward()
     {
-        if (currentNode == null)
+        if (currentNode == null || currentNode.forwardRoom == null)
             return;
 
-        if (currentNode.forwardRoom != null)
-        {
-            Debug.Log(
-                $"[RoomManager] 앞으로 이동: " +
-                $"Node {currentNode.id} → " +
-                $"Node {currentNode.forwardRoom.id}"
-            );
-
-            TryMoveTo(currentNode.forwardRoom);
-        }
-        MoveSound();
+        RequestMove(currentNode.forwardRoom);
     }
 
     public void MoveBackward()
     {
-        if (currentNode == null ||
-            currentNode.backwardRoom == null)
-        {
-            Debug.Log(
-                "[RoomManager] 후방으로 갈 수 있는 방이 없습니다."
-            );
-
+        if (currentNode == null || currentNode.backwardRoom == null)
             return;
-        }
 
-        RoomNode target = currentNode.backwardRoom;
-
-        Debug.Log(
-            $"[RoomManager] 뒤로 이동: " +
-            $"현재 Node {currentNode.id} → " +
-            $"Node {target.id}"
-        );
-
-        TryMoveTo(target);
+        RequestMove(currentNode.backwardRoom);
     }
 
     public void MoveLeft()
     {
-        if (currentNode == null)
+        if (currentNode == null || currentNode.leftRoom == null)
             return;
 
-        if (currentNode.leftRoom != null)
-        {
-            Debug.Log(
-                $"[RoomManager] 왼쪽 이동: " +
-                $"Node {currentNode.id} → " +
-                $"Node {currentNode.leftRoom.id}"
-            );
-
-            TryMoveTo(currentNode.leftRoom);
-        }
-        MoveSound();
+        RequestMove(currentNode.leftRoom);
     }
 
     public void MoveRight()
     {
-        if (currentNode == null)
+        if (currentNode == null || currentNode.rightRoom == null)
             return;
 
-        if (currentNode.rightRoom != null)
-        {
-            Debug.Log(
-                $"[RoomManager] 오른쪽 이동: " +
-                $"Node {currentNode.id} → " +
-                $"Node {currentNode.rightRoom.id}"
-            );
+        RequestMove(currentNode.rightRoom);
+    }
+    private void RequestMove(RoomNode target)
+    {
+        if (target == null || isMoving)
+            return;
 
-            TryMoveTo(currentNode.rightRoom);
-        }
-        MoveSound();
+        StartCoroutine(MoveWithFocusRoutine(target));
     }
 
+    private System.Collections.IEnumerator MoveWithFocusRoutine(
+        RoomNode target)
+    {
+        isMoving = true;
+
+        CameraFocus cameraFocus = CameraFocus.Instance;
+
+        // 현재 방을 포커스 대상으로 사용한다.
+        if (cameraFocus != null &&
+            currentRoom != null &&
+            !cameraFocus.IsFocused)
+        {
+            cameraFocus.FocusOn(currentRoom.gameObject);
+
+            // 카메라 포커스 이동이 끝날 때까지 대기
+            while (cameraFocus.IsTweening)
+                yield return null;
+
+            // 포커스된 방을 잠시 보여준다.
+            yield return new WaitForSeconds(focusViewDuration);
+
+            // 원래 카메라 위치로 복귀
+            cameraFocus.FocusOut();
+
+            while (cameraFocus.IsTweening)
+                yield return null;
+        }
+
+        // 연출이 모두 끝난 뒤 실제 방 이동
+        TryMoveTo(target);
+
+        isMoving = false;
+    }
     public void MoveToNext(int index)
     {
         if (currentNode == null)

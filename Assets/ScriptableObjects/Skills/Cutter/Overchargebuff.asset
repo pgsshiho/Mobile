@@ -14,9 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BuffData
   buffName: Overcharge
   duration: 2
-  damageMultiplier: 2
-  attackBonus: 20
+  attackBonus: 0
   defenseBonus: 0
-  hitBonus: 0
   speedBonus: 0
+  hitBonus: 0
   critBonus: 0
+  damageMultiplier: 2
+  healMultiplier: 1

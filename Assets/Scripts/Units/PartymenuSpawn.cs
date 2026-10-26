@@ -158,7 +158,16 @@ public class PartymenuSpawn : MonoBehaviour
         }
         Debug.Log("[PartymenuSpawn] PartySpawn 메서드가 완료되었습니다.");
     }
+    /// <summary>
+    /// 소환한 파티 유닛을 모두 회수합니다.
+    /// PartyManager의 파티 데이터는 유지합니다.
+    /// </summary>
+    public void RecallSpawnedUnits()
+    {
+        ClearSpawnedUnits();
 
+        Debug.Log("[PartymenuSpawn] 소환된 파티 유닛을 모두 회수했습니다.");
+    }
     private void ClearSpawnedUnits()
     {
         for (int i = 0; i < spawnedUnits.Length; i++)

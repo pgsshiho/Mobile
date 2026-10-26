@@ -18,6 +18,7 @@ public class AudioManager : MonoBehaviour
     [Header("Settings")]
     public AudioMixer audioMixer;
     public AudioClip battleBgm;
+    public AudioClip mainBgm;
 
     // 현재 볼륨 값
     public float nowMasterVolume = 1f;
@@ -59,7 +60,10 @@ public class AudioManager : MonoBehaviour
         SetSFX(nowSFXVolume);
 
     }
-
+    public void Start()
+    {
+        PlayMainBgm();
+    }
     public void SetMaster(float value)
     {
         nowMasterVolume = value;
@@ -119,8 +123,18 @@ public class AudioManager : MonoBehaviour
         bgmSource.loop = true;
         bgmSource.Play();
     }
+    public void PlayMainBgm()
+    {
+        if (bgmSource == null || battleBgm == null) return;
+        if (bgmSource.clip == mainBgm && bgmSource.isPlaying) return;
 
-    public void StopBgm() { if (bgmSource != null) bgmSource.Stop(); }
+        bgmSource.clip = mainBgm;
+        bgmSource.loop = true;
+        bgmSource.Play();
+    }
+
+    public void StopBattleBgm() { if (bgmSource != null) bgmSource.Stop(); }
+    public void StopMainBgm() { if (bgmSource != null) bgmSource.Stop(); }
     public void PlaySfx(AudioClip clip) { if (sfxSource != null && clip != null) sfxSource.PlayOneShot(clip); }
 
     private static void SaveAudioSetting(System.Action<SaveData> apply)

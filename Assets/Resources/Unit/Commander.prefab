@@ -323,22 +323,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a15364bfa04ba429a2875bab2bab56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerUnit
-  maxHealth: 100
-  health: 100
-  emergencyPower: 0.2
+  maxHealth: 50
+  health: 50
+  emergencyPower: 0.7
   communication: 100
   isPowerDown: 0
   isEmergencyMode: 0
   hasSelfDestructed: 0
-  attackPower: 5
-  defensePower: 5
+  attackPower: 2
+  defensePower: 0
   specialArmor: 0
   criticalChance: 0
-  accuracy: 90
-  dodgeChance: 0.05
+  accuracy: 60
+  dodgeChance: 0.15
   speed: 5
-  energyMax: 100
-  energyCurrent: 100
+  energyMax: 5
+  energyCurrent: 5
   rustChance: 20
   rustDamage: 5
   oxidationResist: 0
@@ -1206,6 +1206,7 @@ GameObject:
   - component: {fileID: 4654462838472302610}
   - component: {fileID: 5867441370804688722}
   - component: {fileID: 620508659882748199}
+  - component: {fileID: 4873430068080236966}
   m_Layer: 6
   m_Name: Button
   m_TagString: Untagged
@@ -1313,7 +1314,35 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 5867441370804688722}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 4873430068080236966}
+        m_TargetAssemblyTypeName: OpenUI, Assembly-CSharp
+        m_MethodName: CloseAll
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &4873430068080236966
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1255218293086238818}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29ee785e179334d8addb8e2aa8ffef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OpenUI
+  uiObjects:
+  - {fileID: 6871601380673479016}
+  popupDuration: 0.25
+  startScale: 0.7
 --- !u!1 &1681450897644058944
 GameObject:
   m_ObjectHideFlags: 0

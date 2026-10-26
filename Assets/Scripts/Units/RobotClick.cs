@@ -36,11 +36,20 @@ public class RobotClick : MonoBehaviour, IPointerClickHandler
         TextSet();
     }
 
+
+
     public void OnPointerClick(PointerEventData eventData)
     {
-        // 아이템 또는 Fixer 대상 선택 중(또는 방금 선택을 완료한 프레임)에는 스탯창을 열지 않는다.
         if (BattleManager.instance != null)
         {
+            // 분수대 선택은 일반 대상 선택보다 먼저 처리한다.
+            if (BattleManager.instance.IsSelectingFountainTarget)
+            {
+                BattleManager.instance.TryHandleFountainTarget(Self);
+                return;
+            }
+
+            // 기존 아이템 / Fixer / 스킬 대상 선택 처리
             if (BattleManager.instance.IsSelectingAnyTarget ||
                 BattleManager.instance.IsSelectingItemTarget ||
                 BattleManager.instance.IsSelectingFixerTarget)
@@ -54,6 +63,8 @@ public class RobotClick : MonoBehaviour, IPointerClickHandler
         if (myUI != null)
             myUI.SetActive(true);
     }
+
+
 
     private void OnDisable()
     {

@@ -135,6 +135,74 @@ MonoBehaviour:
     m_Key: Master
     m_Metadata:
       m_Items: []
+  - m_Id: 60498846958452736
+    m_Key: FindChoice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60498926583119872
+    m_Key: ExitChoice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60499077208965120
+    m_Key: RuinedBuilding
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60499501198573568
+    m_Key: AlreadyFindBuilding
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60501276714565632
+    m_Key: FindItem
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60501562048872448
+    m_Key: RuninPartyDamage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60510599570227200
+    m_Key: GOMain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60510621091201024
+    m_Key: Quit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60513535033573376
+    m_Key: QuitAsk
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60514019773480960
+    m_Key: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60616078195654656
+    m_Key: SpeedChoice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60616090967310336
+    m_Key: AttackChoice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60616092401762304
+    m_Key: MaxHpChoice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60616235003904000
+    m_Key: FFindChoice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60616236727762944
+    m_Key: FExitChoice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60616597412741120
+    m_Key: Fountain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60616699497906176
+    m_Key: AlreadyFindfountain
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -297,36 +297,54 @@ public class PlayerUnit :
     }
 
     // 아군 클릭
+    // 아군 클릭
+    // 아군 클릭
+    // 아군 클릭
     public void OnPointerClick(PointerEventData eventData)
     {
-        // 인벤토리 아이템의 아군 대상 선택은 턴 대기 상태와 무관하게 먼저 처리한다.
-        if (BattleManager.instance != null &&
-            BattleManager.instance.TryHandleItemTarget(this))
+        if (BattleManager.instance != null)
+        {
+            // 1. 분수대 로봇 선택
+            if (BattleManager.instance.TryHandleFountainTarget(this))
+                return;
+
+            // 2. Fixer 로봇 선택
+            if (BattleManager.instance.TryHandleFixerTarget(this))
+                return;
+
+            // 3. 인벤토리 아이템 대상 선택
+            if (BattleManager.instance.TryHandleItemTarget(this))
+                return;
+        }
+
+        // 4. 기존 전투 타겟 선택 처리
+        if (TurnManager.instance == null ||
+            !TurnManager.instance.waitingForTarget)
             return;
 
-        if (TurnManager.instance == null || !TurnManager.instance.waitingForTarget)
-            return;
-        base.AttackFocus(this.gameObject);
+        base.AttackFocus(gameObject);
+
         Unit current = TurnManager.instance.currentUnit;
+
         if (!(current is PlayerUnit) || health <= 0)
             return;
 
+        // 5. 기존 교대 이동 처리
         if (BattleManager.instance != null &&
             BattleManager.instance.TryHandleFormationMoveTarget(
                 (PlayerUnit)current,
-                this
-            ))
+                this))
             return;
 
         SkillData skill = current.selectedSkill;
-        if (skill == null) return;
 
-        // TargetType.Ally는 아군 1명을 직접 지정하는 스킬이다.
-        // 선택한 행동 유닛 자신도 포함하므로 회복/보호 스킬에 모두 사용 가능하다.
+        if (skill == null)
+            return;
+
+        // 6. 기존 아군 대상 스킬 처리
         if (skill.targetType == TargetType.Ally)
         {
             current.SelectTarget(this);
         }
-
     }
 }

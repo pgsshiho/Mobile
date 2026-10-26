@@ -39,14 +39,25 @@ public class BattleManager : MonoBehaviour
     public AudioClip battleBgm;
 
     private Fixer fixerTargetSelector;
+    private fountain fountainTargetSelector;
+    private BackpackUIManager itemTargetSelector;
+
     private int lastTargetHandledFrame = -1;
 
     public bool IsSelectingFixerTarget =>
         fixerTargetSelector != null;
 
-    /// <summary>아이템이나 Fixer 등 대상을 선택 중이거나 이번 프레임에 막 선택을 완료했는지 여부입니다.</summary>
+    public bool IsSelectingFountainTarget =>
+        fountainTargetSelector != null;
+
+    public bool IsSelectingItemTarget =>
+        itemTargetSelector != null;
+
     public bool IsSelectingAnyTarget =>
-        IsSelectingItemTarget || IsSelectingFixerTarget || (Time.frameCount == lastTargetHandledFrame);
+        IsSelectingItemTarget ||
+        IsSelectingFixerTarget ||
+        IsSelectingFountainTarget ||
+        Time.frameCount == lastTargetHandledFrame;
     private struct CachedSkillButton
     {
         public GameObject root;
@@ -60,11 +71,6 @@ public class BattleManager : MonoBehaviour
     private TMP_Text[] battleUIEXTexts;
 
     private bool isSelectingFormationMove;
-    private BackpackUIManager itemTargetSelector;
-
-    /// <summary>인벤토리 아이템의 아군 대상을 고르는 중인지 여부입니다.</summary>
-    public bool IsSelectingItemTarget => itemTargetSelector != null;
-
     // 전투 규칙은 UI/씬 참조 없이 별도 객체에 둔다.
     private readonly BattleTargetingRules targetingRules =
         new BattleTargetingRules();
@@ -103,6 +109,10 @@ public class BattleManager : MonoBehaviour
             else if (IsSelectingFixerTarget)
             {
                 CancelFixerTargetSelection();
+            }
+            else if (IsSelectingFountainTarget)
+            {
+                CancelFountainTargetSelection();
             }
         }
     }
@@ -308,7 +318,7 @@ public class BattleManager : MonoBehaviour
         // BGM
         if (AudioManager.instance != null)
         {
-            AudioManager.instance.StopBgm();
+            AudioManager.instance.StopBattleBgm();
             AudioManager.instance.PlayBattleBgm();
         }
 
@@ -403,8 +413,53 @@ public class BattleManager : MonoBehaviour
         Debug.Log("[아이템] 사용할 아군 로봇을 선택하세요.");
         return true;
     }
+
+    public bool BeginfountainSelector(fountain selector)
+    {
+        if (selector == null ||
+            PartyManager.instance == null ||
+            PartyManager.instance.partySlots == null)
+        {
+            return false;
+        }
+
+        if (Party == null || Party.Length == 0)
+        {
+            Debug.LogWarning(
+                "[BattleManager] 파티 스폰 위치가 설정되어 있지 않습니다.");
+            return false;
+        }
+
+        // 다른 대상 선택이 진행 중이면 중복 시작하지 않는다.
+        if (itemTargetSelector != null ||
+            fixerTargetSelector != null ||
+            fountainTargetSelector != null)
+        {
+            Debug.LogWarning(
+                "[BattleManager] 다른 대상 선택이 진행 중입니다.");
+            return false;
+        }
+
+        fountainTargetSelector = selector;
+
+        // 파티 배치
+        selector.PlacePartyAtfountainPositions();
+
+        Debug.Log("[Fountain] 청소할 로봇을 선택하세요.");
+        return true;
+    }
+
     public bool BeginFixerSelector(Fixer selector)
     {
+        if (itemTargetSelector != null ||
+            fixerTargetSelector != null ||
+             fountainTargetSelector != null)
+        {
+            Debug.LogWarning(
+                "[BattleManager] 다른 대상 선택이 진행 중입니다."
+            );
+            return false;
+        }
         if (selector == null ||
             PartyManager.instance == null ||
             PartyManager.instance.partySlots == null)
@@ -434,50 +489,60 @@ public class BattleManager : MonoBehaviour
     /// 아군 로봇 클릭 시 Fixer 대상 선택을 처리합니다.
     /// PlayerUnit의 클릭 이벤트에서 호출해야 합니다.
     /// </summary>
-    public bool TryHandleFixerTarget(Unit target)
+
+    /// <summary>
+    /// 분수대에서 청소할 로봇을 선택한다.
+    /// </summary>
+    public bool TryHandleFountainTarget(Unit target)
     {
-        if (fixerTargetSelector == null)
+        if (fountainTargetSelector == null)
             return false;
 
+        // 잘못된 대상이어도 선택 모드는 유지한다.
         if (target == null ||
             target.health <= 0 ||
             !IsCurrentPartyMember(target))
         {
-            // 유효하지 않은 대상 클릭 — 선택 모드 유지 (소비하지 않음)
             return true;
         }
 
-        // 이번 프레임에 선택 처리가 완료되었음을 기록 (스탯창 등이 열리지 않도록 방어)
         lastTargetHandledFrame = Time.frameCount;
 
-        // 선택 상태 먼저 해제 후 처리 (중복 호출 방지)
-        Fixer selectedFixer = fixerTargetSelector;
-        fixerTargetSelector = null;
+        fountain selectedFountain = fountainTargetSelector;
 
-        // 같은 프레임에서 스탯창이 켜지지 않도록 즉시 닫기
+        // 선택 완료 처리 중 중복 클릭 방지
         RobotClick rc = target.GetComponent<RobotClick>();
+
         if (rc != null && rc.myUI != null)
-        {
             rc.myUI.SetActive(false);
-        }
 
-        // 1. 선택된 로봇 수리 (최대체력까지 치유)
-        bool repairSuccess = selectedFixer.OnRobotSelected(target);
+        bool success = selectedFountain.OnRobotSelected(target);
 
-        // 2. 파티 유닛 회수
-        selectedFixer.RecallRepairParty();
-
-        // 3. 원래 있던 UI 다시 켜기 (복구)
-        selectedFixer.RestoreInteractionUI();
-
-        // 4. 수리 완료 후 상호작용 포커스 아웃
-        if (repairSuccess)
+        if (success)
         {
-            selectedFixer.FocusOut();
+            fountainTargetSelector = null;
+            Debug.Log("[Fountain] 로봇 청소 완료");
         }
-
+        
         return true;
     }
+
+    /// <summary>
+    /// 분수대 로봇 선택을 취소한다.
+    /// </summary>
+    public void CancelFountainTargetSelection()
+    {
+        if (fountainTargetSelector == null)
+            return;
+
+        fountain selectedFountain = fountainTargetSelector;
+        fountainTargetSelector = null;
+
+        selectedFountain.CancelRepairSelection();
+
+        Debug.Log("[Fountain] 로봇 선택이 취소되었습니다.");
+    }
+
     public void CancelFixerTargetSelection()
     {
         if (fixerTargetSelector == null)
@@ -811,7 +876,47 @@ public class BattleManager : MonoBehaviour
         Debug.Log(
             "[전투] 교대할 아군을 선택하세요.");
     }
+    /// <summary>
+    /// 아군 로봇 클릭 시 Fixer 대상 선택을 처리합니다.
+    /// </summary>
+    public bool TryHandleFixerTarget(Unit target)
+    {
+        if (fixerTargetSelector == null)
+            return false;
 
+        // 쓰러졌거나 파티원이 아닌 경우 선택을 유지한다.
+        if (target == null ||
+            target.health <= 0 ||
+            !IsCurrentPartyMember(target))
+        {
+            return true;
+        }
+
+        // 같은 프레임의 중복 클릭 처리 방지
+        lastTargetHandledFrame = Time.frameCount;
+
+        // 중복 처리를 방지하기 위해 선택 상태를 먼저 해제한다.
+        Fixer selectedFixer = fixerTargetSelector;
+        fixerTargetSelector = null;
+
+        // 로봇의 스탯 UI가 열려 있다면 닫는다.
+        RobotClick rc = target.GetComponent<RobotClick>();
+
+        if (rc != null && rc.myUI != null)
+            rc.myUI.SetActive(false);
+
+        // 기존 Fixer 수리 기능 실행
+        selectedFixer.OnRobotSelected(target);
+
+        // 파티원 회수 및 상호작용 상태 복원
+        selectedFixer.RecallRepairParty();
+        selectedFixer.RestoreInteractionUI();
+        selectedFixer.FocusOut();
+
+        Debug.Log("[Fixer] 수리 대상 선택 처리 완료");
+
+        return true;
+    }
 
     public bool TryHandleFormationMoveTarget(
         PlayerUnit mover,

@@ -9,7 +9,7 @@ public class MainmenuManager : MonoBehaviour
     public TextMeshProUGUI Savefile1Chapter;
     public TextMeshProUGUI Savefile2Chapter;
     public TextMeshProUGUI Savefile3Chapter;
-
+    public AudioClip StartSFX;
     void Start()
     {
         RefreshSavefileChapters();
@@ -54,6 +54,9 @@ public class MainmenuManager : MonoBehaviour
         if (data == null)
         {
             Debug.LogWarning("저장 데이터가 없습니다. 슬롯: " + savefile);
+
+            AudioManager.instance.StopMainBgm();
+            AudioManager.instance.PlaySfx(StartSFX);
             SceneChanger.BG("Forest");
         }
 
@@ -65,7 +68,8 @@ public class MainmenuManager : MonoBehaviour
 
         // 불러올 저장 슬롯 선택
         Save.SelectSlot(savefile);
-
+        AudioManager.instance.StopMainBgm();
+        AudioManager.instance.PlaySfx(StartSFX);
         // 저장된 씬으로 이동
         UnityEngine.SceneManagement.SceneManager.LoadScene(data.savedScene);
     }

@@ -192,6 +192,9 @@ public static class CombatCalculator
         if (attacker == null || skill == null) return 0;
 
         int damage = attacker.GetAttackPower() + skill.power;
+
+        // 데미지 배수 합연산
+        // 기본 배율 1.0에서 각 버프의 증가·감소분을 더한다.
         float multiplier = 1f;
 
         if (attacker.buffs != null)
@@ -200,7 +203,7 @@ public static class CombatCalculator
             {
                 if (buff?.data != null)
                 {
-                    multiplier *= buff.data.damageMultiplier;
+                    multiplier += buff.data.damageMultiplier - 1f;
                 }
             }
         }
@@ -215,6 +218,7 @@ public static class CombatCalculator
 
         // 크리티컬 발동: 데미지 2배
         int roll = Random.Range(0, 100);
+
         if (roll < attacker.GetCriticalChance())
         {
             damage = Mathf.RoundToInt(damage * 2f);
@@ -230,14 +234,14 @@ public static class CombatCalculator
             Debug.Log($"{target.Unitname} 표식 추가 피해!");
         }
 
-        // 대상이 금속 피로 상태일 때 파손/피격 피해 1.5배 증폭
+        // 대상이 금속 피로 상태일 때 피해 1.5배 증폭
         if (target != null && target.isMetalFatigue)
         {
             damage = Mathf.RoundToInt(damage * 1.5f);
             Debug.Log($"[금속 피로] {target.Unitname} 구조적 결함으로 피해 증폭 ({damage})");
         }
 
-        // 공격자의 녹 확률 판정 (공격 시 상대에게 녹/산화 부여)
+        // 공격자의 녹 확률 판정
         if (target != null && attacker.rustChance > 0)
         {
             if (Random.Range(0, 100) < attacker.rustChance)
@@ -263,7 +267,7 @@ public static class CombatCalculator
         {
             float targetDodge = target.dodgeChance;
 
-            // 윤활유 유출 상태이면 회피율 0 (피하지 못함)
+            // 윤활유 유출 상태이면 회피율 0
             if (target.isLubricantLeak || target.isOilLeak)
             {
                 targetDodge = 0f;
@@ -273,11 +277,15 @@ public static class CombatCalculator
             {
                 Debug.Log($"{target.Unitname} 공격 회피 성공!");
 
-                // 잔상 현상: 적의 공격을 피할 때마다 명중률(정확도)이 -10씩 낮아짐
+                // 잔상 현상: 회피할 때마다 명중률 페널티 누적
                 if (target.isGhosting)
                 {
                     target.ghostingMissPenalty += 10;
-                    Debug.LogWarning($"[잔상 현상] {target.Unitname} 잔상 혼동으로 명중률 -10 누적 (총 페널티: -{target.ghostingMissPenalty})");
+
+                    Debug.LogWarning(
+                        $"[잔상 현상] {target.Unitname} 잔상 혼동으로 명중률 -10 누적 " +
+                        $"(총 페널티: -{target.ghostingMissPenalty})"
+                    );
                 }
 
                 return false;
@@ -289,6 +297,7 @@ public static class CombatCalculator
         finalHit = Mathf.Clamp(finalHit, 0, 100);
 
         int hitRoll = Random.Range(0, 100);
+
         return hitRoll < finalHit;
     }
-}
+}   

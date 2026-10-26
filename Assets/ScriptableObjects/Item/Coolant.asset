@@ -15,9 +15,9 @@ MonoBehaviour:
   itemName: Coolant
   description: 
   icon: {fileID: 21300000, guid: 2a51a4ce89b09de4b854428542e9fad6, type: 3}
-  maxStackCount: 0
+  maxStackCount: 10
   usableInBattle: 1
-  effectType: 0
+  effectType: 6
   healAmount: 0
   energyAmount: 0
   communicationAmount: 0

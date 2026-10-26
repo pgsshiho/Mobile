@@ -3888,6 +3888,7 @@ GameObject:
   - component: {fileID: 6460497934701113815}
   - component: {fileID: 581065938856793282}
   - component: {fileID: 1690508606304546862}
+  - component: {fileID: 7469086733940767928}
   m_Layer: 6
   m_Name: Button
   m_TagString: Untagged
@@ -3995,7 +3996,35 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 581065938856793282}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 7469086733940767928}
+        m_TargetAssemblyTypeName: OpenUI, Assembly-CSharp
+        m_MethodName: CloseAll
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &7469086733940767928
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4427012931087188150}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29ee785e179334d8addb8e2aa8ffef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OpenUI
+  uiObjects:
+  - {fileID: 3289494630309912220}
+  popupDuration: 0.25
+  startScale: 0.7
 --- !u!1 &4443864720902019361
 GameObject:
   m_ObjectHideFlags: 0
@@ -5759,22 +5788,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a15364bfa04ba429a2875bab2bab56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerUnit
-  maxHealth: 100
-  health: 100
-  emergencyPower: 0.2
+  maxHealth: 70
+  health: 70
+  emergencyPower: 0.7
   communication: 100
   isPowerDown: 0
   isEmergencyMode: 0
   hasSelfDestructed: 0
-  attackPower: 5
-  defensePower: 5
-  specialArmor: 0
-  criticalChance: 0
-  accuracy: 90
-  dodgeChance: 0.05
-  speed: 5
-  energyMax: 100
-  energyCurrent: 100
+  attackPower: 3
+  defensePower: 8
+  specialArmor: 5
+  criticalChance: 10
+  accuracy: 80
+  dodgeChance: 0.1
+  speed: 6
+  energyMax: 7
+  energyCurrent: 7
   rustChance: 20
   rustDamage: 5
   oxidationResist: 0

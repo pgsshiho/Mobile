@@ -38,17 +38,17 @@ public class BackpackUIManager : MonoBehaviour, ICurrencyHolder
     public TextMeshProUGUI Waterproof_Tape;
 
     [Header("아이템 최대 소지량 표시")]
-    public GameObject Scrap_Metal_Full;
-    public GameObject Emergency_Battery_Full;
-    public GameObject Antenna_Full;
-    public GameObject Fuse_Full;
-    public GameObject Sandpaper_Full;
-    public GameObject Rust_Remover_Full;
-    public GameObject Coolant_Full;
-    public GameObject Fire_Extinguisher_Full;
-    public GameObject Brush_Full;
-    public GameObject Electrical_Tape_FULL;
-    public GameObject Waterproof_Tape_Full;
+    public GameObject Scrap_Metal_Zero;
+    public GameObject Emergency_Battery_Zero;
+    public GameObject Antenna_Zero;
+    public GameObject Fuse_Zero;
+    public GameObject Sandpaper_Zero;
+    public GameObject Rust_Remover_Zero;
+    public GameObject Coolant_Zero;
+    public GameObject Fire_Extinguisher_Zero;
+    public GameObject Brush_Zero;
+    public GameObject Electrical_Tape_Zero;
+    public GameObject Waterproof_Tape_Zero;
 
     private ICurrencyHolder currencyHolder;
     private ICurrencyObservable currencyObservable;
@@ -106,17 +106,17 @@ public class BackpackUIManager : MonoBehaviour, ICurrencyHolder
                 Material.text = currencyHolder.GetCurrency(CurrencyType.Material).ToString();
         }
 
-        RefreshItem(Scrap_Metal_Data, Scrap_Metal, Scrap_Metal_Full);
-        RefreshItem(Emergency_Battery_Data, Emergency_Battery, Emergency_Battery_Full);
-        RefreshItem(Antenna_Data, Antenna, Antenna_Full);
-        RefreshItem(Fuse_Data, Fuse, Fuse_Full);
-        RefreshItem(Sandpaper_Data, Sandpaper, Sandpaper_Full);
-        RefreshItem(Rust_Remover_Data, Rust_Remover, Rust_Remover_Full);
-        RefreshItem(Coolant_Data, Coolant, Coolant_Full);
-        RefreshItem(Fire_Extinguisher_Data, Fire_Extinguisher, Fire_Extinguisher_Full);
-        RefreshItem(Brush_Data, Brush, Brush_Full);
-        RefreshItem(Electrical_Tape_Data, Electrical_Tape, Electrical_Tape_FULL);
-        RefreshItem(Waterproof_Tape_Data, Waterproof_Tape, Waterproof_Tape_Full);
+        RefreshItem(Scrap_Metal_Data, Scrap_Metal, Scrap_Metal_Zero);
+        RefreshItem(Emergency_Battery_Data, Emergency_Battery, Emergency_Battery_Zero);
+        RefreshItem(Antenna_Data, Antenna, Antenna_Zero);
+        RefreshItem(Fuse_Data, Fuse, Fuse_Zero);
+        RefreshItem(Sandpaper_Data, Sandpaper, Sandpaper_Zero);
+        RefreshItem(Rust_Remover_Data, Rust_Remover, Rust_Remover_Zero);
+        RefreshItem(Coolant_Data, Coolant, Coolant_Zero);
+        RefreshItem(Fire_Extinguisher_Data, Fire_Extinguisher, Fire_Extinguisher_Zero);
+        RefreshItem(Brush_Data, Brush, Brush_Zero);
+        RefreshItem(Electrical_Tape_Data, Electrical_Tape, Electrical_Tape_Zero);
+        RefreshItem(Waterproof_Tape_Data, Waterproof_Tape, Waterproof_Tape_Zero);
         BindItemButtons();
     }
 
@@ -136,10 +136,18 @@ public class BackpackUIManager : MonoBehaviour, ICurrencyHolder
 
         if (fullObject != null)
         {
+            bool isZero = data != null &&
+                          count <= 0;
+
+            fullObject.SetActive(isZero);
+        }
+
+        if (fullObject != null)
+        {
             bool isFull = data != null &&
                           count >= data.maxStackCount;
 
-            fullObject.SetActive(isFull);
+            countText.color = isFull ? Color.red : Color.white;
         }
     }
 
@@ -341,7 +349,6 @@ public class BackpackUIManager : MonoBehaviour, ICurrencyHolder
                 return true;
             }
         }
-
         return false;
     }
 }

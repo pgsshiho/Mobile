@@ -116,9 +116,24 @@ public class ItemManager : MonoBehaviour
             return false;
         }
 
-        bool inBattle = BattleManager.instance != null && BattleManager.instance.isBattle;
+        bool inBattle = BattleManager.instance != null
+                && BattleManager.instance.isBattle;
+
         if (!inBattle)
-            return IsPartyMember(target, out reason);
+        {
+            if (!IsPartyMember(target, out reason))
+                return false;
+
+            // HP 회복 아이템: 에너지가 있어야 사용 가능
+            if (item.effectType == ItemEffectType.HealHp
+                && target.energyCurrent <= 0)
+            {
+                reason = "에너지가 부족합니다.";
+                return false;
+            }
+
+            return true;
+        }
 
         if (!item.usableInBattle || item.effectType == ItemEffectType.HealHp)
         {
@@ -219,13 +234,25 @@ private static bool MatchesQuestNeed(ItemEffectType effect, QuestNeed need)
         switch (item.effectType)
         {
             case ItemEffectType.HealHp:
-                target.Heal(Mathf.RoundToInt(item.healAmount * target.GetHealMultiplier()));
-                return true;
+                {
+                    if (target.energyCurrent <= 0)
+                        return false;
+
+                    if (target.health >= target.maxHealth)
+                        return false;
+
+                    target.energyCurrent--;
+
+                    target.Heal(item.healAmount);
+
+                    return true;
+                }
+
             case ItemEffectType.RecoverEnergy:
-                target.energyCurrent = Mathf.Min(target.energyMax, target.energyCurrent + item.energyAmount);
-                ItemRuntime scrap = inventory.Find(entry => entry?.data != null && entry.data.effectType == ItemEffectType.HealHp);
-                if (scrap != null) scrap.usedCount = 0;
-                return true;
+                {
+                    target.energyCurrent = target.energyMax;
+                    return true;
+                }
             case ItemEffectType.RecoverAntenna:
                 target.ModifyCommunication(item.communicationAmount);
                 return true;
