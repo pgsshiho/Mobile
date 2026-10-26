@@ -238,15 +238,10 @@ public class fountain : MonoBehaviour
         isSelecting = false;
 
         RecallRepairParty();
-
+        Save.CommitSave();
         Debug.Log("[Fountain] 분수대 사용 완료");
         return true;
     }
-
-    /// <summary>
-    /// 분수대 전용 위치에 파티를 배치한다.
-    /// 기존 PartyManager 배치 시스템을 재사용한다.
-    /// </summary>
     public void PlacePartyAtfountainPositions()
     {
         if (PartyManager.instance == null)
@@ -317,9 +312,7 @@ public class fountain : MonoBehaviour
             PartyManager.instance.RecallParty();
 
         PartymenuSpawn[] spawners =
-            FindObjectsByType<PartymenuSpawn>(
-                FindObjectsSortMode.None
-            );
+            FindObjectsByType<PartymenuSpawn>();
 
         foreach (PartymenuSpawn spawner in spawners)
         {

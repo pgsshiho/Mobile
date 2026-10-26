@@ -4,6 +4,8 @@ using TMPro;
 using UnityEngine.Localization.Settings;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.Rendering;
+using UnityEngine.EventSystems;
 
 public class BattleManager : MonoBehaviour
 {
@@ -41,6 +43,7 @@ public class BattleManager : MonoBehaviour
     private Fixer fixerTargetSelector;
     private fountain fountainTargetSelector;
     private BackpackUIManager itemTargetSelector;
+    private BlackMarket BlackMarketTargetSelector;
 
     private int lastTargetHandledFrame = -1;
 
@@ -52,11 +55,13 @@ public class BattleManager : MonoBehaviour
 
     public bool IsSelectingItemTarget =>
         itemTargetSelector != null;
-
+    public bool IsSelectingBlackMaket => 
+        BlackMarketTargetSelector != null;
     public bool IsSelectingAnyTarget =>
         IsSelectingItemTarget ||
         IsSelectingFixerTarget ||
         IsSelectingFountainTarget ||
+        IsSelectingBlackMaket ||
         Time.frameCount == lastTargetHandledFrame;
     private struct CachedSkillButton
     {
@@ -414,6 +419,40 @@ public class BattleManager : MonoBehaviour
         return true;
     }
 
+    public bool BeginBlackMarketSelector(BlackMarket selector)
+    {
+        if (selector == null ||
+            PartyManager.instance == null ||
+            PartyManager.instance.partySlots == null)
+        {
+            return false;
+        }
+
+        if (Party == null || Party.Length == 0)
+        {
+            Debug.LogWarning(
+                "[BlackMarket] 파티 스폰 위치가 설정되어 있지 않습니다.");
+            return false;
+        }
+
+        // 다른 대상 선택이 진행 중이면 중복 시작하지 않는다.
+        if (itemTargetSelector != null ||
+            fixerTargetSelector != null ||
+            fountainTargetSelector != null)
+        {
+            Debug.LogWarning(
+                "[BlackMarket] 다른 대상 선택이 진행 중입니다.");
+            return false;
+        }
+
+        BlackMarketTargetSelector = selector;
+
+        // 파티 배치
+        selector.PlacePartyAtBlackMarketPositions();
+
+        Debug.Log("[BlackMarket] 장착할 로봇을 선택하세요.");
+        return true;
+    }
     public bool BeginfountainSelector(fountain selector)
     {
         if (selector == null ||

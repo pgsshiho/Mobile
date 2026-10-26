@@ -2,8 +2,6 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
-[System.Serializable]
-public class UnitSelectedEvent : UnityEvent<Unit> { }
 public class Fixer : MonoBehaviour, IPointerClickHandler
 {
     [Header("로봇 목록")]
@@ -284,7 +282,7 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
 
         // Inspector 이벤트 실행
         onRobotSelected?.Invoke(current);
-
+        Save.CommitSave();
         return true;
     }
     private void FocusIn(GameObject target)

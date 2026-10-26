@@ -246,6 +246,39 @@ MonoBehaviour:
     m_Localized: There's a fountain. It looks like I can wash my machine here.
     m_Metadata:
       m_Items: []
+  - m_Id: 60664080838918144
+    m_Localized: 'Reduces instability to increase accuracy.
+
+      accurary + 5'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60664083732987904
+    m_Localized: 'Equip gloves to increase your maximum health.
+
+      MaxHP + 10'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60664084936753152
+    m_Localized: 'Equip a booster to your weapon to increase its attack power.
+
+      Attack
+      Power + 5'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60666799339307008
+    m_Localized: Mount
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60666830360379392
+    m_Localized: 'Powered Armor
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60666833141202944
+    m_Localized: Booster
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
