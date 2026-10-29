@@ -185,30 +185,35 @@ public class PlayerUnit :
             case TargetType.Ally:
 
                 AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
+                BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
                 selectedSkill.skillLogic.Use(this, target, selectedSkill);
                 break;
 
             case TargetType.TwoEnemy:
 
                 AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
+                BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
                 AttackMultipleEnemies(2);
                 break;
 
             case TargetType.ThreeEnemy:
 
                 AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
+                BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
                 AttackMultipleEnemies(3);
                 break;
 
             case TargetType.AllEnemy:
 
                 AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
+                BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
                 AttackAllEnemies();
                 break;
 
             case TargetType.Self:
 
                 AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
+                BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
                 selectedSkill.skillLogic.Use(this, this, selectedSkill);
                 break;
 
@@ -221,6 +226,7 @@ public class PlayerUnit :
                         unit.gameObject.layer == LayerMask.NameToLayer("Player"))
                     {
                         AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
+                        BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
                         selectedSkill.skillLogic.Use(this, unit, selectedSkill);
                     }
                 }
@@ -235,6 +241,7 @@ public class PlayerUnit :
                         unit.gameObject.layer == LayerMask.NameToLayer("Player"))
                     {
                         AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
+                        BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
                         selectedSkill.skillLogic.Use(this, unit, selectedSkill);
                     }
                 }
@@ -277,7 +284,7 @@ public class PlayerUnit :
             {
                 selectedSkill.skillLogic.Use(this, unit, selectedSkill);
                 attacked++;
-
+                BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
                 if (attacked >= count)
                     break;
             }
@@ -291,15 +298,11 @@ public class PlayerUnit :
         {
             if (unit != null && unit.health > 0 && unit.gameObject.layer == LayerMask.NameToLayer("Enemy"))
             {
+                BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
                 selectedSkill.skillLogic.Use(this, unit, selectedSkill);
             }
         }
     }
-
-    // 아군 클릭
-    // 아군 클릭
-    // 아군 클릭
-    // 아군 클릭
     public void OnPointerClick(PointerEventData eventData)
     {
         if (BattleManager.instance != null)

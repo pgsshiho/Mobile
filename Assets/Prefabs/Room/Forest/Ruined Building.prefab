@@ -104,6 +104,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c61ada8106385194e89c6c742489370c, type: 2}
   - {fileID: 11400000, guid: 1eedebb265c9bc7428bfa15045a8ad1c, type: 2}
   - {fileID: 11400000, guid: e01b11f68aa55f646912b6294b680a2b, type: 2}
+  HideUI: {fileID: 0}
   damageAmount: 10
   rewardItemAmount: 2
   damageChance: 20
@@ -210,9 +211,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 995ee3dbe51f07946bdc6b9cdd8b6b9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
-  roomType: 16
+  roomType: 10
   zoneType: 0
-  roomName: ForestEnemy1
+  roomName: ForestRuinbuilding
   enemySpawnPoints: []
   enemies:
   - {fileID: 1669151837191854026, guid: a40a920696447354284c6286375d1e76, type: 3}
@@ -381,7 +382,7 @@ Canvas:
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
   m_UseReflectionProbes: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0

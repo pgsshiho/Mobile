@@ -25,7 +25,8 @@ public class SavedUnitEntry
     public bool hasSelfDestructed;
     public int attackLevel;
     public int defenseLevel;
-    public bool accuracyUpgrade;
+    public int MaxHpLevel;
+    public int accuracyUpgrade;
     public int circuitShortStacks;
     public int ghostingMissPenalty;
     public List<SavedStatusEntry> statuses = new List<SavedStatusEntry>();
@@ -603,8 +604,9 @@ public class Save : MonoBehaviour
             isEmergencyMode = unit.isEmergencyMode,
             hasSelfDestructed = unit.hasSelfDestructed,
             attackLevel = unit.attackLevel,
+            MaxHpLevel = unit.MaxHPLevel,
             defenseLevel = unit.defenseLevel,
-            accuracyUpgrade = unit.accuracyupgrade,
+            accuracyUpgrade = unit.AccurancyLevel,
             circuitShortStacks = unit.circuitShortStacks,
             ghostingMissPenalty = unit.ghostingMissPenalty
         };
@@ -633,8 +635,9 @@ public class Save : MonoBehaviour
             unit.isEmergencyMode = entry.isEmergencyMode;
             unit.hasSelfDestructed = entry.hasSelfDestructed;
             unit.attackLevel = entry.attackLevel;
+            unit.MaxHPLevel = entry.MaxHpLevel;
             unit.defenseLevel = entry.defenseLevel;
-            unit.accuracyupgrade = entry.accuracyUpgrade;
+            unit.AccurancyLevel = entry.accuracyUpgrade;
             unit.circuitShortStacks = entry.circuitShortStacks;
             unit.ghostingMissPenalty = entry.ghostingMissPenalty;
             unit.StatusHandler.RestoreStatuses(entry.statuses);

@@ -159,6 +159,7 @@ public class TurnManager : MonoBehaviour
     }
     public void EndTurn()
     {
+        BattleManager.instance.SKillname("");
         if (currentUnit != null &&
             currentUnit.myturnUI != null)
         {

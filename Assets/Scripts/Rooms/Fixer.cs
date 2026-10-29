@@ -50,11 +50,13 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
 
     [Header("Fixer 상호작용 중 숨길 UI")]
     public GameObject[] hideUIObjects;
+    public GameObject HideForRobotUI;
 
     private bool[] originalUIStates;
 
     TurnOffUIForPrefabs TO;
-
+    [Header("포커스 위치")]
+    public Vector2 focusPosition = new Vector2(0f, -250f);
     private void Awake()
     {
         TO = FindAnyObjectByType<TurnOffUIForPrefabs>();
@@ -172,7 +174,7 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
             Debug.LogWarning("[Fixer] 수리 전용 소환 위치를 찾을 수 없습니다.");
             return;
         }
-
+        HideForRobotUI.SetActive(true);
         PartyManager.instance.PlacePartyAtPositions(spawnPoints);
         Debug.Log("[Fixer] 수리실 파티원 배치 완료");
     }
@@ -187,7 +189,7 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
         }
 
         PartymenuSpawn[] spawners =
-            FindObjectsByType<PartymenuSpawn>(); // CS0618 수정: FindObjectsByType<PartymenuSpawn>(FindObjectsSortMode.None) → FindObjectsByType<PartymenuSpawn>()
+            FindObjectsByType<PartymenuSpawn>(); 
 
         foreach (PartymenuSpawn spawner in spawners)
         {
@@ -196,6 +198,7 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
         }
 
         Debug.Log("[Fixer] 수리용 파티 유닛 회수 완료");
+        HideForRobotUI.SetActive(false);
     }
     public void OnDisable()
     {
@@ -277,8 +280,9 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
         current = target;
         current.health = current.maxHealth;
 
-        Debug.Log(
-            $"[Fixer] {current.Unitname} 수리 완료 - 최대체력({current.health}/{current.maxHealth})까지 치유되었습니다.");
+        Notion.Instance.NotionUpLocalizationFormat("FIxerHeal",
+            target.name
+            );
 
         // Inspector 이벤트 실행
         onRobotSelected?.Invoke(current);
@@ -312,7 +316,7 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
         if (rectTransform != null) // UI
         {
             rectTransform.SetAsLastSibling();
-            seq.Join(rectTransform.DOAnchorPos(Vector2.zero, duration));
+            seq.Join(rectTransform.DOAnchorPos(focusPosition, duration));
             seq.Join(rectTransform.DOScale(focusable.OriginalScale * targetScaleMultiplier, duration));
         }
         else // 3D 월드 오브젝트

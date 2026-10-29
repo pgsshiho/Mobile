@@ -167,29 +167,65 @@ public class ItemManager : MonoBehaviour
 
     public bool UseItem(ItemData item, Unit target)
     {
+        // 아이템과 대상 확인
+        if (item == null || target == null)
+            return false;
+
+        // 사용 가능 여부 확인
         if (!CanUseItem(item, target, out string reason))
         {
-            Debug.Log($"[Item] 사용 불가: {reason}");
+            Debug.Log($"[Item] 사용 실패: {reason}");
             return false;
         }
 
-        ItemRuntime runtime = inventory.Find(entry => entry != null && entry.data == item);
-        if (item.maxUseCount > 0 && runtime.usedCount >= item.maxUseCount)
+        // 실제 인벤토리에서 아이템 데이터 찾기
+        ItemRuntime runtime = inventory.Find(entry =>
+            entry != null &&
+            entry.data == item);
+
+        // 보유 수량 확인
+        if (runtime == null || runtime.count <= 0)
         {
-            Debug.Log("[Item] 사용 횟수 한도에 도달했습니다.");
+            Debug.LogWarning($"[Item] {item.itemName}의 보유 수량이 없습니다.");
             return false;
         }
 
-        if (!ApplyItemEffect(item, target, runtime))
+        // 아이템별 사용 횟수 제한 확인
+        if (item.maxUseCount > 0 &&
+            runtime.usedCount >= item.maxUseCount)
+        {
+            Debug.LogWarning($"[Item] {item.itemName}의 사용 횟수를 초과했습니다.");
+            return false;
+        }
+
+        // 아이템 효과 적용
+        bool success = ApplyItemEffect(item, target, runtime);
+
+        // 효과 적용에 성공한 경우에만 차감 및 저장
+        if (!success)
             return false;
 
-        runtime.count--;
+        runtime.count = Mathf.Max(0, runtime.count - 1);
         runtime.usedCount++;
-        if (BattleManager.instance != null && BattleManager.instance.isBattle)
-            itemUsedThisTurn = true;
 
+        // 전투 중 아이템 사용 여부 기록
+        if (BattleManager.instance != null &&
+            BattleManager.instance.isBattle)
+        {
+            itemUsedThisTurn = true;
+        }
+
+        // 변경된 인벤토리 저장
         SaveToData();
+
+        // 구독 중인 UI에 변경 사실 알림
         OnInventoryChanged?.Invoke();
+
+        Debug.Log(
+            $"[Item] {item.itemName} 사용 완료 / " +
+            $"남은 수량: {runtime.count}"
+        );
+
         return true;
     }
 

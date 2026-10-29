@@ -1,69 +1,72 @@
+
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
+
 [System.Serializable]
 public class UnitSelectedEvent : UnityEvent<Unit> { }
+
 public class BlackMarket : MonoBehaviour
 {
     [Header("로봇 목록")]
     public Unit[] Robots;
     public bool cantouchRobot = false;
+    public bool isSelectingRobot = false;
 
-    [Header("구매 비용 설정")]
+    [Header("구매 비용")]
     [Tooltip("구매에 필요한 골드")]
     public int requiredGold = 100;
+
     [Tooltip("구매에 필요한 재료")]
     public int requiredMaterial = 0;
 
-    [Header("선택지 텍스트 설정")]
-    [Tooltip("구매 선택지 텍스트")]
+    [Header("선택지 텍스트")]
     public string buyChoiceText = "BlackMarketBuy";
-    [Tooltip("나가기 선택지 텍스트")]
     public string exitChoiceText = "BlackMarketLeave";
 
-    [Header("다이얼로그 키 설정")]
-    [Tooltip("로컬라이제이션 테이블의 '돈이 더 필요해' 키")]
+    [Header("다이얼로그")]
     public string noMoneyDialogueKey = "BLACKMARKET_NO_MONEY";
-
-
-    [Header("대화 키 목록")]
     public string[] Dialoguekey;
 
-    [Header("기본 연출 설정")]
-    public float duration = 1.0f;
+    [Header("포커스 연출")]
+    public float duration = 1f;
     public float targetScaleMultiplier = 2.5f;
-    [Tooltip("3D 월드 오브젝트 포커스 시 카메라와의 거리")]
     public float distanceFromCamera = 5f;
-    public bool IsTweening { get; private set; } = false;
-    [Header("BlackMarket 전용 로봇 소환 위치")]
-    [Tooltip("수리할 로봇이 배치될 위치")]
+
+    public bool IsTweening { get; private set; }
+
+    [Header("로봇 배치 위치")]
     public Transform[] repairSpawnPositions;
 
     [Header("상점 UI")]
     public GameObject shopUI;
-
-    private Camera mainCamera;
-    private FocusableObject currentFocusedTarget;
+    public GameObject shoperHideUI;
 
     [Header("로봇 선택 이벤트")]
     public UnitSelectedEvent onRobotSelected = new UnitSelectedEvent();
 
     public Unit current;
 
-    [Header("BlackMarket 상호작용 중 숨길 UI")]
+    [Header("상호작용 중 숨길 UI")]
     public GameObject[] hideUIObjects;
+    
 
-    private bool[] originalUIStates;
-
-    TurnOffUIForPrefabs TO;
-
+    [Header("상품 종류")]
     public int KindOfItem = 0;
 
+    private Camera mainCamera;
+    private FocusableObject currentFocusedTarget;
+    private bool[] originalUIStates;
+    private TurnOffUIForPrefabs uiPrefabManager;
+    [Header("포커스 위치")]
+    public Vector2 focusPosition = new Vector2(0f, -250f);
     private void Awake()
     {
-        TO = FindAnyObjectByType<TurnOffUIForPrefabs>();
-        hideUIObjects = TO.TurnOffs;
+        uiPrefabManager = FindAnyObjectByType<TurnOffUIForPrefabs>();
+
+        if (uiPrefabManager != null)
+            hideUIObjects = uiPrefabManager.TurnOffs;
 
         if (hideUIObjects == null)
             return;
@@ -77,7 +80,30 @@ public class BlackMarket : MonoBehaviour
         }
     }
 
-    // UI 숨기기
+    private void OnEnable()
+    {
+        FocusManager.RequestFocusOut += OnRequestFocusOut;
+    }
+
+    private void OnDisable()
+    {
+        FocusManager.RequestFocusOut -= OnRequestFocusOut;
+
+        if (BattleManager.instance != null &&
+            BattleManager.instance.IsSelectingFixerTarget)
+        {
+            BattleManager.instance.CancelFixerTargetSelection();
+        }
+
+        isSelectingRobot = false;
+        RestoreInteractionUI();
+    }
+
+
+    // ─────────────────────────────────────────────
+    // UI 표시 및 복구
+    // ─────────────────────────────────────────────
+
     private void HideInteractionUI()
     {
         if (hideUIObjects == null)
@@ -90,7 +116,6 @@ public class BlackMarket : MonoBehaviour
         }
     }
 
-    // 기존 활성 상태로 복구
     public void RestoreInteractionUI()
     {
         if (hideUIObjects == null || originalUIStates == null)
@@ -103,82 +128,81 @@ public class BlackMarket : MonoBehaviour
         }
     }
 
-    public void OnEnable()
-    {
-        FocusManager.RequestFocusOut += OnRequestFocusOut;
-    }
-
     private void OnRequestFocusOut()
     {
-        // 로봇 선택 중일 때는 다이얼로그 닫힘 등으로 인한 외부 FocusOut 요청을 무시합니다.
-        if (BattleManager.instance != null && BattleManager.instance.IsSelectingFixerTarget)
+        // 다른 시스템의 포커스 해제 요청으로 선택이 끊기지 않게 한다.
+        if (isSelectingRobot)
+            return;
+
+        if (BattleManager.instance != null &&
+            BattleManager.instance.IsSelectingFixerTarget)
             return;
 
         FocusOut();
     }
 
+    // ─────────────────────────────────────────────
+    // 파티 로봇 배치 및 회수
+    // ─────────────────────────────────────────────
+
     public void PlacePartyAtBlackMarketPositions()
     {
         if (PartyManager.instance == null)
         {
-            Debug.LogWarning("[Fixer] PartyManager를 찾을 수 없습니다.");
+            Debug.LogWarning("[BlackMarket] PartyManager를 찾을 수 없습니다.");
             return;
         }
 
-        Transform[] spawnPoints = null;
-        Camera cam = mainCamera != null ? mainCamera : Camera.main;
-
-        // 1. 설정된 repairSpawnPositions가 현재 카메라 시야 내에 유효한지 검사
-        if (repairSpawnPositions != null && repairSpawnPositions.Length > 0 && repairSpawnPositions[0] != null)
-        {
-            if (cam != null)
-            {
-                Vector3 vp = cam.WorldToViewportPoint(repairSpawnPositions[0].position);
-                // 화면 시야 범위(0~1) 내에 들어오고 카메라 앞쪽(z > 0)인지 확인
-                if (vp.z > 0 && vp.x >= -0.2f && vp.x <= 1.2f && vp.y >= -0.2f && vp.y <= 1.2f)
-                {
-                    spawnPoints = repairSpawnPositions;
-                }
-                else
-                {
-                    Debug.LogWarning($"[Fixer] repairSpawnPositions가 카메라 시야 밖({repairSpawnPositions[0].position})에 있습니다. 카메라 정면 파티 위치로 자동 전환합니다.");
-                }
-            }
-            else
-            {
-                spawnPoints = repairSpawnPositions;
-            }
-        }
-
-        // 2. repairSpawnPositions가 카메라 밖 엉뚱한 곳에 있거나 설정되지 않은 경우:
-        // 카메라가 정면으로 비추는 BattleManager.instance.Party 위치를 우선 사용
-        if (spawnPoints == null)
-        {
-            if (BattleManager.instance != null &&
-                BattleManager.instance.Party != null &&
-                BattleManager.instance.Party.Length > 0 &&
-                BattleManager.instance.Party[0] != null)
-            {
-                spawnPoints = BattleManager.instance.Party;
-            }
-            else
-            {
-                spawnPoints = repairSpawnPositions;
-            }
-        }
+        Transform[] spawnPoints = GetAvailableSpawnPositions();
 
         if (spawnPoints == null || spawnPoints.Length == 0)
         {
-            Debug.LogWarning("[Fixer] 수리 전용 소환 위치를 찾을 수 없습니다.");
+            Debug.LogWarning("[BlackMarket] 로봇 배치 위치를 찾을 수 없습니다.");
             return;
         }
 
         PartyManager.instance.PlacePartyAtPositions(spawnPoints);
-        Debug.Log("[Fixer] 수리실 파티원 배치 완료");
+        Debug.Log("[BlackMarket] 파티 로봇 배치 완료");
     }
-    /// <summary>
-    /// 수리 선택용으로 소환/배치된 파티 유닛을 회수합니다.
-    /// </summary>
+
+    private Transform[] GetAvailableSpawnPositions()
+    {
+        Camera cam = mainCamera != null ? mainCamera : Camera.main;
+
+        if (repairSpawnPositions != null &&
+            repairSpawnPositions.Length > 0 &&
+            repairSpawnPositions[0] != null)
+        {
+            if (cam == null)
+                return repairSpawnPositions;
+
+            Vector3 viewportPosition =
+                cam.WorldToViewportPoint(repairSpawnPositions[0].position);
+
+            bool isVisible =
+                viewportPosition.z > 0 &&
+                viewportPosition.x >= -0.2f &&
+                viewportPosition.x <= 1.2f &&
+                viewportPosition.y >= -0.2f &&
+                viewportPosition.y <= 1.2f;
+
+            if (isVisible)
+                return repairSpawnPositions;
+
+            Debug.LogWarning(
+                "[BlackMarket] 배치 위치가 카메라 시야 밖에 있어 기본 파티 위치를 사용합니다.");
+        }
+
+        if (BattleManager.instance != null &&
+            BattleManager.instance.Party != null &&
+            BattleManager.instance.Party.Length > 0 &&
+            BattleManager.instance.Party[0] != null)
+        {
+            return BattleManager.instance.Party;
+        }
+
+        return repairSpawnPositions;
+    }
     public void RecallRepairParty()
     {
         if (PartyManager.instance != null)
@@ -187,7 +211,7 @@ public class BlackMarket : MonoBehaviour
         }
 
         PartymenuSpawn[] spawners =
-            FindObjectsByType<PartymenuSpawn>(); // CS0618 수정: FindObjectsByType<PartymenuSpawn>(FindObjectsSortMode.None) → FindObjectsByType<PartymenuSpawn>()
+            FindObjectsByType<PartymenuSpawn>();
 
         foreach (PartymenuSpawn spawner in spawners)
         {
@@ -195,164 +219,140 @@ public class BlackMarket : MonoBehaviour
                 spawner.RecallSpawnedUnits();
         }
 
-        Debug.Log("[Fixer] 수리용 파티 유닛 회수 완료");
+        Debug.Log("[BlackMarket] 수리용 파티 유닛 회수 완료");
     }
-    public void OnDisable()
-    {
-        FocusManager.RequestFocusOut -= OnRequestFocusOut;
+    // ─────────────────────────────────────────────
+    // 상점 및 구매
+    // ─────────────────────────────────────────────
 
-        if (BattleManager.instance != null && BattleManager.instance.IsSelectingFixerTarget)
-        {
-            BattleManager.instance.CancelFixerTargetSelection();
-        }
-        else
-        {
-            RecallRepairParty();
-            RestoreInteractionUI();
-        }
+    public void OnPointerClick()
+    {
+        FocusIn(gameObject);
     }
 
-    public void OnPointerClick(PointerEventData eventData)
+    public void TurnOntheShopUI()
     {
-        GameObject clickedObject = eventData.pointerPress;
-        if (clickedObject != null)
+        Debug.Log("[BlackMarket] 상점 UI 켜기");
+
+        if (shopUI != null)
         {
-            FocusIn(gameObject);
+            Debug.Log("[BlackMarket] shopUI 활성화");
+
+            shopUI.SetActive(true);
+
+            RectTransform rect = shopUI.GetComponent<RectTransform>();
+
+            if (rect != null)
+                rect.SetAsLastSibling();
         }
     }
+
+    public void ItemBuy(int itemKind)
+    {
+        KindOfItem = itemKind;
+        TryPurchase();
+    }
+
+    private void TryPurchase()
+    {
+        if (!TryGetItemPrice(out int goldCost))
+        {
+            Debug.LogWarning($"[BlackMarket] 잘못된 상품 종류: {KindOfItem}");
+            return;
+        }
+
+        if (CurrencyManager.instance == null)
+        {
+            Debug.LogWarning("[BlackMarket] CurrencyManager를 찾을 수 없습니다.");
+            return;
+        }
+
+        requiredGold = goldCost;
+
+        bool hasEnoughGold =
+            CurrencyManager.instance.HasEnough(CurrencyType.Gold, requiredGold);
+
+        bool hasEnoughMaterial =
+            requiredMaterial <= 0 ||
+            CurrencyManager.instance.HasEnough(
+                CurrencyType.Material, requiredMaterial);
+
+        if (!hasEnoughGold || !hasEnoughMaterial)
+        {
+            Debug.Log("[BlackMarket] 재화가 부족합니다.");
+
+            if (DialogueManager.instance != null)
+            {
+                DialogueManager.instance.StartDialogue(
+                    new string[] { noMoneyDialogueKey });
+            }
+
+            return;
+        }
+
+        // 선택 모드를 시작할 수 있을 때만 결제한다.
+        BeginRepairSelection();
+
+        if (!isSelectingRobot)
+            return;
+
+        if (requiredGold > 0)
+        {
+            CurrencyManager.instance.SpendCurrency(
+                CurrencyType.Gold, requiredGold);
+        }
+
+        if (requiredMaterial > 0)
+        {
+            CurrencyManager.instance.SpendCurrency(
+                CurrencyType.Material, requiredMaterial);
+        }
+
+        Debug.Log(
+            $"[BlackMarket] 구매 완료: 골드 -{requiredGold}, 재료 -{requiredMaterial}");
+    }
+
+    private bool TryGetItemPrice(out int price)
+    {
+        switch (KindOfItem)
+        {
+            case 0:
+                price = 10000;
+                return true;
+
+            case 1:
+                price = 7000;
+                return true;
+
+            case 2:
+                price = 5000;
+                return true;
+
+            default:
+                price = 0;
+                return false;
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // 로봇 강화 선택
+    // ─────────────────────────────────────────────
 
     public void BeginBlackMarketSelector()
     {
         if (BattleManager.instance == null ||
             !BattleManager.instance.BeginBlackMarketSelector(this))
         {
-            Debug.LogWarning(
-                "[Fixer] 파티원을 소환하거나 선택할 수 없습니다.");
-        }
-    }
-    /// <summary>
-    /// 플레이어가 선택한 로봇을 전달받아 Inspector 이벤트를 실행합니다.
-    /// </summary>
-    public bool OnRobotSelected(Unit target)
-    {
-        if (target == null)
-            return false;
-        // 선택한 로봇 최대체력까지 치유
-        current = target;
-        switch (KindOfItem)
-        {
-            case 0:
-                current.accuracy += 5;
-                break;
-            case 1:
-                current.maxHealth += 10;
-                break;
-            case 2:
-                current.attackPower += 5;
-                break;
-        }
-
-
-        Debug.Log(
-            $"[BlackMarket] {current.Unitname} 수리 완료 - 최대체력({current.health}/{current.maxHealth})까지 치유되었습니다.");
-
-        // Inspector 이벤트 실행
-        onRobotSelected?.Invoke(current);
-        Save.CommitSave();
-        return true;
-    }
-    private void FocusIn(GameObject target)
-    {
-        if (IsTweening || target == null) return;
-
-        FocusableObject focusable = target.GetComponent<FocusableObject>();
-        if (focusable == null)
-        {
-            focusable = target.AddComponent<FocusableObject>();
-        }
-
-        if (focusable.IsFocused) return;
-
-        if (currentFocusedTarget != null && currentFocusedTarget != focusable)
-        {
-            FocusOut();
-        }
-
-        currentFocusedTarget = focusable;
-        focusable.IsFocused = true;
-        IsTweening = true;
-
-        RectTransform rectTransform = target.GetComponent<RectTransform>();
-        Sequence seq = DOTween.Sequence();
-
-        if (rectTransform != null) // UI
-        {
-            rectTransform.SetAsLastSibling();
-            seq.Join(rectTransform.DOAnchorPos(Vector2.zero, duration));
-            seq.Join(rectTransform.DOScale(focusable.OriginalScale * targetScaleMultiplier, duration));
-        }
-        else // 3D 월드 오브젝트
-        {
-            if (mainCamera == null) mainCamera = Camera.main;
-            Vector3 targetWorldPos = mainCamera.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, distanceFromCamera));
-            seq.Join(target.transform.DOMove(targetWorldPos, duration));
-            seq.Join(target.transform.DOScale(focusable.OriginalScale * targetScaleMultiplier, duration));
-            seq.Join(target.transform.DORotateQuaternion(Quaternion.LookRotation(mainCamera.transform.forward), duration));
-        }
-
-        seq.SetEase(Ease.OutCubic)
-           .OnComplete(() => IsTweening = false);
-
-        // 다이얼로그 + 선택지(구매한다 / 나간다) 표시
-        if (DialogueManager.instance != null)
-        {
-            string[] keysToUse = (Dialoguekey != null && Dialoguekey.Length > 0)
-                ? Dialoguekey
-                : new string[] { "BlackMarket" };
-
-            DialogueManager.instance.StartDialogueWithChoices(
-                keysToUse,
-                new DialogueChoice[]
-                {
-                    new DialogueChoice
-                    {
-                        text = LocalizationManager.GetLocalizedString(buyChoiceText),
-                        onSelected = CreateBuyEvent()
-                    },
-                    new DialogueChoice
-                    {
-                        text = LocalizationManager.GetLocalizedString(exitChoiceText)
-                    },
-                }
-            );
+            Debug.LogWarning("[BlackMarket] 로봇 선택을 시작할 수 없습니다.");
         }
     }
 
-    /// <summary>
-    /// "구매한다" 선택지에 연결할 UnityEvent를 생성합니다.
-    /// </summary>
-    private UnityEngine.Events.UnityEvent CreateBuyEvent()
-    {
-        var evt = new UnityEngine.Events.UnityEvent();
-        evt.AddListener(TurnOntheShopUI);
-        return evt;
-    }
-    public void TurnOntheShopUI()
-    {
-        shopUI.SetActive(true);
-    }
-
-    public void ItemBuy(int ItemKind)
-    {
-        KindOfItem = ItemKind;
-        TryPurchase();
-    }
     public void BeginRepairSelection()
     {
         if (PartyManager.instance == null ||
             BattleManager.instance == null)
         {
-            Debug.LogWarning("[BlackMarket] 파티 관리자를 찾을 수 없습니다.");
+            Debug.LogWarning("[BlackMarket] 필요한 관리자를 찾을 수 없습니다.");
             return;
         }
 
@@ -361,100 +361,218 @@ public class BlackMarket : MonoBehaviour
 
         HideInteractionUI();
 
-        // 파티원 선택 모드 시작 및 배치
         if (!BattleManager.instance.BeginBlackMarketSelector(this))
         {
-            Debug.LogWarning("[BlackMarket] 수리할 파티원을 선택할 수 없습니다.");
+            Debug.LogWarning("[BlackMarket] 로봇 선택을 시작할 수 없습니다.");
             RestoreInteractionUI();
             return;
         }
+        shopUI.gameObject.SetActive(false);
+        shoperHideUI.gameObject.SetActive(true);
+        isSelectingRobot = true;
     }
-    /// <summary>
-    /// 구매 조건 확인 (파티 정원 4명 검사 -> 재화 검사 -> Action으로 모든 FactoryAddUnit의 CanClick 활성화)
-    /// </summary>
-    private void TryPurchase()
+    public bool OnRobotSelected(Unit target)
     {
-        switch(KindOfItem)
+        if (target == null)
+            return false;
+
+        current = target;
+
+        switch (KindOfItem)
         {
             case 0:
-                requiredGold = 10000;
-                // Handle item kind 0
+                current.accuracy += 5;
+                Notion.Instance.NotionUpLocalization("BlackMarketAccuracyUp");
                 break;
+
             case 1:
-                requiredGold = 7000;
+                current.maxHealth += 10;
+                Notion.Instance.NotionUpLocalization("BlackMarketMaxHealthUp");
                 break;
-            // Add more cases as needed
+
             case 2:
-                requiredGold = 5000;
+                current.attackPower += 5;
+                Notion.Instance.NotionUpLocalization("BlackMarketAttackPowerUp");
                 break;
+
+            default:
+                Debug.LogWarning($"[BlackMarket] 잘못된 상품 종류: {KindOfItem}");
+                return false;
         }
-        // 2. 비용 조건 확인 (CurrencyManager)
-        bool hasGold = CurrencyManager.instance == null || CurrencyManager.instance.HasEnough(CurrencyType.Gold, requiredGold);
-        bool hasMaterial = CurrencyManager.instance == null || requiredMaterial <= 0 || CurrencyManager.instance.HasEnough(CurrencyType.Material, requiredMaterial);
 
-        if (!hasGold || !hasMaterial)
-        {
-            // 재화 부족 실패: 다이얼로그 출력 후 종료
-            Debug.Log("[RobotFactory] 재화 부족 — 구매 실패");
+        onRobotSelected?.Invoke(current);
 
-            if (DialogueManager.instance != null)
-            {
-                DialogueManager.instance.StartDialogue(new string[] { noMoneyDialogueKey });
-            }
+        isSelectingRobot = false;
+        RestoreInteractionUI();
+        FocusOut();
+        RecallRepairParty();
+        Save.CommitSave();
+
+        Debug.Log($"[BlackMarket] {current.Unitname} 강화 완료");
+        return true;
+    }
+
+    // ─────────────────────────────────────────────
+    // NPC 포커스 및 대화
+    // ─────────────────────────────────────────────
+
+    private void FocusIn(GameObject target)
+    {
+        if (IsTweening || target == null)
             return;
-        }
 
-        // 3. 재화 결제 차감
-        if (CurrencyManager.instance != null)
+        FocusableObject focusable = target.GetComponent<FocusableObject>();
+
+        if (focusable == null)
+            focusable = target.AddComponent<FocusableObject>();
+
+        if (focusable.IsFocused)
+            return;
+
+        if (currentFocusedTarget != null &&
+            currentFocusedTarget != focusable)
         {
-            if (requiredGold > 0)
-                CurrencyManager.instance.SpendCurrency(CurrencyType.Gold, requiredGold);
-            if (requiredMaterial > 0)
-                CurrencyManager.instance.SpendCurrency(CurrencyType.Material, requiredMaterial);
+            FocusOut();
+
+            if (IsTweening)
+                return;
         }
 
-        Debug.Log($"<color=cyan>[RobotFactory]</color> 구매 완료! (골드 -{requiredGold}, 재료 -{requiredMaterial}) 원하는 로봇을 클릭/선택하여 파티에 추가하세요.");
+        currentFocusedTarget = focusable;
+        focusable.IsFocused = true;
+        IsTweening = true;
 
-        BeginRepairSelection();
+        RectTransform rectTransform = target.GetComponent<RectTransform>();
+        Sequence sequence = DOTween.Sequence();
 
+        if (rectTransform != null)
+        {
+            rectTransform.SetAsLastSibling();
+
+            sequence.Join(
+                rectTransform.DOAnchorPos(focusPosition, duration));
+
+            sequence.Join(
+                rectTransform.DOScale(
+                    focusable.OriginalScale * targetScaleMultiplier, duration));
+        }
+        else
+        {
+            if (mainCamera == null)
+                mainCamera = Camera.main;
+
+            if (mainCamera != null)
+            {
+                Vector3 targetPosition = mainCamera.ViewportToWorldPoint(
+                    new Vector3(0.5f, 0.5f, distanceFromCamera));
+
+                sequence.Join(target.transform.DOMove(targetPosition, duration));
+                sequence.Join(target.transform.DOScale(
+                    focusable.OriginalScale * targetScaleMultiplier, duration));
+
+                sequence.Join(target.transform.DORotateQuaternion(
+                    Quaternion.LookRotation(mainCamera.transform.forward), duration));
+            }
+        }
+
+        sequence
+            .SetEase(Ease.OutCubic)
+            .OnComplete(() => IsTweening = false);
+
+        ShowDialogueChoices();
+    }
+
+    private void ShowDialogueChoices()
+    {
+        if (DialogueManager.instance == null)
+            return;
+
+        string[] dialogueKeys =
+            Dialoguekey != null && Dialoguekey.Length > 0
+                ? Dialoguekey
+                : new string[] { "BlackMarket" };
+
+        DialogueManager.instance.StartDialogueWithChoices(
+            dialogueKeys,
+            new DialogueChoice[]
+            {
+                new DialogueChoice
+                {
+                    text = LocalizationManager.GetLocalizedString(buyChoiceText),
+                    onSelected = CreateBuyEvent()
+                },
+                new DialogueChoice
+                {
+                    text = LocalizationManager.GetLocalizedString(exitChoiceText)
+                }
+            });
+    }
+
+    private UnityEvent CreateBuyEvent()
+    {
+        UnityEvent buyEvent = new UnityEvent();
+        buyEvent.AddListener(TurnOntheShopUI);
+        return buyEvent;
     }
 
     public void FocusOut()
     {
-        if (IsTweening || currentFocusedTarget == null) return;
+        if (IsTweening || currentFocusedTarget == null)
+            return;
 
         IsTweening = true;
+
         FocusableObject focusable = currentFocusedTarget;
         GameObject target = focusable.gameObject;
         RectTransform rectTransform = target.GetComponent<RectTransform>();
 
-        Sequence seq = DOTween.Sequence();
+        Sequence sequence = DOTween.Sequence();
 
         if (rectTransform != null)
         {
-            seq.Join(rectTransform.DOAnchorPos(focusable.OriginalPosition, duration));
-            seq.Join(rectTransform.DOScale(focusable.OriginalScale, duration));
-            seq.SetEase(Ease.OutCubic)
-               .OnComplete(() =>
-               {
-                   rectTransform.SetSiblingIndex(focusable.OriginalSiblingIndex);
-                   focusable.IsFocused = false;
-                   currentFocusedTarget = null;
-                   IsTweening = false;
-               });
+            sequence.Join(
+                rectTransform.DOAnchorPos(focusable.OriginalPosition, duration));
+
+            sequence.Join(
+                rectTransform.DOScale(focusable.OriginalScale, duration));
+
+            sequence.SetEase(Ease.OutCubic).OnComplete(() =>
+            {
+                rectTransform.SetSiblingIndex(focusable.OriginalSiblingIndex);
+                FinishFocusOut(focusable);
+            });
         }
         else
         {
-            seq.Join(target.transform.DOMove(focusable.OriginalPosition, duration));
-            seq.Join(target.transform.DOScale(focusable.OriginalScale, duration));
-            seq.Join(target.transform.DORotateQuaternion(focusable.OriginalRotation, duration));
-            seq.SetEase(Ease.OutCubic)
-               .OnComplete(() =>
-               {
-                   focusable.IsFocused = false;
-                   currentFocusedTarget = null;
-                   IsTweening = false;
-               });
+            sequence.Join(
+                target.transform.DOMove(focusable.OriginalPosition, duration));
+
+            sequence.Join(
+                target.transform.DOScale(focusable.OriginalScale, duration));
+
+            sequence.Join(
+                target.transform.DORotateQuaternion(
+                    focusable.OriginalRotation, duration));
+
+            sequence.SetEase(Ease.OutCubic).OnComplete(() =>
+            {
+                FinishFocusOut(focusable);
+            });
         }
+    }
+
+    private void FinishFocusOut(FocusableObject focusable)
+    {
+        focusable.IsFocused = false;
+        currentFocusedTarget = null;
+        IsTweening = false;
+    }
+    public void CloseShopUI()
+    {
+        if (shopUI != null)
+            shopUI.SetActive(false);
+
+        if (shoperHideUI != null)
+            shoperHideUI.SetActive(false);
     }
 }

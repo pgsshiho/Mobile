@@ -21,6 +21,14 @@ public class RobotClick : MonoBehaviour, IPointerClickHandler
     public TextMeshProUGUI speed;
     public TextMeshProUGUI energyMax;
     public TextMeshProUGUI energyCurrent;
+    public TextMeshProUGUI AttackUp;
+    public TextMeshProUGUI AttackMaxUp;
+    public TextMeshProUGUI DepenceUp;
+    public TextMeshProUGUI DepenceMaxUp;
+    public TextMeshProUGUI AccuraryUp;
+    public TextMeshProUGUI AccuraryMaxUp;
+    public TextMeshProUGUI MaxHPUp;
+    public TextMeshProUGUI MaxHPMaxUp;
 
     public Slider Hp;
 
@@ -40,16 +48,38 @@ public class RobotClick : MonoBehaviour, IPointerClickHandler
 
     public void OnPointerClick(PointerEventData eventData)
     {
+        Debug.Log($"[RobotClick] 터치됨: {Self?.Unitname ?? "Self가 null"}");
         if (BattleManager.instance != null)
         {
-            // 분수대 선택은 일반 대상 선택보다 먼저 처리한다.
+            // 1. 분수대 대상 선택
             if (BattleManager.instance.IsSelectingFountainTarget)
             {
                 BattleManager.instance.TryHandleFountainTarget(Self);
+                Debug.Log("분수대 선택");
                 return;
             }
 
-            // 기존 아이템 / Fixer / 스킬 대상 선택 처리
+            // 2. 블랙마켓 대상 선택
+            if (BattleManager.instance.IsSelectingBlackMaket)
+            {
+                BattleManager.instance.TryHandleBlackMarketTarget(Self);
+                Debug.Log("블랙마켓 선택");
+                return;
+            }
+            //3. 수리점 대상 선택
+            if (BattleManager.instance.IsSelectingFixerTarget)
+            {
+                BattleManager.instance.TryHandleFixerTarget(Self);
+                Debug.Log("수리점 선택");
+                return;
+            }
+            if (BattleManager.instance.IsSelectingBlackSmith)
+            {
+                BattleManager.instance.TryHandleBlackSmithTarget(Self);
+                Debug.Log("수리점 선택");
+                return;
+            }
+            // 3. 다른 대상 선택 중에는 일반 스탯 UI를 열지 않음
             if (BattleManager.instance.IsSelectingAnyTarget ||
                 BattleManager.instance.IsSelectingItemTarget ||
                 BattleManager.instance.IsSelectingFixerTarget)
@@ -63,9 +93,6 @@ public class RobotClick : MonoBehaviour, IPointerClickHandler
         if (myUI != null)
             myUI.SetActive(true);
     }
-
-
-
     private void OnDisable()
     {
         // 유닛이 필드에서 회수(비활성화)될 때 열려 있던 스탯창도 함께 닫아준다.
@@ -86,11 +113,20 @@ public class RobotClick : MonoBehaviour, IPointerClickHandler
         attackPower.text = Self.attackPower.ToString();
         defensePower.text = Self.defensePower.ToString();
         specialArmor.text = Self.specialArmor.ToString();
+        criticalChance.text = Self.criticalChance.ToString();
         accuracy.text = Self.accuracy.ToString();
         dodgeChance.text = Self.dodgeChance.ToString();
         speed.text = Self.speed.ToString();
         energyMax.text = Self.energyMax.ToString();
         energyCurrent.text = Self.energyCurrent.ToString();
+        AttackUp.text = Self.attackLevel.ToString();
+        AttackMaxUp.text = Self.maxAttackLevel.ToString();
+        DepenceUp.text = Self.defenseLevel.ToString();
+        DepenceMaxUp.text = Self.maxDefenseLevel.ToString();
+        AccuraryUp.text = Self.AccurancyLevel.ToString();
+        AccuraryMaxUp.text = Self.maxAccurancyLevel.ToString();
+        MaxHPUp.text = Self.MaxHPLevel.ToString();
+        MaxHPMaxUp.text = Self.maxMaxHPLevel.ToString();
 
         if (Hp != null)
         {

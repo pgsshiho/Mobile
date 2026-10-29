@@ -17,11 +17,6 @@ public class SettingPanelButtonManager : MonoBehaviour
         ButtonSetting();
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 
     public void ButtonSetting()
     {

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -23,10 +24,10 @@ public enum RoomType
     // 세부 방 종류
     ItemShop,
     Blacksmith,
+    BlackMarket,
     RepairShop,
     Fountain,
-    SageStone,
-    TrainingRoom,
+    RuinBuilding,
 
     GrassRoom,
     FloodedRoom,
@@ -42,10 +43,31 @@ public enum RoomType
 public class RoomManager : MonoBehaviour
 {
     public static RoomManager instance;
-    [Header("방 이동 포커스 연출")]
-    [SerializeField] private float focusViewDuration = 1.0f;
 
     private bool isMoving;
+    private enum MoveDirection
+    {
+        None,
+        Forward,
+        Backward,
+        Left,
+        Right
+    }
+
+    private class RoomVisit
+    {
+        public RoomNode node;
+        public MoveDirection enteredBy;
+
+        public RoomVisit(RoomNode node, MoveDirection enteredBy)
+        {
+            this.node = node;
+            this.enteredBy = enteredBy;
+        }
+    }
+
+    // 실제 방문 경로를 기록한다.
+    private List<RoomVisit> movementHistory = new List<RoomVisit>();
     [Header("Zone & Room Settings")]
     [Tooltip("한 Zone당 생성할 총 방의 개수 (항상 최소 13개)")]
     [Min(13)]
@@ -136,9 +158,13 @@ public class RoomManager : MonoBehaviour
         UnityEngine.Random.InitState(mapSeed);
         GenerateMap();
         UnityEngine.Random.state = previousRandomState;
-
         if (allNodes.Count > 0)
         {
+            movementHistory.Clear();
+            movementHistory.Add(
+                new RoomVisit(allNodes[0], MoveDirection.None)
+            );
+
             EnterNode(allNodes[0]);
         }
     }
@@ -261,22 +287,21 @@ public class RoomManager : MonoBehaviour
         // 3. 로봇 공장 1개
         middleRooms.Add(RoomType.RobotFactory);
 
-        // 4. 보상 방 3종 중 서로 다른 2개
+        // 4. 보상 방 2종 중 서로 다른 1개
         List<RoomType> requiredRewards = new List<RoomType>
         {
             RoomType.Fountain,
-            RoomType.SageStone,
-            RoomType.TrainingRoom
+            RoomType.RuinBuilding,
         };
         ShuffleList(requiredRewards);
         middleRooms.Add(requiredRewards[0]);
-        middleRooms.Add(requiredRewards[1]);
 
         // 5. 상점 방 3종 중 서로 다른 2개
         List<RoomType> requiredShops = new List<RoomType>
         {
             RoomType.ItemShop,
             RoomType.Blacksmith,
+            RoomType.BlackMarket,
             RoomType.RepairShop
         };
         ShuffleList(requiredShops);
@@ -355,8 +380,7 @@ public class RoomManager : MonoBehaviour
         RoomType[] rewards =
         {
             RoomType.Fountain,
-            RoomType.SageStone,
-            RoomType.TrainingRoom
+            RoomType.RuinBuilding,
         };
 
         return rewards[
@@ -370,7 +394,8 @@ public class RoomManager : MonoBehaviour
         {
             RoomType.ItemShop,
             RoomType.Blacksmith,
-            RoomType.RepairShop
+            RoomType.RepairShop,
+            RoomType.BlackMarket
         };
 
         return village[
@@ -635,6 +660,12 @@ public class RoomManager : MonoBehaviour
             {
                 node.rightRoom = rightNode;
             }
+            Debug.Log(
+       $"Node {node.id} ({node.roomType}) " +
+       $"좌표: {node.gridPos} | " +
+       $"왼쪽: {(node.leftRoom != null ? $"Node {node.leftRoom.id} ({node.leftRoom.roomType})" : "없음")} | " +
+       $"오른쪽: {(node.rightRoom != null ? $"Node {node.rightRoom.id} ({node.rightRoom.roomType})" : "없음")}"
+   );
         }
     }
 
@@ -758,83 +789,127 @@ public class RoomManager : MonoBehaviour
     // 방 이동
     // ============================================================
 
-    public void FocusMove()
-    {
-        CameraFocus.Instance?.FocusOn(gameObject);
-    }
 
     public void MoveForward()
     {
-        if (currentNode == null || currentNode.forwardRoom == null)
-            return;
-
-        RequestMove(currentNode.forwardRoom);
+        RequestMove(MoveDirection.Forward);
     }
 
     public void MoveBackward()
     {
-        if (currentNode == null || currentNode.backwardRoom == null)
-            return;
-
-        RequestMove(currentNode.backwardRoom);
+        RequestMove(MoveDirection.Backward);
     }
 
     public void MoveLeft()
     {
-        if (currentNode == null || currentNode.leftRoom == null)
-            return;
-
-        RequestMove(currentNode.leftRoom);
+        RequestMove(MoveDirection.Left);
     }
 
     public void MoveRight()
     {
-        if (currentNode == null || currentNode.rightRoom == null)
-            return;
-
-        RequestMove(currentNode.rightRoom);
-    }
-    private void RequestMove(RoomNode target)
-    {
-        if (target == null || isMoving)
-            return;
-
-        StartCoroutine(MoveWithFocusRoutine(target));
+        RequestMove(MoveDirection.Right);
     }
 
-    private System.Collections.IEnumerator MoveWithFocusRoutine(
-        RoomNode target)
+    private bool IsOppositeDirection(
+        MoveDirection current,
+        MoveDirection previous)
     {
-        isMoving = true;
+        return
+            (current == MoveDirection.Forward &&
+             previous == MoveDirection.Backward) ||
 
-        CameraFocus cameraFocus = CameraFocus.Instance;
+            (current == MoveDirection.Backward &&
+             previous == MoveDirection.Forward) ||
 
-        // 현재 방을 포커스 대상으로 사용한다.
-        if (cameraFocus != null &&
-            currentRoom != null &&
-            !cameraFocus.IsFocused)
+            (current == MoveDirection.Left &&
+             previous == MoveDirection.Right) ||
+
+            (current == MoveDirection.Right &&
+             previous == MoveDirection.Left);
+    }
+
+    private void RequestMove(MoveDirection direction)
+    {
+        if (isMoving || currentNode == null)
+            return;
+
+        RoomNode target = null;
+        bool isBacktracking = false;
+
+        // 직전에 방문한 방으로 돌아갈 수 있는지 확인한다.
+        if (movementHistory.Count >= 2)
         {
-            cameraFocus.FocusOn(currentRoom.gameObject);
+            RoomVisit currentVisit =
+                movementHistory[movementHistory.Count - 1];
 
-            // 카메라 포커스 이동이 끝날 때까지 대기
-            while (cameraFocus.IsTweening)
-                yield return null;
+            if (IsOppositeDirection(
+                direction,
+                currentVisit.enteredBy))
+            {
+                target = movementHistory[
+                    movementHistory.Count - 2
+                ].node;
 
-            // 포커스된 방을 잠시 보여준다.
-            yield return new WaitForSeconds(focusViewDuration);
-
-            // 원래 카메라 위치로 복귀
-            cameraFocus.FocusOut();
-
-            while (cameraFocus.IsTweening)
-                yield return null;
+                isBacktracking = true;
+            }
         }
 
-        // 연출이 모두 끝난 뒤 실제 방 이동
-        TryMoveTo(target);
+        // 이전 방으로 돌아가는 상황이 아니라면
+        // 기존 그리드 연결을 이용한다.
+        if (target == null)
+        {
+            switch (direction)
+            {
+                case MoveDirection.Forward:
+                    target = currentNode.forwardRoom;
+                    break;
+
+                case MoveDirection.Backward:
+                    target = currentNode.backwardRoom;
+                    break;
+
+                case MoveDirection.Left:
+                    target = currentNode.leftRoom;
+                    break;
+
+                case MoveDirection.Right:
+                    target = currentNode.rightRoom;
+                    break;
+            }
+        }
+
+        if (target == null)
+            return;
+
+        isMoving = true;
+
+        TryMoveTo(target, direction, isBacktracking);
 
         isMoving = false;
     }
+
+    private void RecordMovement(
+        RoomNode target,
+        MoveDirection direction,
+        bool isBacktracking)
+    {
+        if (isBacktracking && movementHistory.Count >= 2)
+        {
+            // 현재 방의 방문 기록을 제거하고 이전 방으로 돌아간다.
+            movementHistory.RemoveAt(
+                movementHistory.Count - 1
+            );
+        }
+        else
+        {
+            // 새 방으로 이동한 경로를 기록한다.
+            movementHistory.Add(
+                new RoomVisit(target, direction)
+            );
+        }
+    }
+
+
     public void MoveToNext(int index)
     {
         if (currentNode == null)
@@ -850,29 +925,53 @@ public class RoomManager : MonoBehaviour
     /// <summary>
     /// 일반 방은 즉시 이동하고, 보스방은 경고 확인 후에만 진입한다.
     /// </summary>
-    private void TryMoveTo(RoomNode target)
+
+    private void TryMoveTo(
+        RoomNode target,
+        MoveDirection direction = MoveDirection.None,
+        bool isBacktracking = false)
     {
         if (target == null)
             return;
 
         if (target.roomType == RoomType.Boss)
         {
-            ShowBossEntryWarning(target);
+            ShowBossEntryWarning(
+                target,
+                direction,
+                isBacktracking
+            );
             return;
         }
 
+        Save.CommitSave();
+
         EnterNode(target);
+
+        RecordMovement(
+            target,
+            direction,
+            isBacktracking
+        );
+
         MoveSound();
     }
+
 
     /// <summary>
     /// 기존 DialogueManager와 DialogueChoiceController를 이용해 보스 진입을 확인한다.
     /// </summary>
-    private void ShowBossEntryWarning(RoomNode bossNode)
+
+    private void ShowBossEntryWarning(
+        RoomNode bossNode,
+        MoveDirection direction,
+        bool isBacktracking)
     {
         if (DialogueManager.instance == null)
         {
-            Debug.LogWarning("[RoomManager] DialogueManager가 없어 보스방 진입을 보류했습니다.");
+            Debug.LogWarning(
+                "[RoomManager] DialogueManager가 없어 보스방 진입을 보류했습니다."
+            );
             return;
         }
 
@@ -881,9 +980,19 @@ public class RoomManager : MonoBehaviour
             text = "들어간다",
             onSelected = new UnityEngine.Events.UnityEvent()
         };
+
         enterChoice.onSelected.AddListener(() =>
         {
+            Save.CommitSave();
+
             EnterNode(bossNode);
+
+            RecordMovement(
+                bossNode,
+                direction,
+                isBacktracking
+            );
+
             MoveSound();
         });
 
@@ -891,14 +1000,15 @@ public class RoomManager : MonoBehaviour
             "앞은 강한 몬스터가 있는 것 같으며 다시 돌이킬 수 없다.",
             new[]
             {
-                enterChoice,
-                new DialogueChoice
-                {
-                    text = "아직이다",
-                    onSelected = new UnityEngine.Events.UnityEvent()
-                }
+            enterChoice,
+            new DialogueChoice
+            {
+                text = "아직이다",
+                onSelected = new UnityEngine.Events.UnityEvent()
+            }
             });
     }
+
 
     public void MoveSound()
     {

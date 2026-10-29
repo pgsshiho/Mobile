@@ -227,6 +227,152 @@ MonoBehaviour:
     m_Key: "\uBD80\uC2A4\uD130\uC774\uB984"
     m_Metadata:
       m_Items: []
+  - m_Id: 60874557837770752
+    m_Key: BlackMarketAccuracyUp
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60874574606598144
+    m_Key: BlackMarketMaxHealthUp
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60874575873277952
+    m_Key: BlackMarketAttackPowerUp
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60875585597440000
+    m_Key: BLACKMARKET_NO_MONEY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60916035972726784
+    m_Key: ChooseUnit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60935579047002112
+    m_Key: FountainResult
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60937997704986624
+    m_Key: RuinedDamage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60947321726664704
+    m_Key: FIxerHeal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60978377389473792
+    m_Key: BlackMarket
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61209437884874752
+    m_Key: Hardwarestore
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61303083342725120
+    m_Key: Hardwarestorebuy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61303084110282752
+    m_Key: Hardwarestoreexit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61303361492189184
+    m_Key: noitem
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61303411979026432
+    m_Key: FullBackpack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61303430819840000
+    m_Key: Hardwarestore_no_money
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61342068144308224
+    m_Key: AttackUp
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61342068479852544
+    m_Key: AcUp
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61342069369044992
+    m_Key: DefenseUp
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61342270662082560
+    m_Key: MaxHpUp
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61345924311908352
+    m_Key: AttackUpEx
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61345925331124224
+    m_Key: AcUpEx
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61345926350340096
+    m_Key: DefenseUpEx
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61345936882237440
+    m_Key: MaxHpUpEx
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61391101193846784
+    m_Key: BlackSmith
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61391102947065856
+    m_Key: BlacksmithAccept
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61391104905805824
+    m_Key: BlacksmithLeave
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61391462361169920
+    m_Key: BLACKSMITH_NO_MONEY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61391816410759168
+    m_Key: BlackSmithWillBroken
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61392467551289344
+    m_Key: BlackSmithMaxHealthUp
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61392490619961344
+    m_Key: BlackSmithAttackUp
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61392556114018304
+    m_Key: BlackSmithAccurancyUp
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61576735548211200
+    m_Key: BlackSmithDefenseUp
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61595792586539008
+    m_Key: 'Speed
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61613515047665664
+    m_Key: NPC_B_01
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61646663894663168
+    m_Key: Avoid
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61663645310353408
+    m_Key: New Entry
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

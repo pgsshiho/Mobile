@@ -120,11 +120,11 @@ public class Room : MonoBehaviour
                 Debug.Log("분수 - 확정 버프 획득");
                 break;
 
-            case RoomType.SageStone:
+            case RoomType.RuinBuilding:
                 Debug.Log("현자의 석판 - 경험치 획득");
                 break;
 
-            case RoomType.TrainingRoom:
+            case RoomType.BlackMarket:
                 Debug.Log("훈련 교관 - 능력치 업 구매");
                 break;
 

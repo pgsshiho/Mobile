@@ -86,7 +86,6 @@ public class Unit : MonoBehaviour
     public float criticalChance = 5f;           // 크리티컬: 치명타 확률
 
     [Tooltip("정확도 (명중률 0~100%)")]
-    [Range(0, 100)]
     public int accuracy = 90;                   // 정확도: 명중률
 
     [Tooltip("회피율 (0.0 ~ 1.0): 적의 공격을 회피할 확률")]
@@ -144,9 +143,12 @@ public class Unit : MonoBehaviour
     [Header("Upgrade")]
     public int attackLevel = 0;
     public int defenseLevel = 0;
-    public int maxAttackLevel = 10;
-    public int maxDefenseLevel = 10;
-    public bool accuracyupgrade = false;
+    public int AccurancyLevel = 0;
+    public int MaxHPLevel = 0;
+    public int maxAccurancyLevel = 3;
+    public int maxAttackLevel = 3;
+    public int maxDefenseLevel = 3;
+    public int maxMaxHPLevel = 3;
     public string Unitname = "";
 
     [Header("Status Icon")]
@@ -431,6 +433,18 @@ public class Unit : MonoBehaviour
 
         // 4. 포커스 아웃 이벤트 요청
         FocusManager.RequestFocusOut?.Invoke();
+
+        yield return WaitHalfSec;
+    }
+    /// <summary>
+    /// 전투 중 상태이상 및 특수 메시지를 표시합니다.
+    /// </summary>
+    public void ShowCombatText(string message, Color? color = null)
+    {
+        UIHandler.ShowCombatText(
+            message,
+            color ?? Color.white
+        );
     }
     public virtual void TakeDamage(int damage, DamageType type = DamageType.Normal)
     {

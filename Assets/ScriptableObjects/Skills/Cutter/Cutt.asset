@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4148de06aa3f6fc4fb8b87538ee7aabc, type: 3}
   m_Name: Cutt
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
-  skillName: Cut
+  skillName: Cuts
   icon: {fileID: 21300000, guid: acd5cc8718fd9044586022fd3e513a41, type: 3}
   description: Cut
   targetType: 0

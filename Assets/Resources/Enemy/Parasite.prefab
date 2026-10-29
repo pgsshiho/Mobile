@@ -403,7 +403,7 @@ MonoBehaviour:
   isPowerDown: 0
   isEmergencyMode: 0
   hasSelfDestructed: 0
-  attackPower: 4
+  attackPower: 0
   defensePower: 0
   specialArmor: 0
   criticalChance: 0
@@ -432,11 +432,15 @@ MonoBehaviour:
   damageTextPrefab: {fileID: 3432776059765830471, guid: 7d3631656ebbd604aa80f9e945222ebc, type: 3}
   damageTextSpawnPoint: {fileID: 7284542131567827613}
   HPBar: {fileID: 8759068627910526035}
+  deathSFX: {fileID: 0}
   attackLevel: 0
   defenseLevel: 0
+  AccurancyLevel: 0
+  MaxHPLevel: 0
+  maxAccurancyLevel: 3
   maxAttackLevel: 10
   maxDefenseLevel: 10
-  accuracyupgrade: 0
+  maxMaxHPLevel: 3
   Unitname: Enemy
   statusIconParent: {fileID: 7284542131567827613}
   statusIconSet: {fileID: 11400000, guid: d1e54b7e3b3164b4b9ae45b7b986cfa2, type: 2}

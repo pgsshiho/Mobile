@@ -114,7 +114,6 @@ public class PartymenuSpawn : MonoBehaviour
                 ? PartyManager.instance.partySlots[i]
                 : null;
         }
-        Debug.Log("[PartymenuSpawn] PartySlotUI 배열이 업데이트되었습니다.");
     }
 
     /// <summary>일반 월드 오브젝트로 파티 유닛을 생성한다.</summary>
@@ -154,6 +153,12 @@ public class PartymenuSpawn : MonoBehaviour
                 1f
             );
 
+            Debug.Log(
+                $"생성 직후: {spawned.name}, " +
+                $"활성 상태: {spawned.gameObject.activeSelf}"
+            );
+
+            spawned.gameObject.SetActive(true);
             spawnedUnits[i] = spawned;
         }
         Debug.Log("[PartymenuSpawn] PartySpawn 메서드가 완료되었습니다.");

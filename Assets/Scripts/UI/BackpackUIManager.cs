@@ -10,7 +10,8 @@ public class BackpackUIManager : MonoBehaviour, ICurrencyHolder
     [Header("재화 UI")]
     public TextMeshProUGUI Money;
     public TextMeshProUGUI Material;
-
+    [Header("아이템 버튼 설정")]
+    [SerializeField] private Button[] targetItemButtons;
     [Header("아이템 데이터")]
     public ItemData Scrap_Metal_Data;
     public ItemData Emergency_Battery_Data;
@@ -122,35 +123,35 @@ public class BackpackUIManager : MonoBehaviour, ICurrencyHolder
 
     // 개별 아이템 개수 및 최대 소지량 표시 갱신
     private void RefreshItem(
-        ItemData data,
-        TextMeshProUGUI countText,
-        GameObject fullObject)
+    ItemData data,
+    TextMeshProUGUI countText,
+    GameObject zeroObject)
     {
         int count = 0;
 
         if (itemManager != null && data != null)
             count = itemManager.GetItemCount(data);
 
+        // 아이템 개수 갱신
         if (countText != null)
+        {
             countText.text = count.ToString();
 
-        if (fullObject != null)
-        {
-            bool isZero = data != null &&
-                          count <= 0;
-
-            fullObject.SetActive(isZero);
-        }
-
-        if (fullObject != null)
-        {
             bool isFull = data != null &&
                           count >= data.maxStackCount;
 
-            countText.color = isFull ? Color.red : Color.white;
+            countText.color = isFull
+                ? Color.red
+                : Color.white;
+        }
+
+        // 아이템이 0개인지 갱신
+        if (zeroObject != null)
+        {
+            bool isZero = data != null && count <= 0;
+            zeroObject.SetActive(isZero);
         }
     }
-
     // 재화 변경 이벤트
     private void HandleCurrencyChanged(
         CurrencyType type, int delta, int newValue)
@@ -218,7 +219,7 @@ public class BackpackUIManager : MonoBehaviour, ICurrencyHolder
             Debug.LogWarning("[BackpackUI] 아이템을 사용할 전투 파티 위치를 찾을 수 없습니다.");
             return;
         }
-
+        
         HideItemChoices();
     }
 
@@ -232,17 +233,31 @@ public class BackpackUIManager : MonoBehaviour, ICurrencyHolder
     /// <summary>BattleManager가 대상 아군을 클릭했을 때 호출합니다.</summary>
     public bool ApplySelectedItemTo(Unit target)
     {
-        if (current == null || current.data == null || ItemManager.Instance == null)
+        if (current == null || current.data == null)
             return false;
 
-        bool used = ItemManager.Instance.UseItem(current.data, target);
-        if (used)
+        if (ItemManager.Instance == null)
+            return false;
+
+        // 선택한 아이템 사용
+        bool used = ItemManager.Instance.UseItem(
+            current.data,
+            target
+        );
+
+        if (!used)
         {
-            current = null;
-            Setting();
+            Debug.LogWarning("[BackpackUI] 아이템 사용에 실패했습니다.");
+            return false;
         }
 
-        return used;
+        // 사용 성공 후 선택 해제
+        current = null;
+
+        // 수량 및 보유 상태 UI 갱신
+        Setting();
+
+        return true;
     }
 
     private void HideItemChoices()
@@ -318,24 +333,34 @@ public class BackpackUIManager : MonoBehaviour, ICurrencyHolder
         if (itemManager == null || itemManager.inventory == null)
             return;
 
-        // BackPackUI의 형제 아이템 버튼은 모두 ItemData의 이름으로 연결한다.
-        // 따라서 Scrap Metal뿐 아니라 같은 목록의 모든 아이템이 동일한 사용 흐름을 가진다.
-        foreach (Button button in Resources.FindObjectsOfTypeAll<Button>())
+        if (targetItemButtons == null)
+            return;
+
+        foreach (Button button in targetItemButtons)
         {
-            if (button == null || !button.gameObject.scene.IsValid())
+            if (button == null)
                 continue;
 
             ItemRuntime runtime = itemManager.inventory.Find(entry =>
-                entry != null && entry.data != null && entry.data.itemName == button.name);
+                entry != null &&
+                entry.data != null &&
+                entry.data.itemName == button.name);
+
             if (runtime == null)
                 continue;
 
-            ItemButton itemButton = button.GetComponent<ItemButton>() ?? button.gameObject.AddComponent<ItemButton>();
+            ItemButton itemButton = button.GetComponent<ItemButton>();
+
+            if (itemButton == null)
+                itemButton = button.gameObject.AddComponent<ItemButton>();
+
             itemButton.Configure(this, runtime);
 
-            // 씬에서 이미 ItemButton.OnClick이 연결된 버튼은 중복 등록하지 않는다.
-            if (boundItemButtons.Add(button) && !HasPersistentItemButtonClick(button, itemButton))
+            if (boundItemButtons.Add(button) &&
+                !HasPersistentItemButtonClick(button, itemButton))
+            {
                 button.onClick.AddListener(itemButton.OnClick);
+            }
         }
     }
 

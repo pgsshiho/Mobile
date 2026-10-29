@@ -1,7 +1,6 @@
 
 using DG.Tweening;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 public class CameraFocus : MonoBehaviour
 {
@@ -14,11 +13,9 @@ public class CameraFocus : MonoBehaviour
     [Tooltip("카메라가 이동하는 시간")]
     [SerializeField] private float duration = 1.0f;
 
-    [Tooltip("대상으로부터 떨어질 거리")]
+    [Tooltip("버튼 위치를 기준으로 계산할 월드 공간 거리")]
+    [Min(0.1f)]
     [SerializeField] private float distance = 3.0f;
-
-    [Tooltip("대상보다 위쪽에서 바라볼 높이")]
-    [SerializeField] private float heightOffset = 1.0f;
 
     private Vector3 originalPosition;
     private Quaternion originalRotation;
@@ -33,56 +30,59 @@ public class CameraFocus : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+
         if (targetCamera == null)
             targetCamera = Camera.main;
     }
 
-    public void FocusOnClickedButton()
-    {
-        GameObject clickedButton =
-            EventSystem.current.currentSelectedGameObject;
-
-        if (clickedButton == null)
-        {
-            Debug.LogWarning("선택된 버튼을 찾을 수 없습니다.");
-            return;
-        }
-
-        FocusOn(clickedButton);
-    }
-
     /// <summary>
-    /// 지정한 오브젝트 쪽으로 카메라를 이동시킵니다.
+    /// Screen Space - Overlay 버튼의 화면 위치를 기준으로 카메라를 이동시킵니다.
     /// </summary>
-    public void FocusOn(GameObject target)
+    public bool FocusOnButton(Transform buttonTransform)
     {
-        if (target == null || targetCamera == null || isTweening)
-            return;
+        if (buttonTransform == null || targetCamera == null)
+            return false;
 
-        if (isFocused)
-            return;
+        if (isTweening || isFocused)
+            return false;
 
-        // 기존 카메라 위치와 회전 저장
+        // Overlay UI의 Transform 좌표를 화면 좌표로 변환합니다.
+        Vector2 screenPosition =
+            RectTransformUtility.WorldToScreenPoint(
+                null,
+                buttonTransform.position
+            );
+
+        // 화면 좌표에서 카메라가 바라보는 광선을 생성합니다.
+        Ray ray = targetCamera.ScreenPointToRay(screenPosition);
+
+        // 버튼 화면 위치에 대응하는 가상의 월드 좌표를 구합니다.
+        Vector3 focusPoint = ray.GetPoint(distance);
+
+        // 카메라의 기존 전방 방향을 기준으로 목표 위치를 계산합니다.
+        Vector3 focusPosition =
+            focusPoint - targetCamera.transform.forward * distance;
+
+        Vector3 direction = focusPoint - focusPosition;
+
+        if (direction.sqrMagnitude < 0.001f)
+            return false;
+
         originalPosition = targetCamera.transform.position;
         originalRotation = targetCamera.transform.rotation;
-
-        Transform targetTransform = target.transform;
-
-        // 대상의 앞쪽에서 바라보도록 위치 계산
-        Vector3 focusPosition =
-            targetTransform.position
-            - targetTransform.forward * distance
-            + Vector3.up * heightOffset;
-
-        // 대상의 중심을 바라보도록 회전 계산
-        Vector3 direction =
-            targetTransform.position - focusPosition;
 
         Quaternion focusRotation =
             Quaternion.LookRotation(direction.normalized);
 
-        isTweening = true;
         isFocused = true;
+        isTweening = true;
 
         currentTween?.Kill();
 
@@ -94,7 +94,8 @@ public class CameraFocus : MonoBehaviour
 
         sequence.Join(
             targetCamera.transform.DORotateQuaternion(
-                focusRotation, duration
+                focusRotation,
+                duration
             )
         );
 
@@ -102,17 +103,20 @@ public class CameraFocus : MonoBehaviour
             .OnComplete(() =>
             {
                 isTweening = false;
+                currentTween = null;
             })
             .OnKill(() =>
             {
                 isTweening = false;
+                currentTween = null;
             });
 
         currentTween = sequence;
+        return true;
     }
 
     /// <summary>
-    /// 원래 카메라 위치로 돌아갑니다.
+    /// 포커스 전 카메라 위치와 회전으로 복귀합니다.
     /// </summary>
     public void FocusOut()
     {
@@ -121,19 +125,19 @@ public class CameraFocus : MonoBehaviour
 
         isTweening = true;
 
-        currentTween?.Kill();
-
         Sequence sequence = DOTween.Sequence();
 
         sequence.Join(
             targetCamera.transform.DOMove(
-                originalPosition, duration
+                originalPosition,
+                duration
             )
         );
 
         sequence.Join(
             targetCamera.transform.DORotateQuaternion(
-                originalRotation, duration
+                originalRotation,
+                duration
             )
         );
 
@@ -147,24 +151,17 @@ public class CameraFocus : MonoBehaviour
             .OnKill(() =>
             {
                 isTweening = false;
+                currentTween = null;
             });
 
         currentTween = sequence;
     }
 
-    /// <summary>
-    /// 포커스 상태에 따라 이동 또는 복귀합니다.
-    /// </summary>
-    public void ToggleFocus(GameObject target)
-    {
-        if (isFocused)
-            FocusOut();
-        else
-            FocusOn(target);
-    }
-
     private void OnDestroy()
     {
         currentTween?.Kill();
+
+        if (Instance == this)
+            Instance = null;
     }
 }

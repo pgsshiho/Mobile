@@ -21,10 +21,9 @@ public class fountain : MonoBehaviour
     [Header("상태")]
     public bool isFind = false;
     public Unit current;
-    public TextMeshProUGUI Uptext;
 
     private bool isSelecting = false;
-
+    public GameObject HideUI;
     /// <summary>
     /// 대화창이 닫히더라도 로봇 선택 중에는
     /// 기존 포커스 해제 요청을 무시한다.
@@ -38,25 +37,7 @@ public class fountain : MonoBehaviour
         }
     }
 
-    public void TextUp()
-    {
-        if (Uptext == null)
-        {
-            Debug.LogWarning("[Fountain] Uptext가 연결되지 않았습니다.");
-            return;
-        }
-
-        Uptext.gameObject.SetActive(true);
-
-        Uptext.transform
-            .DOBlendableLocalMoveBy(new Vector3(0, 50, 0), 1.0f)
-            .SetEase(Ease.OutQuad);
-
-        Uptext.DOFade(1f, 0f);
-
-        Uptext.DOFade(0f, 1.0f)
-            .OnComplete(() => Uptext.gameObject.SetActive(false));
-    }
+  
 
     /// <summary>
     /// 로봇 선택을 취소한다.
@@ -178,7 +159,7 @@ public class fountain : MonoBehaviour
             );
             return;
         }
-
+        HideUI.SetActive(true);
         isSelecting = true;
     }
 
@@ -193,15 +174,15 @@ public class fountain : MonoBehaviour
 
         int statUpRandom = Random.Range(0, 3);
         string resultText = "";
-
+        int resultstat = 0;
         switch (statUpRandom)
         {
             case 0:
                 target.speed += 2;
 
                 resultText =
-                    LocalizationManager.GetLocalizedString("Speed") + " +2";
-
+                    LocalizationManager.GetLocalizedString("Speed");
+                resultstat = 2;
                 Debug.Log($"[Fountain] {target.name}: 속도 +2");
                 break;
 
@@ -209,34 +190,38 @@ public class fountain : MonoBehaviour
                 target.attackPower += 5;
 
                 resultText =
-                    LocalizationManager.GetLocalizedString("Attack") + " +5";
-
+                    LocalizationManager.GetLocalizedString("Attack");
+                resultstat = 5;
                 Debug.Log($"[Fountain] {target.name}: 공격력 +5");
                 break;
 
             case 2:
-                target.maxHealth += 5;
+                target.maxHealth += 10;
 
                 resultText =
-                    LocalizationManager.GetLocalizedString("MaxHp") + " +5";
-
-                Debug.Log($"[Fountain] {target.name}: 최대 체력 +5");
+                    LocalizationManager.GetLocalizedString("MaxHp");
+                resultstat = 10;
+                Debug.Log($"[Fountain] {target.name}: 최대 체력 +10");
                 break;
         }
 
         current = target;
 
         // 강화 결과 표시
-        if (Uptext != null)
+        if (Notion.Instance != null)
         {
-            Uptext.text = resultText;
-            TextUp();
+            Notion.Instance.NotionUpLocalizationFormat(
+                "FountainResult",
+                target.name,
+                resultText,
+                resultstat.ToString()
+            );
         }
 
         // 강화가 적용된 뒤에만 사용 완료 처리
         isFind = true;
         isSelecting = false;
-
+        HideUI.SetActive(false);
         RecallRepairParty();
         Save.CommitSave();
         Debug.Log("[Fountain] 분수대 사용 완료");
@@ -321,6 +306,7 @@ public class fountain : MonoBehaviour
         }
 
         Debug.Log("[Fountain] 파티 유닛 회수 완료");
+        HideUI.SetActive(false);
     }
 
     /// <summary>

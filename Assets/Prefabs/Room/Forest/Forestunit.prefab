@@ -152,7 +152,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   roomType: 4
   zoneType: 0
-  roomName: ForestEnemy1
+  roomName: Forstunit
   enemySpawnPoints: []
   enemies:
   - {fileID: 1669151837191854026, guid: a40a920696447354284c6286375d1e76, type: 3}
@@ -165,6 +165,7 @@ MonoBehaviour:
   node:
     id: 0
     floor: 0
+    gridPos: {x: 0, y: 0}
     zoneType: 0
     roomType: 0
     cleared: 0
@@ -322,6 +323,9 @@ MonoBehaviour:
   data: {fileID: 11400000, guid: 38cfb655a315f1341928fef6c03ddc23, type: 2}
   currentCount: 0
   isCompleted: 0
+  onQuestCompleted:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &6458464141344095011
 GameObject:
   m_ObjectHideFlags: 0

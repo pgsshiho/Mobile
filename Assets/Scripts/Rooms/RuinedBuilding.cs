@@ -8,10 +8,9 @@ public class RuinedBuilding : MonoBehaviour
     public string[] FindDailogueKey;
     public string FindChoiceText = "FindChoice";
     public string exitChoiceText = "ExitChoice";
-
     [Header("탐색 보상 아이템")]
     public ItemData[] items;
-
+    public GameObject HideUI;
     [Header("탐색 설정")]
     [Min(0)]
     public int damageAmount = 10;
@@ -142,6 +141,10 @@ public class RuinedBuilding : MonoBehaviour
         Unit target = validParty[index];
 
         target.TakeDamage(damageAmount);
+
+        Notion.Instance.NotionUpLocalizationFormat(
+            "RuinedDamage",target.name, damageAmount.ToString(),target.health
+        );
 
         Debug.Log(
             $"[RuinedBuilding] 탐색 중 피해 발생: {target.name}, 피해량 {damageAmount}"

@@ -260,14 +260,14 @@ public static class CombatCalculator
 
     public static bool CheckHit(Unit attacker, Unit target, SkillData skill)
     {
-        if (attacker == null || skill == null) return false;
+        if (attacker == null || skill == null)
+            return false;
 
         // 1. 대상 회피율 체크
         if (target != null)
         {
             float targetDodge = target.dodgeChance;
 
-            // 윤활유 유출 상태이면 회피율 0
             if (target.isLubricantLeak || target.isOilLeak)
             {
                 targetDodge = 0f;
@@ -277,7 +277,9 @@ public static class CombatCalculator
             {
                 Debug.Log($"{target.Unitname} 공격 회피 성공!");
 
-                // 잔상 현상: 회피할 때마다 명중률 페널티 누적
+                // 회피한 대상에게 메시지 출력
+                target.ShowCombatText("회피!", Color.gray);
+
                 if (target.isGhosting)
                 {
                     target.ghostingMissPenalty += 10;
@@ -298,6 +300,17 @@ public static class CombatCalculator
 
         int hitRoll = Random.Range(0, 100);
 
-        return hitRoll < finalHit;
+        if (hitRoll >= finalHit)
+        {
+            // 명중에 실패했을 때 공격 대상에게 표시
+            if (target != null)
+            {
+                target.ShowCombatText(LocalizationManager.GetLocalizedString("Avoid"), Color.gray);
+            }
+
+            return false;
+        }
+
+        return true;
     }
 }   

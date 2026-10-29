@@ -44,6 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95d9a229b77316a409e8ad38c6206b72, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomManager
+  focusViewDuration: 1
   roomsPerZone: 13
   enemyPools:
   - {fileID: 11400000, guid: 29eb9f343012f9444928d1e2468a7ef5, type: 2}
@@ -52,6 +53,12 @@ MonoBehaviour:
   roomPools:
   - {fileID: 11400000, guid: 4389b0fc976d2664aadb3c772a33fd15, type: 2}
   - {fileID: 11400000, guid: 522fb0574d7cc4b44b13f9e1401217ba, type: 2}
+  - {fileID: 11400000, guid: 691f41eee9f8aba48a0fecc3a391b864, type: 2}
+  - {fileID: 11400000, guid: 6f6c7714e641833499a78554b471eee5, type: 2}
+  - {fileID: 11400000, guid: e20b9de4824ea6c40886d4b1b48b1e4c, type: 2}
+  - {fileID: 11400000, guid: 8d25237e122359543a5b76a5bfc9ef05, type: 2}
+  - {fileID: 11400000, guid: d475a6c59f14b914aaca6da5c5cc8368, type: 2}
+  - {fileID: 11400000, guid: 5483e460e6b7a5346895dbf356639aee, type: 2}
   roomParent: {fileID: 0}
   allNodes: []
   generatedMapOverview: []

@@ -3,9 +3,9 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Localization.Settings;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine.Rendering;
 using UnityEngine.EventSystems;
+using System.Collections.Generic;
 
 public class BattleManager : MonoBehaviour
 {
@@ -44,7 +44,7 @@ public class BattleManager : MonoBehaviour
     private fountain fountainTargetSelector;
     private BackpackUIManager itemTargetSelector;
     private BlackMarket BlackMarketTargetSelector;
-
+    private BlackSmith BlackSmithTargetSelector;
     private int lastTargetHandledFrame = -1;
 
     public bool IsSelectingFixerTarget =>
@@ -57,11 +57,15 @@ public class BattleManager : MonoBehaviour
         itemTargetSelector != null;
     public bool IsSelectingBlackMaket => 
         BlackMarketTargetSelector != null;
+
+    public bool IsSelectingBlackSmith =>
+        BlackSmithTargetSelector != null;
     public bool IsSelectingAnyTarget =>
         IsSelectingItemTarget ||
         IsSelectingFixerTarget ||
         IsSelectingFountainTarget ||
         IsSelectingBlackMaket ||
+        IsSelectingBlackSmith ||
         Time.frameCount == lastTargetHandledFrame;
     private struct CachedSkillButton
     {
@@ -70,6 +74,9 @@ public class BattleManager : MonoBehaviour
         public TMP_Text label;
         public Image iconImage;
     }
+    [Header("스킬이름")]
+    public string Skillname = "";
+    public TextMeshProUGUI Skillnames;
 
     private CachedSkillButton[] cachedButtons;
 
@@ -81,8 +88,8 @@ public class BattleManager : MonoBehaviour
         new BattleTargetingRules();
     private FormationMoveRules formationMoveRules;
 
-    private readonly Dictionary<Enemy, int> enemyColumns =
-        new Dictionary<Enemy, int>();
+    private readonly BattlePositioningService positioning =
+        new BattlePositioningService();
 
 
     private void Awake()
@@ -299,13 +306,14 @@ public class BattleManager : MonoBehaviour
         }
     }
 
-
-    // =========================================================
-    // Battle Start
-    // =========================================================
-
+    public void SKillname(string name)
+    {
+        Skillnames.text = name;
+    }
+    
     public void StartBattle(Room room)
     {
+        SKillname("");
         isBattle = true;
 
         HideBattleUIEX();
@@ -342,56 +350,7 @@ public class BattleManager : MonoBehaviour
 
     public void SetupBattlePositions(Room room)
     {
-        enemyColumns.Clear();
-
-        if (PartyManager.instance != null &&
-            Party != null &&
-            Party.Length > 0)
-        {
-            PartyManager.instance.PlacePartyAtPositions(Party);
-        }
-
-        if (room != null &&
-            room.enemies != null &&
-            room.enemies.Length > 0)
-        {
-            for (int i = 0; i < room.enemies.Length; i++)
-            {
-                Enemy enemy = room.enemies[i];
-
-                if (enemy == null)
-                    continue;
-
-                Transform targetPoint = null;
-
-                if (Enemy != null &&
-                    i < Enemy.Length &&
-                    Enemy[i] != null)
-                {
-                    targetPoint = Enemy[i];
-                }
-                else if (room.enemySpawnPoints != null &&
-                         i < room.enemySpawnPoints.Length &&
-                         room.enemySpawnPoints[i] != null)
-                {
-                    targetPoint =
-                        room.enemySpawnPoints[i];
-                }
-
-                if (targetPoint != null)
-                {
-                    enemy.transform.position =
-                        targetPoint.position;
-
-                    enemy.transform.rotation =
-                        targetPoint.rotation;
-                }
-
-                enemy.gameObject.SetActive(true);
-
-                enemyColumns[enemy] = i;
-            }
-        }
+        positioning.Setup(room, PartyManager.instance, Party, Enemy);
     }
 
     // =========================================================
@@ -418,7 +377,40 @@ public class BattleManager : MonoBehaviour
         Debug.Log("[아이템] 사용할 아군 로봇을 선택하세요.");
         return true;
     }
+    public bool BeginBlackSmithSelector(BlackSmith selector)
+    {
+        if (selector == null ||
+            PartyManager.instance == null ||
+            PartyManager.instance.partySlots == null)
+        {
+            return false;
+        }
 
+        if (Party == null || Party.Length == 0)
+        {
+            Debug.LogWarning(
+                "[BlackSmith] 파티 스폰 위치가 설정되어 있지 않습니다.");
+            return false;
+        }
+
+        // 다른 대상 선택이 진행 중이면 중복 시작하지 않는다.
+        if (itemTargetSelector != null ||
+            fixerTargetSelector != null ||
+            fountainTargetSelector != null)
+        {
+            Debug.LogWarning(
+                "[BlackSmith] 다른 대상 선택이 진행 중입니다.");
+            return false;
+        }
+
+        BlackSmithTargetSelector = selector;
+
+        // 파티 배치
+        selector.PlacePartyAtBlackSmithPositions();
+
+        Debug.Log("[BlackMarket] 장착할 로봇을 선택하세요.");
+        return true;
+    }
     public bool BeginBlackMarketSelector(BlackMarket selector)
     {
         if (selector == null ||
@@ -524,14 +516,72 @@ public class BattleManager : MonoBehaviour
 
         return true;
     }
-    /// <summary>
-    /// 아군 로봇 클릭 시 Fixer 대상 선택을 처리합니다.
-    /// PlayerUnit의 클릭 이벤트에서 호출해야 합니다.
-    /// </summary>
+    public bool TryHandleBlackMarketTarget(Unit target)
+    {
+        if (BlackMarketTargetSelector == null)
+            return false;
+        Debug.Log("블랙마켓 배틀매니저로 이동");
+        // 잘못된 대상이어도 선택 모드는 유지한다.
+        if (target == null ||
+            target.health <= 0 ||
+            !IsCurrentPartyMember(target))
+        {
+            return true;
+        }
 
-    /// <summary>
-    /// 분수대에서 청소할 로봇을 선택한다.
-    /// </summary>
+        lastTargetHandledFrame = Time.frameCount;
+
+        BlackMarket selectedBlackMarket = BlackMarketTargetSelector;
+
+        // 선택 완료 처리 중 중복 클릭 방지
+        RobotClick rc = target.GetComponent<RobotClick>();
+
+        if (rc != null && rc.myUI != null)
+            rc.myUI.SetActive(false);
+
+        bool success = selectedBlackMarket.OnRobotSelected(target);
+
+        if (success)
+        {
+            BlackMarketTargetSelector = null;
+            Debug.Log("[BlackMarket] 로봇 선택 완료");
+        }
+
+        return true;
+    }
+    public bool TryHandleBlackSmithTarget(Unit target)
+    {
+        if (BlackSmithTargetSelector == null)
+            return false;
+        Debug.Log("대장간 배틀매니저로 이동");
+        // 잘못된 대상이어도 선택 모드는 유지한다.
+        if (target == null ||
+            target.health <= 0 ||
+            !IsCurrentPartyMember(target))
+        {
+            return true;
+        }
+
+        lastTargetHandledFrame = Time.frameCount;
+
+        BlackSmith selectedBlackSmith = BlackSmithTargetSelector;
+
+        // 선택 완료 처리 중 중복 클릭 방지
+        RobotClick rc = target.GetComponent<RobotClick>();
+
+        if (rc != null && rc.myUI != null)
+            rc.myUI.SetActive(false);
+
+        bool success = selectedBlackSmith.OnRobotSelected(target);
+
+        if (success)
+        {
+            BlackSmithTargetSelector = null;
+            Debug.Log("[BlackSmith] 로봇 선택 완료");
+        }
+
+        return true;
+    }
     public bool TryHandleFountainTarget(Unit target)
     {
         if (fountainTargetSelector == null)
@@ -652,7 +702,7 @@ public class BattleManager : MonoBehaviour
             : null;
 
         return targetingRules.CanPlayerTargetEnemy(
-            partySlots, enemyColumns, attacker, target, skill);
+            partySlots, positioning.EnemyColumns, attacker, target, skill);
     }
 
 
@@ -688,7 +738,7 @@ public class BattleManager : MonoBehaviour
         SkillData skill)
     {
         foreach (KeyValuePair<Enemy, int> pair
-                 in enemyColumns)
+                 in positioning.EnemyColumns)
         {
             Enemy enemy = pair.Key;
 
@@ -707,7 +757,7 @@ public class BattleManager : MonoBehaviour
 
     public void ClearEnemyTargetAvailability()
     {
-        foreach (Enemy enemy in enemyColumns.Keys)
+        foreach (Enemy enemy in positioning.EnemyColumns.Keys)
         {
             if (enemy != null)
             {
@@ -1029,6 +1079,7 @@ public class BattleManager : MonoBehaviour
 
     public void SelectSkill(int index)
     {
+        
         if (TurnManager.instance == null)
             return;
 
@@ -1052,7 +1103,7 @@ public class BattleManager : MonoBehaviour
 
         SkillData selectedSkill =
             player.skills[index];
-
+        SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
         if (selectedSkill == null)
             return;
 
@@ -1219,17 +1270,7 @@ public class BattleManager : MonoBehaviour
             }
         }
 
-        foreach (Enemy enemy
-                 in enemyColumns.Keys)
-        {
-            if (enemy != null)
-            {
-                enemy.gameObject
-                    .SetActive(false);
-            }
-        }
-
-        enemyColumns.Clear();
+        positioning.DisableEnemies();
     }
 
 
@@ -1239,45 +1280,6 @@ public class BattleManager : MonoBehaviour
 
     public void RearrangeEnemies()
     {
-        if (Enemy == null ||
-            Enemy.Length == 0)
-        {
-            return;
-        }
-
-        List<Enemy> aliveEnemies =
-            new List<Enemy>();
-
-        foreach (KeyValuePair<Enemy, int> pair
-                 in enemyColumns)
-        {
-            Enemy enemy = pair.Key;
-
-            if (enemy != null &&
-                enemy.gameObject.activeSelf &&
-                enemy.health > 0)
-            {
-                aliveEnemies.Add(enemy);
-            }
-        }
-
-        for (int i = 0;
-             i < aliveEnemies.Count;
-             i++)
-        {
-            Enemy enemy =
-                aliveEnemies[i];
-
-            if (Enemy[i] != null)
-            {
-                enemy.transform.position =
-                    Enemy[i].position;
-
-                enemy.transform.rotation =
-                    Enemy[i].rotation;
-            }
-
-            enemyColumns[enemy] = i;
-        }
+        positioning.Rearrange(Enemy);
     }
 }

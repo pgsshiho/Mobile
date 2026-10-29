@@ -16,7 +16,8 @@ MonoBehaviour:
     m_Code: en
   m_SharedData: {fileID: 11400000, guid: 7e4a49d29f2a014439dc8a641bcfbabe, type: 2}
   m_Metadata:
-    m_Items: []
+    m_Items:
+    - rid: 7918249053304651860
   m_TableData:
   - m_Id: 4613747474432
     m_Localized: 'The world has '
@@ -279,6 +280,212 @@ MonoBehaviour:
     m_Localized: Booster
     m_Metadata:
       m_Items: []
+  - m_Id: 60874557837770752
+    m_Localized: 'The unit''s accuracy has increased by 5.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60874574606598144
+    m_Localized: The unit's max HP has increased by 10.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60874575873277952
+    m_Localized: The unit's attack power has increased by 5.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60875585597440000
+    m_Localized: What were you planning to buy without any money?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60916035972726784
+    m_Localized: CHooseUnit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60935579047002112
+    m_Localized: The {1} of {0} has increased by {2}.
+    m_Metadata:
+      m_Items:
+      - rid: 7918249053304651860
+  - m_Id: 60937997704986624
+    m_Localized: '{0} lost {1} HP. Remaining HP: {2}
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60947321726664704
+    m_Localized: '{0} has been restored to its maximum.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60978377389473792
+    m_Localized: 'Is there enough money?
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61209437884874752
+    m_Localized: 'Having spares is not a luxury.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61303430819840000
+    m_Localized: 'I am not a volunteer.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61303411979026432
+    m_Localized: 'It looks like there is no more room in the bag.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61303361492189184
+    m_Localized: 'It looks like the stock has run out.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61303084110282752
+    m_Localized: Leabing
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61303083342725120
+    m_Localized: Buy something
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61342068144308224
+    m_Localized: 'Attack Power Upgrade
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61342068479852544
+    m_Localized: 'Accuracy Upgrade
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61342069369044992
+    m_Localized: 'Defense Upgrade
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61342270662082560
+    m_Localized: MaxHP Upgrade
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61345924311908352
+    m_Localized: 'Attack power increases by 5.
+
+      This can occur up to 3 times.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61345925331124224
+    m_Localized: 'Accuracy increases by 5.
+
+      This can occur up to 3 times.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61345926350340096
+    m_Localized: 'Defense increases by 5.
+
+      Can stack up to 3 times.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61345936882237440
+    m_Localized: 'MaxHp increases by 5.
+
+      Can be done up to 3 times.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61391101193846784
+    m_Localized: 'Is there something that needs to be made?
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61391102947065856
+    m_Localized: 'Reinforce the airframe.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61391104905805824
+    m_Localized: Leaving
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61391462361169920
+    m_Localized: 'Even I cannot create something out of nothing.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61391816410759168
+    m_Localized: 'If you reinforce it any further, the machine will break.
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61392467551289344
+    m_Localized: 'The MaxHP of {0} has increased by 5.
+
+'
+    m_Metadata:
+      m_Items:
+      - rid: 7918249053304651860
+  - m_Id: 61392490619961344
+    m_Localized: 'The Attack of {0} has increased by 5.
+
+'
+    m_Metadata:
+      m_Items:
+      - rid: 7918249053304651860
+  - m_Id: 61392556114018304
+    m_Localized: 'The accuracy of {0} has increased by 5.
+
+'
+    m_Metadata:
+      m_Items:
+      - rid: 7918249053304651860
+  - m_Id: 61576735548211200
+    m_Localized: '{0}''s defense has increased by 5.
+
+'
+    m_Metadata:
+      m_Items:
+      - rid: 7918249053304651860
+  - m_Id: 61595792586539008
+    m_Localized: 'Speed
+
+'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61613515047665664
+    m_Localized: "Is there one you\u2019ve got your eye on?\r\nThey say you can take
+      it, provided you\u2019ve got the money."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61646663894663168
+    m_Localized: miss!
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 7918249053304651860
+      type: {class: SmartFormatTag, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_Entries: 
+        m_SharedEntries:
+        - id: 60935579047002112
+        - id: 61576735548211200
+        - id: 61392556114018304
+        - id: 61392490619961344
+        - id: 61392467551289344
