@@ -1249,6 +1249,9 @@ public class BattleManager : MonoBehaviour
         }
         else
         {
+            AudioManager.instance.StopBattleBgm();
+            SceneChanger.BG("Mainmenu");
+            Save.DeleteSaveSlot(Save.activeSlot);
             Debug.Log("패배!");
         }
     }

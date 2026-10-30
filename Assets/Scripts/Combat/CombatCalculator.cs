@@ -222,6 +222,8 @@ public static class CombatCalculator
         if (roll < attacker.GetCriticalChance())
         {
             damage = Mathf.RoundToInt(damage * 2f);
+            // 빗나감 표기와 동일하게, 크리티컬도 피격 대상 위에 표시한다.
+            target?.ShowCombatText(LocalizationManager.GetLocalizedString("Chri"), new Color(1f, 0.82f, 0.1f));
             Debug.Log($"<color=yellow>[크리티컬 발동!]</color> {attacker.Unitname} 데미지 2배 증폭 ({damage})");
         }
 
@@ -278,7 +280,7 @@ public static class CombatCalculator
                 Debug.Log($"{target.Unitname} 공격 회피 성공!");
 
                 // 회피한 대상에게 메시지 출력
-                target.ShowCombatText("회피!", Color.gray);
+                target.ShowCombatText(LocalizationManager.GetLocalizedString("Avoid"), Color.gray);
 
                 if (target.isGhosting)
                 {

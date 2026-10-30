@@ -14,6 +14,10 @@ public class UnitStatusHandler
 
     // 상태이상별 남은 턴 수 (-1 = 무한, 0 이하 = 없음)
     private readonly Dictionary<StatusType, int> statusTurns = new Dictionary<StatusType, int>();
+    // 상태이상 틱 처리 중 새로 생긴 상태는 이번 턴에 피해와 턴 감소를 적용하지 않는다.
+    private readonly HashSet<StatusType> statusesAppliedThisTurn = new HashSet<StatusType>();
+    private bool isRestoringStatuses;
+    private bool isProcessingTurnTick;
 
     // ────────────────────────────────────────────
     // 읽기 프로퍼티 (Unit.cs 에서 참조)
@@ -134,9 +138,14 @@ public class UnitStatusHandler
 
         statusTurns[type] = turns;
 
+        if (isNew && isProcessingTurnTick)
+            statusesAppliedThisTurn.Add(type);
+
         if (isNew)
         {
             uiHandler?.AddStatusIcon(type);
+            if (!isRestoringStatuses)
+                uiHandler?.ShowStatusText(GetStatusDisplayName(type), GetStatusTextColor(type));
             Debug.Log($"{owner.Unitname} [{type}] 부여 (지속: {(turns == -1 ? "무한" : turns + "턴")})");
         }
         else
@@ -166,11 +175,19 @@ public class UnitStatusHandler
         ClearStates();
         if (savedStatuses == null) return;
 
-        foreach (SavedStatusEntry status in savedStatuses)
+        isRestoringStatuses = true;
+        try
         {
-            if (status == null || status.type == StatusType.None || status.remainingTurns == 0)
-                continue;
-            AddStatus(status.type, status.remainingTurns);
+            foreach (SavedStatusEntry status in savedStatuses)
+            {
+                if (status == null || status.type == StatusType.None || status.remainingTurns == 0)
+                    continue;
+                AddStatus(status.type, status.remainingTurns);
+            }
+        }
+        finally
+        {
+            isRestoringStatuses = false;
         }
     }
 
@@ -179,16 +196,36 @@ public class UnitStatusHandler
     // ────────────────────────────────────────────
     public void TickTurn()
     {
-        OxidationTick();
-        OverheatTick();
-        FireTick();
-        CircuitryShortTick();
-        LubricantLeakTick();
-        OilEmptyTick();
-        MetalFatigueTick();
-        BleedingTick();
+        statusesAppliedThisTurn.Clear();
+        isProcessingTurnTick = true;
+
+        try
+        {
+        // 상태이상 피해는 한 턴에 모두 계산한 뒤 한 번만 적용한다.
+        // 따라서 여러 상태이상에 걸려도 피해 숫자가 여러 개로 나뉘지 않는다.
+        int totalStatusDamage = 0;
+        totalStatusDamage += OxidationTick();
+        totalStatusDamage += OverheatTick();
+        totalStatusDamage += FireTick();
+        totalStatusDamage += CircuitryShortTick();
+        totalStatusDamage += LubricantLeakTick();
+        totalStatusDamage += OilEmptyTick();
+        totalStatusDamage += MetalFatigueTick();
+        totalStatusDamage += BleedingTick();
+
+        if (totalStatusDamage > 0)
+        {
+            owner.TakeDamage(totalStatusDamage, Unit.DamageType.Status);
+            Debug.Log($"{owner.Unitname} 상태이상 합산 피해 -{totalStatusDamage}");
+        }
 
         TickDownAll();
+        }
+        finally
+        {
+            isProcessingTurnTick = false;
+            statusesAppliedThisTurn.Clear();
+        }
     }
 
     // ────────────────────────────────────────────
@@ -201,6 +238,7 @@ public class UnitStatusHandler
         {
             if (!statusTurns.ContainsKey(type)) continue;
             if (statusTurns[type] == -1) continue; // 무한 지속
+            if (statusesAppliedThisTurn.Contains(type)) continue;
 
             statusTurns[type]--;
 
@@ -217,35 +255,34 @@ public class UnitStatusHandler
     // ────────────────────────────────────────────
 
     // 산화 II : maxHp × oxidationDamagePercent% 도트 (특수 장갑으로 경감)
-    private void OxidationTick()
+    private int OxidationTick()
     {
-        if (!HasStatus(StatusType.OxidationII)) return;
+        if (!CanTick(StatusType.OxidationII)) return 0;
 
         float pct = owner.oxidationDamagePercent / 100f;
         int baseDmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * pct) + owner.rustDamage);
         int finalDmg = Mathf.Max(1, baseDmg - owner.specialArmor);
 
-        owner.TakeDamage(finalDmg, Unit.DamageType.Corrosion);
         Debug.Log($"{owner.Unitname} 산화II 틱 -{finalDmg} (특수장갑 방어: {owner.specialArmor})");
+        return finalDmg;
     }
 
     // 금속 피로 : 매 턴 하드웨어 마모로 물리 방어력 감소 및 피로 도트
-    private void MetalFatigueTick()
+    private int MetalFatigueTick()
     {
-        if (!HasStatus(StatusType.MetalFatigue)) return;
+        if (!CanTick(StatusType.MetalFatigue)) return 0;
 
         int wearDmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.02f));
-        owner.TakeDamage(wearDmg, Unit.DamageType.Normal);
         Debug.Log($"{owner.Unitname} 금속 피로 마모 피해 -{wearDmg}");
+        return wearDmg;
     }
 
     // 과열 : maxHp 4% 도트, 10% 확률 회로단선 / 5% 확률 화재 전이
-    private void OverheatTick()
+    private int OverheatTick()
     {
-        if (!HasStatus(StatusType.Overheat)) return;
+        if (!CanTick(StatusType.Overheat)) return 0;
 
         int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.04f) - owner.specialArmor);
-        owner.TakeDamage(dmg, Unit.DamageType.Fire);
         Debug.Log($"{owner.Unitname} 과열 틱 -{dmg}");
 
         if (Random.Range(0, 100) < 10 && !HasStatus(StatusType.CircuitryShort))
@@ -260,25 +297,26 @@ public class UnitStatusHandler
             AddStatus(StatusType.Fire, 4);
             Debug.Log($"{owner.Unitname} 과열 → 화재 전이!");
         }
+
+        return dmg;
     }
 
     // 화재 : maxHp 10% 도트
-    private void FireTick()
+    private int FireTick()
     {
-        if (!HasStatus(StatusType.Fire)) return;
+        if (!CanTick(StatusType.Fire)) return 0;
 
         int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.10f) - owner.specialArmor);
-        owner.TakeDamage(dmg, Unit.DamageType.Fire);
         Debug.Log($"{owner.Unitname} 화재 틱 -{dmg}");
+        return dmg;
     }
 
     // 회로 단선 (합선) : maxHp 3% 도트, 15% 확률 과열 유발
-    private void CircuitryShortTick()
+    private int CircuitryShortTick()
     {
-        if (!HasStatus(StatusType.CircuitryShort) && !HasStatus(StatusType.ShortCircuit)) return;
+        if (!CanTick(StatusType.CircuitryShort) && !CanTick(StatusType.ShortCircuit)) return 0;
 
         int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.03f) - owner.specialArmor);
-        owner.TakeDamage(dmg, Unit.DamageType.Electric);
         Debug.Log($"{owner.Unitname} 회로 단선 틱 -{dmg}");
 
         if (Random.Range(0, 100) < 15 && !HasStatus(StatusType.Overheat) && !HasStatus(StatusType.Fire))
@@ -286,15 +324,16 @@ public class UnitStatusHandler
             AddStatus(StatusType.Overheat, 3);
             Debug.Log($"{owner.Unitname} 회로 단선 → 과열 발생!");
         }
+
+        return dmg;
     }
 
     // 윤활유 유출 : maxHp 3% 도트, 10% 확률 과열 유발
-    private void LubricantLeakTick()
+    private int LubricantLeakTick()
     {
-        if (!HasStatus(StatusType.LubricantLeak) && !HasStatus(StatusType.OilLeak)) return;
+        if (!CanTick(StatusType.LubricantLeak) && !CanTick(StatusType.OilLeak)) return 0;
 
         int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.03f) - owner.specialArmor);
-        owner.TakeDamage(dmg, Unit.DamageType.Bleed);
         Debug.Log($"{owner.Unitname} 윤활유 유출 틱 -{dmg}");
 
         if (Random.Range(0, 100) < 10 && !HasStatus(StatusType.Overheat) && !HasStatus(StatusType.Fire))
@@ -302,27 +341,66 @@ public class UnitStatusHandler
             AddStatus(StatusType.Overheat, 3);
             Debug.Log($"{owner.Unitname} 윤활유 유출 → 마찰 과열 발생!");
         }
+
+        return dmg;
     }
 
     // 윤활유 고갈 : maxHp 2% 도트
-    private void OilEmptyTick()
+    private int OilEmptyTick()
     {
-        if (!HasStatus(StatusType.OilEmpty)) return;
+        if (!CanTick(StatusType.OilEmpty)) return 0;
 
         int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.02f) - owner.specialArmor);
-        owner.TakeDamage(dmg, Unit.DamageType.Bleed);
         Debug.Log($"{owner.Unitname} 윤활유 고갈 틱 -{dmg}");
+        return dmg;
     }
 
     // 출혈 : maxHp 5% 도트
-    private void BleedingTick()
+    private int BleedingTick()
     {
-        if (!HasStatus(StatusType.Bleeding)) return;
+        if (!CanTick(StatusType.Bleeding)) return 0;
 
         int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.05f));
-        owner.TakeDamage(dmg, Unit.DamageType.Bleed);
         Debug.Log($"{owner.Unitname} 출혈 틱 -{dmg}");
+        return dmg;
     }
+
+    private bool CanTick(StatusType type) =>
+        HasStatus(type) && !statusesAppliedThisTurn.Contains(type);
+
+    private static string GetStatusDisplayName(StatusType type) => type switch
+    {
+        StatusType.MetalFatigue => "금속 피로",
+        StatusType.LubricantLeak => "윤활유 유출",
+        StatusType.CircuitryShort => "회로 단선",
+        StatusType.DataFragmentation => "데이터 파편화",
+        StatusType.LogicLoop => "논리 오류",
+        StatusType.Ghosting => "잔상 현상",
+        StatusType.OxidationI => "산화 I",
+        StatusType.OxidationII => "산화 II",
+        StatusType.Overheat => "과열",
+        StatusType.Fire => "화재",
+        StatusType.ShortCircuit => "합선",
+        StatusType.OilLeak => "윤활유 누유",
+        StatusType.OilEmpty => "윤활유 고갈",
+        StatusType.FuseBroken => "퓨즈 파손",
+        StatusType.WeaponPollution => "무장 오염",
+        StatusType.Broken => "파손",
+        StatusType.Marked => "목표 지정",
+        StatusType.Stun => "기절",
+        StatusType.Bleeding => "출혈",
+        _ => "상태이상"
+    };
+
+    private static Color GetStatusTextColor(StatusType type) => type switch
+    {
+        StatusType.Fire or StatusType.Overheat => new Color(1f, 0.45f, 0.05f),
+        StatusType.Bleeding or StatusType.LubricantLeak or StatusType.OilLeak => new Color(0.95f, 0.15f, 0.15f),
+        StatusType.CircuitryShort or StatusType.ShortCircuit => new Color(1f, 0.95f, 0.15f),
+        StatusType.OxidationI or StatusType.OxidationII => new Color(0.75f, 0.45f, 0.2f),
+        StatusType.Stun => Color.gray,
+        _ => new Color(0.85f, 0.35f, 1f)
+    };
 
     public void AddMark(int turns) => AddStatus(StatusType.Marked, turns);
 }

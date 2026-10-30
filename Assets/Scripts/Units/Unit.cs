@@ -43,7 +43,8 @@ public class Unit : MonoBehaviour
         Fire,
         Heal,
         Corrosion,  // 산화 / 녹 데미지
-        Electric    // 전기 / 단선 폭발
+        Electric,   // 전기 / 단선 폭발
+        Status      // 여러 상태이상 지속 피해를 합산한 피해
     }
     protected bool turnEndedBySystem = false;
     [Header("=== 1. 체력 & 생존 (Health & Survival) ===")]

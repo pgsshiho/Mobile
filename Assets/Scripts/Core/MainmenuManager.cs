@@ -1,6 +1,5 @@
 
 using TMPro;
-using UnityEditor.U2D.Tooling.Analyzer;
 using UnityEngine;
 using UnityEngine.Localization.Settings;
 
@@ -53,11 +52,14 @@ public class MainmenuManager : MonoBehaviour
 
         if (data == null)
         {
-            Debug.LogWarning("저장 데이터가 없습니다. 슬롯: " + savefile);
+            // 빈 슬롯은 기존 런을 이어받지 않고 새 시드를 발급해 새 로그라이크 런을 시작한다.
+            Save.SelectSlot(savefile);
+            Save.StartNewRun(1);
 
-            AudioManager.instance.StopMainBgm();
-            AudioManager.instance.PlaySfx(StartSFX);
+            AudioManager.instance?.StopMainBgm();
+            AudioManager.instance?.PlaySfx(StartSFX);
             SceneChanger.BG("Forest");
+            return;
         }
 
         if (string.IsNullOrEmpty(data.savedScene))
@@ -68,8 +70,8 @@ public class MainmenuManager : MonoBehaviour
 
         // 불러올 저장 슬롯 선택
         Save.SelectSlot(savefile);
-        AudioManager.instance.StopMainBgm();
-        AudioManager.instance.PlaySfx(StartSFX);
+        AudioManager.instance?.StopMainBgm();
+        AudioManager.instance?.PlaySfx(StartSFX);
         // 저장된 씬으로 이동
         UnityEngine.SceneManagement.SceneManager.LoadScene(data.savedScene);
     }

@@ -41,10 +41,10 @@ public class AudioManager : MonoBehaviour
         }
         instance = this;
         DontDestroyOnLoad(gameObject);
-        SaveData saveData = Save.GetSaveData();
-        nowMasterVolume = saveData != null ? saveData.masterVolume : PlayerPrefs.GetFloat("Master", 1f);
-        nowBGMVolume = saveData != null ? saveData.bgmVolume : PlayerPrefs.GetFloat("BGM", 1f);
-        nowSFXVolume = saveData != null ? saveData.sfxVolume : PlayerPrefs.GetFloat("SFX", 1f);
+        GlobalSaveData settings = Save.GetGlobalSaveData();
+        nowMasterVolume = settings.masterVolume;
+        nowBGMVolume = settings.bgmVolume;
+        nowSFXVolume = settings.sfxVolume;
 
         // 복원용 초기값 세팅 (0 미만이면 기본 1로 지정)
         prevMasterVolume = nowMasterVolume > 0.001f ? nowMasterVolume : 1f;
@@ -137,12 +137,15 @@ public class AudioManager : MonoBehaviour
     public void StopMainBgm() { if (bgmSource != null) bgmSource.Stop(); }
     public void PlaySfx(AudioClip clip) { if (sfxSource != null && clip != null) sfxSource.PlayOneShot(clip); }
 
-    private static void SaveAudioSetting(System.Action<SaveData> apply)
+    private static void SaveAudioSetting(System.Action<GlobalSaveData> apply)
     {
-        SaveData data = Save.GetSaveData();
-        if (data == null) return;
+        GlobalSaveData data = Save.GetGlobalSaveData();
         apply(data);
-        Save.CommitSave();
+        Save.UpdateGlobalSettings(
+            data.language,
+            data.masterVolume,
+            data.bgmVolume,
+            data.sfxVolume);
     }
 
     public void OnChild()

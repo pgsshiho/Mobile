@@ -68,6 +68,33 @@ public class SaveData
     public bool hasActiveRun = false;     // 현재 진행 중인 런 세이브가 존재하는가 (이어하기 가능 여부)
 }
 
+/// <summary>한 슬롯의 목록 표시용 정보입니다. 실제 게임 진행은 slot_N.json에만 저장합니다.</summary>
+[Serializable]
+public class SaveSlotMetadata
+{
+    public bool exists;
+    public long lastSavedUtcTicks;
+    public int chapter = 1;
+    public string sceneName = "Forest";
+    public bool hasActiveRun;
+}
+
+/// <summary>
+/// 게임 진행과 분리된 기기 공용 저장 데이터입니다.
+/// 언어/사운드/마지막 선택 슬롯과 세이브 파일 목록만 보관합니다.
+/// </summary>
+[Serializable]
+public class GlobalSaveData
+{
+    public int version = 1;
+    public int activeSlot;
+    public int language;
+    public float masterVolume = 1f;
+    public float bgmVolume = 1f;
+    public float sfxVolume = 1f;
+    public List<SaveSlotMetadata> slots = new List<SaveSlotMetadata>();
+}
+
 public class Save : MonoBehaviour
 {
     public static Save instance;
@@ -77,8 +104,11 @@ public class Save : MonoBehaviour
     private const string KEY_ACTIVE_SLOT = "GameSaveData_ActiveSlot";
     private const string KEY_SLOT_PREFIX = "GameSaveData_Slot_";
     private const string SaveFolderName = "Saves";
+    private const string GlobalSaveFileName = "global_meta.json";
+    private const string GlobalSaveBackupFileName = "global_meta.json.bak";
     private static SaveData cachedData;
-    private static int activeSlot = -1;
+    private static GlobalSaveData globalData;
+    public static int activeSlot = -1;
     private float autosaveTimer;
     private const float AutosaveIntervalSeconds = 30f;
 
@@ -158,13 +188,18 @@ public class Save : MonoBehaviour
     {
         if (cachedData != null) return;
 
-        activeSlot = Mathf.Clamp(PlayerPrefs.GetInt(KEY_ACTIVE_SLOT, 0), 0, SaveSlotCount - 1);
+        EnsureGlobalDataLoaded();
+        activeSlot = Mathf.Clamp(globalData.activeSlot, 0, SaveSlotCount - 1);
 
         // 이전 단일 세이브를 첫 번째 슬롯으로 한 번만 옮긴다.
         if (!PlayerPrefs.HasKey(GetSlotKey(0)) && PlayerPrefs.HasKey(KEY_SAVE_DATA))
         {
             PlayerPrefs.SetString(GetSlotKey(0), PlayerPrefs.GetString(KEY_SAVE_DATA));
             PlayerPrefs.Save();
+
+            // 단일 저장 데이터를 슬롯으로 이관한 직후 전역 슬롯 목록도 함께 갱신한다.
+            RefreshAllSlotMetadata();
+            CommitGlobalSave();
         }
 
         string json = ReadSlotJson(activeSlot);
@@ -186,14 +221,46 @@ public class Save : MonoBehaviour
         }
 
         EnsurePartySlotsCapacity(cachedData);
-        if (cachedData.saveVersion < 2)
-        {
-            // 2버전 이전 저장에는 옵션 값이 없으므로 기존 모바일 설정값을 한 번만 가져온다.
-            cachedData.masterVolume = PlayerPrefs.GetFloat("Master", 1f);
-            cachedData.bgmVolume = PlayerPrefs.GetFloat("BGM", 1f);
-            cachedData.sfxVolume = PlayerPrefs.GetFloat("SFX", 1f);
-        }
         cachedData.saveVersion = 2;
+    }
+
+    private static void EnsureGlobalDataLoaded()
+    {
+        if (globalData != null)
+            return;
+
+        globalData = ReadGlobalData() ?? new GlobalSaveData();
+        EnsureGlobalSlotCapacity(globalData);
+
+        // 최초 전환 때 기존 활성 슬롯의 설정을 전역 메타로 이관한다.
+        if (globalData.version < 1)
+            globalData.version = 1;
+
+        if (!File.Exists(GetGlobalSavePath()) && !File.Exists(GetGlobalBackupPath()))
+        {
+            globalData.activeSlot = Mathf.Clamp(PlayerPrefs.GetInt(KEY_ACTIVE_SLOT, 0), 0, SaveSlotCount - 1);
+            globalData.masterVolume = PlayerPrefs.GetFloat("Master", 1f);
+            globalData.bgmVolume = PlayerPrefs.GetFloat("BGM", 1f);
+            globalData.sfxVolume = PlayerPrefs.GetFloat("SFX", 1f);
+
+            SaveData legacy = TryReadSlotData(globalData.activeSlot);
+            if (legacy != null)
+            {
+                globalData.language = legacy.language;
+                globalData.masterVolume = legacy.masterVolume;
+                globalData.bgmVolume = legacy.bgmVolume;
+                globalData.sfxVolume = legacy.sfxVolume;
+            }
+        }
+
+        RefreshAllSlotMetadata();
+        CommitGlobalSave();
+    }
+
+    public static GlobalSaveData GetGlobalSaveData()
+    {
+        EnsureGlobalDataLoaded();
+        return globalData;
     }
 
     public static SaveData GetSaveData()
@@ -209,6 +276,8 @@ public class Save : MonoBehaviour
         cachedData.lastSavedUtcTicks = DateTime.UtcNow.Ticks;
         json = JsonUtility.ToJson(cachedData, true);
         WriteSlotJson(GetActiveSlotIndex(), json);
+        UpdateSlotMetadata(GetActiveSlotIndex(), cachedData);
+        CommitGlobalSave();
         // 이전 PlayerPrefs 기반 저장과의 하위 호환용 메타데이터만 유지한다.
         PlayerPrefs.Save();
     }
@@ -226,7 +295,10 @@ public class Save : MonoBehaviour
 
         activeSlot = slotIndex;
         cachedData = null;
-        PlayerPrefs.SetInt(KEY_ACTIVE_SLOT, activeSlot);
+        EnsureGlobalDataLoaded();
+        globalData.activeSlot = activeSlot;
+        CommitGlobalSave();
+        PlayerPrefs.SetInt(KEY_ACTIVE_SLOT, activeSlot); // 구버전 호환용
         PlayerPrefs.Save();
         EnsureDataLoaded();
     }
@@ -234,6 +306,24 @@ public class Save : MonoBehaviour
     public static bool HasSaveSlot(int slotIndex)
     {
         return slotIndex >= 0 && slotIndex < SaveSlotCount && !string.IsNullOrEmpty(ReadSlotJson(slotIndex));
+    }
+
+    /// <summary>메인 메뉴의 슬롯 목록 표시에 쓰는 전역 메타데이터입니다.</summary>
+    public static SaveSlotMetadata GetSaveSlotMetadata(int slotIndex)
+    {
+        EnsureGlobalDataLoaded();
+        if (slotIndex < 0 || slotIndex >= SaveSlotCount)
+            return null;
+
+        EnsureGlobalSlotCapacity(globalData);
+        return globalData.slots[slotIndex];
+    }
+
+    public static IReadOnlyList<SaveSlotMetadata> GetSaveSlotMetadataList()
+    {
+        EnsureGlobalDataLoaded();
+        EnsureGlobalSlotCapacity(globalData);
+        return globalData.slots;
     }
 
     public static SaveData GetSaveSlotData(int slotIndex)
@@ -253,6 +343,9 @@ public class Save : MonoBehaviour
             cachedData = new SaveData();
             EnsurePartySlotsCapacity(cachedData);
         }
+        EnsureGlobalDataLoaded();
+        globalData.slots[slotIndex] = new SaveSlotMetadata();
+        CommitGlobalSave();
         PlayerPrefs.Save();
     }
 
@@ -260,6 +353,94 @@ public class Save : MonoBehaviour
 
     private static string GetSlotPath(int slotIndex) => Path.Combine(Application.persistentDataPath, SaveFolderName, $"slot_{slotIndex}.json");
     private static string GetBackupPath(int slotIndex) => GetSlotPath(slotIndex) + ".bak";
+    private static string GetGlobalSavePath() => Path.Combine(Application.persistentDataPath, SaveFolderName, GlobalSaveFileName);
+    private static string GetGlobalBackupPath() => Path.Combine(Application.persistentDataPath, SaveFolderName, GlobalSaveBackupFileName);
+
+    private static GlobalSaveData ReadGlobalData()
+    {
+        try
+        {
+            string path = GetGlobalSavePath();
+            string backup = GetGlobalBackupPath();
+            if (File.Exists(path)) return JsonUtility.FromJson<GlobalSaveData>(File.ReadAllText(path));
+            if (File.Exists(backup)) return JsonUtility.FromJson<GlobalSaveData>(File.ReadAllText(backup));
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[Save] 전역 메타 저장 읽기 실패: {e.Message}");
+        }
+        return null;
+    }
+
+    private static void CommitGlobalSave()
+    {
+        if (globalData == null) return;
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(GetGlobalSavePath()));
+            string path = GetGlobalSavePath();
+            string temp = path + ".tmp";
+            string backup = GetGlobalBackupPath();
+            File.WriteAllText(temp, JsonUtility.ToJson(globalData, true));
+            if (File.Exists(path)) File.Copy(path, backup, true);
+            File.Copy(temp, path, true);
+            File.Delete(temp);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Save] 전역 메타 저장 실패: {e.Message}");
+        }
+    }
+
+    private static void EnsureGlobalSlotCapacity(GlobalSaveData data)
+    {
+        if (data.slots == null) data.slots = new List<SaveSlotMetadata>();
+        while (data.slots.Count < SaveSlotCount) data.slots.Add(new SaveSlotMetadata());
+        if (data.slots.Count > SaveSlotCount) data.slots.RemoveRange(SaveSlotCount, data.slots.Count - SaveSlotCount);
+    }
+
+    private static SaveData TryReadSlotData(int slotIndex)
+    {
+        try
+        {
+            string json = ReadSlotJson(slotIndex);
+            return string.IsNullOrEmpty(json) ? null : JsonUtility.FromJson<SaveData>(json);
+        }
+        catch { return null; }
+    }
+
+    private static void RefreshAllSlotMetadata()
+    {
+        EnsureGlobalSlotCapacity(globalData);
+        for (int i = 0; i < SaveSlotCount; i++)
+            UpdateSlotMetadata(i, TryReadSlotData(i));
+    }
+
+    private static void UpdateSlotMetadata(int slotIndex, SaveData data)
+    {
+        if (globalData == null || slotIndex < 0 || slotIndex >= SaveSlotCount) return;
+        EnsureGlobalSlotCapacity(globalData);
+        globalData.slots[slotIndex] = data == null
+            ? new SaveSlotMetadata()
+            : new SaveSlotMetadata
+            {
+                exists = true,
+                lastSavedUtcTicks = data.lastSavedUtcTicks,
+                chapter = data.currentChapter,
+                sceneName = data.savedScene,
+                hasActiveRun = data.hasActiveRun
+            };
+    }
+
+    public static void UpdateGlobalSettings(int language, float master, float bgm, float sfx)
+    {
+        EnsureGlobalDataLoaded();
+        globalData.language = language;
+        globalData.masterVolume = Mathf.Clamp01(master);
+        globalData.bgmVolume = Mathf.Clamp01(bgm);
+        globalData.sfxVolume = Mathf.Clamp01(sfx);
+        CommitGlobalSave();
+    }
 
     private static string ReadSlotJson(int slotIndex)
     {
@@ -385,7 +566,8 @@ public class Save : MonoBehaviour
         data.currentChapter = Mathf.Clamp(chapter, 1, 5);
         data.currentZoneIndex = 0;
         data.currentNodeId = -1;
-        data.savedScene = "Factory";
+        // 새 런의 시작 맵은 Forest다. 메뉴의 새 게임 진입 씬과 저장 씬을 일치시킨다.
+        data.savedScene = "Forest";
 
         if (ChapterManager.instance != null)
         {
@@ -459,7 +641,9 @@ public class Save : MonoBehaviour
 
         SaveData data = GetSaveData();
 
-        data.language = GetCurrentLanguageIndex();
+        GlobalSaveData settings = GetGlobalSaveData();
+        settings.language = GetCurrentLanguageIndex();
+        CommitGlobalSave();
 
         if (ChapterManager.instance != null)
         {
@@ -534,7 +718,7 @@ public class Save : MonoBehaviour
     {
         SaveData data = GetSaveData();
 
-        ChangeLanguage(data.language);
+        ChangeLanguage(GetGlobalSaveData().language);
 
         if (ChapterManager.instance != null)
         {
@@ -588,6 +772,16 @@ public class Save : MonoBehaviour
             PlayerPrefs.DeleteKey(GetSlotKey(i));
             DeleteSlotFiles(i);
         }
+        try
+        {
+            if (File.Exists(GetGlobalSavePath())) File.Delete(GetGlobalSavePath());
+            if (File.Exists(GetGlobalBackupPath())) File.Delete(GetGlobalBackupPath());
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[Save] 전역 메타 삭제 실패: {e.Message}");
+        }
+        globalData = null;
         PlayerPrefs.Save();
         Debug.Log("모든 저장 데이터 초기화 완료");
     }

@@ -28,5 +28,11 @@ public class LanguageSettings : MonoBehaviour
     public void ChangeLocale(int index)
     {
         LocalizationSettings.SelectedLocale = LocalizationSettings.AvailableLocales.Locales[index];
+        GlobalSaveData settings = Save.GetGlobalSaveData();
+        Save.UpdateGlobalSettings(
+            index,
+            settings.masterVolume,
+            settings.bgmVolume,
+            settings.sfxVolume);
     }
 }

@@ -406,12 +406,12 @@ MonoBehaviour:
   attackPower: 0
   defensePower: 0
   specialArmor: 0
-  criticalChance: 0
+  criticalChance: 10
   accuracy: 90
   dodgeChance: 0.05
   speed: 3
-  energyMax: 100
-  energyCurrent: 100
+  energyMax: 3
+  energyCurrent: 3
   rustChance: 20
   rustDamage: 5
   oxidationResist: 0
@@ -438,8 +438,8 @@ MonoBehaviour:
   AccurancyLevel: 0
   MaxHPLevel: 0
   maxAccurancyLevel: 3
-  maxAttackLevel: 10
-  maxDefenseLevel: 10
+  maxAttackLevel: 3
+  maxDefenseLevel: 3
   maxMaxHPLevel: 3
   Unitname: Enemy
   statusIconParent: {fileID: 7284542131567827613}

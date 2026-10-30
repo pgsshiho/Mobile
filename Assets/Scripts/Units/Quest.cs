@@ -97,7 +97,8 @@ public class Quest : MonoBehaviour
             isCompleted = true;
             Debug.Log($"<color=green>★ [{data.questTitle}] 퀘스트 완료! ★</color>");
 
-            // 1. 씬 내 모든 FactoryAddUnit의 CanClick을 true로 활성화 (로봇 선택 가능 상태로 전환)
+            // 1. 씬 내 모든
+            // AddUnit의 CanClick을 true로 활성화 (로봇 선택 가능 상태로 전환)
             FactoryAddUnit.UnlockAll();
 
             // 2. AddParty 하위 호환

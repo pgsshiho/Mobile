@@ -31,10 +31,10 @@ public class RoomNavigationUI : MonoBehaviour
     {
         instance = this;
 
-        RegisterButton(forwardButton, OnForwardClicked);
-        RegisterButton(backwardButton, OnBackwardClicked);
-        RegisterButton(leftButton, OnLeftClicked);
-        RegisterButton(rightButton, OnRightClicked);
+        RegisterButton(forwardButton, OnForwardClicked, nameof(RoomManager.MoveForward));
+        RegisterButton(backwardButton, OnBackwardClicked, nameof(RoomManager.MoveBackward));
+        RegisterButton(leftButton, OnLeftClicked, nameof(RoomManager.MoveLeft));
+        RegisterButton(rightButton, OnRightClicked, nameof(RoomManager.MoveRight));
     }
 
     private void Start()
@@ -43,12 +43,38 @@ public class RoomNavigationUI : MonoBehaviour
         HideAll();
     }
 
-    private void RegisterButton(Button button, UnityEngine.Events.UnityAction action)
+    private void RegisterButton(
+        Button button,
+        UnityEngine.Events.UnityAction action,
+        string roomManagerMethod)
     {
         if (button == null)
             return;
 
+        // 씬 인스펙터에 RoomManager 이동 함수가 이미 연결된 경우가 있다.
+        // 같은 이동 함수를 런타임에서 한 번 더 연결하면 한 번의 터치가 두 번 이동한다.
+        if (HasPersistentRoomManagerMove(button, roomManagerMethod))
+        {
+            // 선택 버튼 정보는 카메라 포커스 등에 사용하므로 이동 없이 이것만 갱신한다.
+            button.onClick.AddListener(() => selectedMoveButton = button);
+            return;
+        }
+
         button.onClick.AddListener(action);
+    }
+
+    private static bool HasPersistentRoomManagerMove(Button button, string methodName)
+    {
+        for (int i = 0; i < button.onClick.GetPersistentEventCount(); i++)
+        {
+            if (button.onClick.GetPersistentTarget(i) is RoomManager &&
+                button.onClick.GetPersistentMethodName(i) == methodName)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void OnForwardClicked()

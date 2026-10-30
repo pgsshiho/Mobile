@@ -34,10 +34,6 @@ public class Room : MonoBehaviour
     {
         return type == RoomType.Enemy ||
                type == RoomType.Boss ||
-               type == RoomType.GrassRoom ||
-               type == RoomType.FloodedRoom ||
-               type == RoomType.CloudRoom ||
-               type == RoomType.PollutedRoom ||
                type == RoomType.EliteEnemy;
     }
 
@@ -91,10 +87,6 @@ public class Room : MonoBehaviour
             // ── 전투방 ──────────────────────────────────────────────
             case RoomType.Enemy:
             case RoomType.Boss:
-            case RoomType.GrassRoom:
-            case RoomType.FloodedRoom:
-            case RoomType.CloudRoom:
-            case RoomType.PollutedRoom:
                 if (!node.cleared)
                 {
                     BattleManager.instance.StartBattle(this);

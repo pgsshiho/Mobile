@@ -18,6 +18,14 @@ public class UnitUIHandler
     private readonly Dictionary<StatusType, GameObject> statusIcons =
         new Dictionary<StatusType, GameObject>();
 
+    // DamageText 프리팹의 World Space Canvas 스케일(0.015) 기준 약 100 UI 픽셀 간격입니다.
+    private const float FloatingTextHorizontalSpacing = 1.2f;
+    // 상태이상 이름은 숫자 피해 텍스트보다 한글 두 글자 정도(약 30 UI 픽셀) 더 오른쪽에 둡니다.
+    private const float StatusTextAdditionalHorizontalOffset = 0.45f;
+    private const float FloatingTextLifetime = 0.9f;
+    private int floatingTextSequence;
+    private float lastFloatingTextTime = -999f;
+
     private Transform dynamicIconContainer;
 
     // 생성자 1: StatusIconSet 사용
@@ -102,6 +110,10 @@ public class UnitUIHandler
                 textColor = new Color(1f, 0.95f, 0.15f);
                 break;
 
+            case Unit.DamageType.Status:
+                textColor = new Color(0.85f, 0.35f, 1f);
+                break;
+
             default:
                 textColor = Color.white;
                 break;
@@ -122,9 +134,20 @@ public class UnitUIHandler
     }
 
     /// <summary>
+    /// 상태이상 이름은 숫자 피해 텍스트와 겹치지 않도록 추가 X 오프셋을 적용해 표시합니다.
+    /// </summary>
+    public void ShowStatusText(string message, Color textColor)
+    {
+        if (owner == null || string.IsNullOrEmpty(message))
+            return;
+
+        SpawnFloatingText(message, textColor, StatusTextAdditionalHorizontalOffset);
+    }
+
+    /// <summary>
     /// 플로팅 텍스트 생성 처리를 공통으로 수행합니다.
     /// </summary>
-    private void SpawnFloatingText(string message, Color textColor)
+    private void SpawnFloatingText(string message, Color textColor, float additionalHorizontalOffset = 0f)
     {
         if (owner == null)
             return;
@@ -133,14 +156,11 @@ public class UnitUIHandler
             ? damageTextSpawnPoint
             : owner.transform;
 
+        float horizontalOffset = GetNextFloatingTextHorizontalOffset() + additionalHorizontalOffset;
         Vector3 spawnPos =
             spawnPoint.position
             + Vector3.up * 1.0f
-            + new Vector3(
-                Random.Range(-0.2f, 0.2f),
-                0f,
-                0f
-            );
+            + Vector3.right * horizontalOffset;
 
         GameObject prefab = damageTextPrefab;
 
@@ -173,6 +193,24 @@ public class UnitUIHandler
             message,
             textColor
         );
+    }
+
+    /// <summary>
+    /// 동시에 나온 텍스트를 중앙, 오른쪽, 왼쪽 순서로 배치합니다.
+    /// 인접 텍스트 사이의 X 간격은 최소 100 UI 픽셀(1.5 월드 단위)입니다.
+    /// </summary>
+    private float GetNextFloatingTextHorizontalOffset()
+    {
+        if (Time.time - lastFloatingTextTime > FloatingTextLifetime)
+            floatingTextSequence = 0;
+
+        lastFloatingTextTime = Time.time;
+        int index = floatingTextSequence++;
+        int horizontalStep = index == 0
+            ? 0
+            : (index % 2 == 1 ? (index + 1) / 2 : -(index / 2));
+
+        return horizontalStep * FloatingTextHorizontalSpacing;
     }
 
     // ============================================================
@@ -238,7 +276,9 @@ public class UnitUIHandler
                 sr.sortingOrder = 25;
             }
 
-            obj.transform.localScale = Vector3.one * 0.15f;
+            // 상태 아이콘이 전투 배경과 겹쳐 묻히지 않도록 충분한 크기와 정렬 순서를 준다.
+            obj.transform.localScale = Vector3.one * 0.28f;
+            obj.transform.localPosition = Vector3.zero;
         }
 
         Image image = obj.GetComponentInChildren<Image>();
@@ -306,7 +346,7 @@ public class UnitUIHandler
         if (dynamicIconContainer != null)
         {
             dynamicIconContainer.localPosition =
-                new Vector3(-0.3f, 1.3f, 0f);
+                new Vector3(-0.3f, 1.7f, 0f);
 
             return dynamicIconContainer;
         }
@@ -321,7 +361,7 @@ public class UnitUIHandler
         {
             dynamicIconContainer = existing;
             dynamicIconContainer.localPosition =
-                new Vector3(-0.3f, 1.3f, 0f);
+                new Vector3(-0.3f, 1.7f, 0f);
 
             return dynamicIconContainer;
         }
@@ -331,7 +371,7 @@ public class UnitUIHandler
 
         containerObj.transform.SetParent(owner.transform, false);
         containerObj.transform.localPosition =
-            new Vector3(-0.3f, 1.3f, 0f);
+            new Vector3(-0.3f, 1.7f, 0f);
 
         dynamicIconContainer = containerObj.transform;
 
@@ -340,7 +380,8 @@ public class UnitUIHandler
 
     private void RepositionStatusIcons()
     {
-        float spacing = 0.5f;
+        // 여러 상태이상 아이콘은 유닛 위에서 서로 겹치지 않게 가로로 배치한다.
+        float spacing = 0.65f;
         int total = statusIcons.Count;
 
         if (total == 0)

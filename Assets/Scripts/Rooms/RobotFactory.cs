@@ -2,7 +2,8 @@ using UnityEngine;
 using DG.Tweening;
 using UnityEngine.EventSystems;
 
-public class RobotFactory : MonoBehaviour, IPointerClickHandler
+public class Robot
+    : MonoBehaviour, IPointerClickHandler
 {
     [Header("로봇 목록")]
     public Unit[] Robots;

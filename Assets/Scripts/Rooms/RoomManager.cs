@@ -29,11 +29,6 @@ public enum RoomType
     Fountain,
     RuinBuilding,
 
-    GrassRoom,
-    FloodedRoom,
-    CloudRoom,
-    PollutedRoom,
-
     EliteEnemy,
 
     // 로봇 영입/제작 등 로봇 관련 기능을 담당하는 필수 특수 방
@@ -274,7 +269,7 @@ public class RoomManager : MonoBehaviour
         List<RoomType> middleRooms = new List<RoomType>();
 
         // 1. 일반 적방 정확히 3개
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 5; i++)
         {
             middleRooms.Add(
                 GetRandomNormalEnemyRoomType(zone)
@@ -307,9 +302,6 @@ public class RoomManager : MonoBehaviour
         ShuffleList(requiredShops);
         middleRooms.Add(requiredShops[0]);
         middleRooms.Add(requiredShops[1]);
-
-        // 6. 아무것도 없는 방(None) 최소 1개
-        middleRooms.Add(RoomType.None);
 
         // 7. 남은 방 랜덤 생성 (적방 3개, 엘리트방 1개 고정을 위해 비전투 방에서만 보충)
         while (middleRooms.Count < middleCount)
@@ -354,21 +346,6 @@ public class RoomManager : MonoBehaviour
             {
                 RoomType.Enemy
             };
-
-        switch (zone)
-        {
-            case ZoneType.Forest:
-                list.Add(RoomType.GrassRoom);
-                break;
-
-            case ZoneType.Coast:
-                list.Add(RoomType.FloodedRoom);
-                break;
-
-            case ZoneType.Lab:
-                list.Add(RoomType.PollutedRoom);
-                break;
-        }
 
         return list[
             Random.Range(0, list.Count)
@@ -487,13 +464,18 @@ public class RoomManager : MonoBehaviour
         List<RoomNode> placedNodes,
         Dictionary<Vector2Int, RoomNode> grid)
     {
-        // 최근에 배치된 방들을 우선하여 나뭇가지 형태로 뻗어나가도록 유도
+        // 최근 노드만 계속 선택하면 매번 긴 한 줄 통로에 가까워진다.
+        // 최근 노드와 전체 노드를 섞어 고르면 주 경로와 옆 가지가 매 런 다르게 형성된다.
         int recentCount = Mathf.Min(4, placedNodes.Count);
         int startIndex = placedNodes.Count - recentCount;
 
         for (int attempt = 0; attempt < 30; attempt++)
         {
-            RoomNode parent = placedNodes[Random.Range(startIndex, placedNodes.Count)];
+            bool extendRecentBranch = Random.value < 0.55f;
+            int parentIndex = extendRecentBranch
+                ? Random.Range(startIndex, placedNodes.Count)
+                : Random.Range(0, placedNodes.Count);
+            RoomNode parent = placedNodes[parentIndex];
             List<Vector2Int> freeNeighbors = GetFreeNeighbors(parent.gridPos, grid);
 
             if (freeNeighbors.Count > 0)
