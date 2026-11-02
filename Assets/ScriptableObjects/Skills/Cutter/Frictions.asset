@@ -18,7 +18,7 @@ MonoBehaviour:
   targetType: 0
   maxTargetDistance: 4
   minUserColumn: 0
-  maxUserColumn: 2
+  maxUserColumn: 0
   power: 0
   hitBonus: 0
   soundEffect: {fileID: 8300000, guid: 8acd3c7bf79383e49832eebef1cdf833, type: 3}

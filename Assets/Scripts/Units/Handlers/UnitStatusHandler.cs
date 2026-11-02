@@ -25,6 +25,8 @@ public class UnitStatusHandler
     public bool HasStatus(StatusType type) =>
         statusTurns.TryGetValue(type, out int t) && t != 0;
 
+    public bool HasAnyStatus() => statusTurns.Count > 0;
+
     public int GetRemainingTurns(StatusType type) =>
         statusTurns.TryGetValue(type, out int t) ? t : 0;
 
@@ -124,6 +126,10 @@ public class UnitStatusHandler
         {
             owner.ghostingMissPenalty = 0;
         }
+        else if (type == StatusType.FuseBroken)
+        {
+            owner.ClearFuseBrokenSkillLock();
+        }
     }
 
     // ────────────────────────────────────────────
@@ -143,6 +149,9 @@ public class UnitStatusHandler
 
         if (isNew)
         {
+            if (type == StatusType.FuseBroken)
+                owner.LockRandomSkillForFuseBroken();
+
             uiHandler?.AddStatusIcon(type);
             if (!isRestoringStatuses)
                 uiHandler?.ShowStatusText(GetStatusDisplayName(type), GetStatusTextColor(type));
@@ -160,6 +169,7 @@ public class UnitStatusHandler
     public void ClearStates()
     {
         statusTurns.Clear();
+        owner.ClearFuseBrokenSkillLock();
         uiHandler?.ClearStatusIcons();
     }
 
@@ -352,6 +362,17 @@ public class UnitStatusHandler
 
         int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.02f) - owner.specialArmor);
         Debug.Log($"{owner.Unitname} 윤활유 고갈 틱 -{dmg}");
+
+        // 윤활유가 없는 상태에서는 마찰열이 누적된다.
+        // 화재 중에는 이미 과열보다 강한 상태이므로 중복 부여하지 않는다.
+        if (Random.Range(0, 100) < 5 &&
+            !HasStatus(StatusType.Overheat) &&
+            !HasStatus(StatusType.Fire))
+        {
+            AddStatus(StatusType.Overheat, 3);
+            Debug.Log($"{owner.Unitname} 윤활유 고갈로 과열 발생! (5%)");
+        }
+
         return dmg;
     }
 

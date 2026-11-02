@@ -9,6 +9,8 @@ public class WeakAttack : SkillBase
         SkillData skill
     )
     {
+        if (user == null || target == null) return;
+
         // 명중 체크
         if (!user.CheckHit(target, skill))
         {
@@ -17,13 +19,14 @@ public class WeakAttack : SkillBase
         }
 
         int damage = user.CalculateDamage(target, skill);
-        if (target.isBleeding || target.isFire || target.isStunned)
-        {
-            damage = (int)(damage * 1.5f);
-        }
-        target.TakeDamage(damage);
-        target.AddStatus(StatusType.Bleeding, 3);
 
-        Debug.Log(target.name + " 출혈 부여!");
+        // 상태이상(모든 디버프/상태이상)이 걸려있을 경우 1.5배 피해
+        if (target.HasAnyStatus())
+        {
+            damage = Mathf.RoundToInt(damage * 1.5f);
+            Debug.Log($"[약점 타격] {target.Unitname} 상태이상 보유로 1.5배 증폭 피해! ({damage})");
+        }
+
+        target.TakeDamage(damage);
     }
 }

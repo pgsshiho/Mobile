@@ -126,6 +126,7 @@ public class Unit : MonoBehaviour
     [Header("Skill")]
     public List<SkillData> skills = new List<SkillData>();
     public SkillData selectedSkill;
+    private SkillData fuseBrokenDisabledSkill;
 
     [Header("Buff & Debuff")]
     public List<BuffRuntime> buffs = new List<BuffRuntime>();
@@ -684,9 +685,64 @@ public class Unit : MonoBehaviour
     }
     public void AddMark(int turns) => StatusHandler.AddMark(turns);
     public bool HasStatus(StatusType type) => StatusHandler.HasStatus(type);
+    public bool HasAnyStatus() => StatusHandler != null && StatusHandler.HasAnyStatus();
     public int GetStatusTurns(StatusType type) => StatusHandler.GetRemainingTurns(type);
     public void AddStatusIcon(StatusType type) => UIHandler.AddStatusIcon(type);
     public void RemoveStatusIcon(StatusType type) => UIHandler.RemoveStatusIcon(type);
+
+    /// <summary>퓨즈 파손으로 이번 상태 지속 중 사용할 수 없는 스킬입니다.</summary>
+    public SkillData FuseBrokenDisabledSkill => fuseBrokenDisabledSkill;
+
+    public bool IsSkillDisabledByFuse(SkillData skill)
+    {
+        return isFuseBroken && skill != null && skill == fuseBrokenDisabledSkill;
+    }
+
+    /// <summary>퓨즈 파손이 새로 부여될 때 유효한 스킬 하나를 무작위 봉인합니다.</summary>
+    public void LockRandomSkillForFuseBroken()
+    {
+        if (skills == null || skills.Count == 0)
+        {
+            fuseBrokenDisabledSkill = null;
+            return;
+        }
+
+        List<SkillData> availableSkills = new List<SkillData>();
+        foreach (SkillData skill in skills)
+        {
+            if (skill != null)
+                availableSkills.Add(skill);
+        }
+
+        if (availableSkills.Count == 0)
+            return;
+
+        fuseBrokenDisabledSkill = availableSkills[UnityEngine.Random.Range(0, availableSkills.Count)];
+
+        if (selectedSkill == fuseBrokenDisabledSkill)
+            selectedSkill = null;
+
+        Debug.LogWarning(
+            $"<color=yellow>[퓨즈 파손]</color> {Unitname}의 " +
+            $"[{fuseBrokenDisabledSkill.skillName}] 스킬이 봉인되었습니다.");
+
+        if (BattleManager.instance != null &&
+            TurnManager.instance != null &&
+            TurnManager.instance.currentUnit == this &&
+            this is PlayerUnit player)
+        {
+            BattleManager.instance.ShowPlayerUI(player);
+        }
+    }
+
+    public void ClearFuseBrokenSkillLock()
+    {
+        if (fuseBrokenDisabledSkill == null)
+            return;
+
+        Debug.Log($"[퓨즈 파손 해제] {Unitname}의 [{fuseBrokenDisabledSkill.skillName}] 스킬 봉인이 해제되었습니다.");
+        fuseBrokenDisabledSkill = null;
+    }
 
     // ==========================
     // Stat & Combat Delegation
