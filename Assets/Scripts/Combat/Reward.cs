@@ -6,6 +6,7 @@ using UnityEngine;
 public class Reward : MonoBehaviour
 {
     public static Reward Instance;
+    public static event System.Action OnRewardClosed;
 
     [Header("UI Panel")]
     public GameObject Rewardpanel;
@@ -45,6 +46,7 @@ public class Reward : MonoBehaviour
         {
             Instance = null;
         }
+        OnRewardClosed = null;
     }
 
     /// <summary>
@@ -143,6 +145,8 @@ public class Reward : MonoBehaviour
         {
             Rewardpanel.SetActive(false);
         }
+
+        OnRewardClosed?.Invoke();
     }
 
     /// <summary>

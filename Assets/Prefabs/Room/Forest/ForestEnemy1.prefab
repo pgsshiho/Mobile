@@ -44,18 +44,24 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 995ee3dbe51f07946bdc6b9cdd8b6b9f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+  m_EditorClassIdentifier: Assembly-CSharp::Room
   roomType: 2
   zoneType: 0
   roomName: ForestEnemy1
   enemySpawnPoints: []
+  enemyPoolOverride: {fileID: 0}
+  enemyPrefabs: []
   enemies:
+  - {fileID: 1669151837191854026, guid: dbe9cb5adabc5b1459b529f0d9731e53, type: 3}
+  - {fileID: 1669151837191854026, guid: dbe9cb5adabc5b1459b529f0d9731e53, type: 3}
   - {fileID: 1669151837191854026, guid: a40a920696447354284c6286375d1e76, type: 3}
+  minEnemyCount: 2
+  maxEnemyCount: 2
   rewardData: {fileID: 11400000, guid: e9893c2a1f019324a954cd17fe12ca71, type: 2}
   minMoney: 50
   maxMoney: 150
-  minMaterial: 10
-  maxMaterial: 30
+  minMaterial: 5
+  maxMaterial: 10
   dropItems: []
   node:
     id: 0
@@ -64,6 +70,7 @@ MonoBehaviour:
     zoneType: 0
     roomType: 0
     cleared: 0
+  enterRoomSFX: {fileID: 8300000, guid: 2b97e3328a0cc7f408906f3728d124b5, type: 3}
 --- !u!1 &4477834644929296797
 GameObject:
   m_ObjectHideFlags: 0

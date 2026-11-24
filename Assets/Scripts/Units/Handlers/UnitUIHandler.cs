@@ -239,6 +239,9 @@ public class UnitUIHandler
             return;
         }
 
+        // 상태 아이콘은 Canvas/루트 등 프리팹마다 다른 참조를 쓰지 않고,
+        // 유닛에 붙는 전용 월드 컨테이너에만 생성한다.
+        // 기존 부모 참조가 UI Canvas인 경우 SpriteRenderer가 보이지 않던 문제를 막는다.
         Transform parent = GetOrCreateIconContainer();
 
         if (parent == null)
@@ -262,6 +265,8 @@ public class UnitUIHandler
 
             SpriteRenderer sr = obj.AddComponent<SpriteRenderer>();
             sr.sprite = icon;
+            sr.enabled = true;
+            sr.color = Color.white;
 
             SpriteRenderer unitSr =
                 owner.GetComponent<SpriteRenderer>();
@@ -269,15 +274,16 @@ public class UnitUIHandler
             if (unitSr != null)
             {
                 sr.sortingLayerID = unitSr.sortingLayerID;
-                sr.sortingOrder = unitSr.sortingOrder + 15;
+                sr.sortingOrder = unitSr.sortingOrder + 100;
             }
             else
             {
-                sr.sortingOrder = 25;
+                sr.sortingOrder = 100;
             }
 
-            // 상태 아이콘이 전투 배경과 겹쳐 묻히지 않도록 충분한 크기와 정렬 순서를 준다.
-            obj.transform.localScale = Vector3.one * 0.28f;
+            // 원본 스프라이트 해상도(605~2048px)가 서로 달라도,
+            // 화면에서는 유닛 높이의 약 25%로 동일하게 보이도록 보정한다.
+            obj.transform.localScale = Vector3.one * GetIconScale(icon);
             obj.transform.localPosition = Vector3.zero;
         }
 
@@ -294,6 +300,9 @@ public class UnitUIHandler
         if (spriteRenderer != null)
         {
             spriteRenderer.sprite = icon;
+            spriteRenderer.enabled = true;
+            spriteRenderer.color = Color.white;
+            ApplyIconSorting(spriteRenderer);
         }
 
         statusIcons.Add(type, obj);
@@ -337,17 +346,9 @@ public class UnitUIHandler
 
     private Transform GetOrCreateIconContainer()
     {
-        if (statusIconParent != null &&
-            statusIconParent != owner.transform)
-        {
-            return statusIconParent;
-        }
-
         if (dynamicIconContainer != null)
         {
-            dynamicIconContainer.localPosition =
-                new Vector3(-0.3f, 1.7f, 0f);
-
+            PositionIconContainerAboveUnit();
             return dynamicIconContainer;
         }
 
@@ -360,9 +361,7 @@ public class UnitUIHandler
         if (existing != null)
         {
             dynamicIconContainer = existing;
-            dynamicIconContainer.localPosition =
-                new Vector3(-0.3f, 1.7f, 0f);
-
+            PositionIconContainerAboveUnit();
             return dynamicIconContainer;
         }
 
@@ -370,12 +369,70 @@ public class UnitUIHandler
             new GameObject("StatusIcon_Container");
 
         containerObj.transform.SetParent(owner.transform, false);
-        containerObj.transform.localPosition =
-            new Vector3(-0.3f, 1.7f, 0f);
 
         dynamicIconContainer = containerObj.transform;
+        PositionIconContainerAboveUnit();
 
         return dynamicIconContainer;
+    }
+
+    private void PositionIconContainerAboveUnit()
+    {
+        if (owner == null || dynamicIconContainer == null)
+            return;
+
+        SpriteRenderer unitRenderer = owner.sp != null
+            ? owner.sp
+            : owner.GetComponent<SpriteRenderer>();
+
+        if (unitRenderer != null)
+        {
+            float iconClearance = Mathf.Max(0.2f, unitRenderer.bounds.size.y * 0.08f);
+            Vector3 worldPosition = new Vector3(
+                unitRenderer.bounds.center.x,
+                unitRenderer.bounds.max.y + iconClearance,
+                owner.transform.position.z);
+            dynamicIconContainer.position = worldPosition;
+            return;
+        }
+
+        dynamicIconContainer.localPosition = new Vector3(0f, 1.7f, 0f);
+    }
+
+    private float GetIconScale(Sprite icon)
+    {
+        if (icon == null)
+            return 0.1f;
+
+        SpriteRenderer unitRenderer = owner.sp != null
+            ? owner.sp
+            : owner.GetComponent<SpriteRenderer>();
+        float desiredWorldHeight = unitRenderer != null
+            ? Mathf.Max(0.35f, unitRenderer.bounds.size.y * 0.24f)
+            : 0.5f;
+        float iconWorldHeightAtScaleOne = Mathf.Max(0.01f, icon.bounds.size.y);
+        float parentScaleY = Mathf.Max(0.01f, Mathf.Abs(dynamicIconContainer.lossyScale.y));
+
+        return desiredWorldHeight / iconWorldHeightAtScaleOne / parentScaleY;
+    }
+
+    private void ApplyIconSorting(SpriteRenderer iconRenderer)
+    {
+        if (iconRenderer == null)
+            return;
+
+        SpriteRenderer unitRenderer = owner.sp != null
+            ? owner.sp
+            : owner.GetComponent<SpriteRenderer>();
+        if (unitRenderer != null)
+        {
+            iconRenderer.sortingLayerID = unitRenderer.sortingLayerID;
+            iconRenderer.sortingOrder = unitRenderer.sortingOrder + 100;
+        }
+        else
+        {
+            iconRenderer.sortingOrder = 100;
+        }
     }
 
     private void RepositionStatusIcons()

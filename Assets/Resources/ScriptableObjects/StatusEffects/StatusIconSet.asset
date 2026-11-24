@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d320984cfb74a5ea79c904e5781fa60, type: 3}
+  m_Name: StatusIconSet
+  m_EditorClassIdentifier: Assembly-CSharp::StatusIconSet
+  statusIconPrefab: {fileID: 0}
+  statusIconDatas:
+  - {fileID: 11400000, guid: f3217843001cf8c45a187d33e7e4ec4c, type: 2}
+  - {fileID: 11400000, guid: 5869d6d2f6364394ca5171e812a103a6, type: 2}
+  - {fileID: 11400000, guid: 1834014b5cdba06468f7e92695307146, type: 2}
+  - {fileID: 11400000, guid: dd670b6fd496a9145a49c76f278c29ed, type: 2}
+  - {fileID: 11400000, guid: e28b28af319cbf041ae5544d13f9576f, type: 2}
+  - {fileID: 11400000, guid: b8d53dd3aec147741ac7557b3e09ae5a, type: 2}
+  - {fileID: 11400000, guid: bcf63c5e0805ce64cbaa09100febdc1c, type: 2}
+  - {fileID: 11400000, guid: 1f648231ba1d049419c69cda9639030b, type: 2}
+  - {fileID: 11400000, guid: 183b6bba77397bc4e9370beaae64d9a2, type: 2}
+  - {fileID: 11400000, guid: 572908dbab790034d848b27736dfd77a, type: 2}
+  - {fileID: 11400000, guid: 825cf0fe2a1abd042a0a50a9b8520057, type: 2}
+  - {fileID: 11400000, guid: 70ed4252877eccf4a8f6af57e7fa6670, type: 2}

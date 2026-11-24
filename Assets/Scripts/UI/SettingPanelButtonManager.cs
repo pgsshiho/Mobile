@@ -4,11 +4,16 @@ using UnityEngine.SceneManagement;
 
 public class SettingPanelButtonManager : MonoBehaviour
 {
+    public static SettingPanelButtonManager instance;
     public GameObject MainmenuButton;
     public GameObject LeftButton;
     public GameObject QuitPanel;
     public TextMeshProUGUI QuitText;
     private void OnEnable()
+    {
+        ButtonSetting();
+    }
+    private void OnDisable()
     {
         ButtonSetting();
     }
@@ -42,7 +47,7 @@ public class SettingPanelButtonManager : MonoBehaviour
     }
     public void GameQuit()
     {
-        Save.CommitSave();
+        Save.instance.SaveGame();
         Application.Quit();
     }
     public void Cancel()

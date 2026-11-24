@@ -49,6 +49,19 @@ public sealed class BattlePositioningService
         enemyColumns.Clear();
     }
 
+    public void RegisterEnemy(Enemy enemy, int column = -1)
+    {
+        if (enemy == null) return;
+        if (column < 0) column = enemyColumns.Count;
+        enemyColumns[enemy] = column;
+    }
+
+    public void UnregisterEnemy(Enemy enemy)
+    {
+        if (enemy == null) return;
+        enemyColumns.Remove(enemy);
+    }
+
     public void Rearrange(Transform[] enemyPositions)
     {
         if (enemyPositions == null || enemyPositions.Length == 0)

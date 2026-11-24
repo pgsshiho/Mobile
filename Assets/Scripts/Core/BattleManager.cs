@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Localization.Settings;
@@ -6,11 +6,11 @@ using System.Collections;
 using UnityEngine.Rendering;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
+using System;
 
 public class BattleManager : MonoBehaviour
 {
     public static BattleManager instance;
-
     [Header("Positions")]
     public Transform[] Party;
     public Transform[] Enemy;
@@ -35,10 +35,18 @@ public class BattleManager : MonoBehaviour
     [Tooltip("누른 뒤 아군을 선택하면 해당 아군의 열로 교대 이동하는 버튼")]
     public Button formationMoveButton;
 
+    [Header("배틀 시작 이벤트")]
+    public GameObject BattleStartEvent;
+    [Min(0f)]
+    [Tooltip("전투 입력을 잠근 채 시작 연출을 표시하는 시간(초)")]
+    public float battleStartEventDuration = 1.25f;
+    public bool IsBattleIntroPlaying { get; private set; }
     [Header("Audio")]
     public AudioSource sfxSource;
     public AudioSource bgmSource;
     public AudioClip battleBgm;
+    public AudioClip battleBossBgm;
+    public AudioClip battleWin;
 
     private Fixer fixerTargetSelector;
     private fountain fountainTargetSelector;
@@ -83,6 +91,7 @@ public class BattleManager : MonoBehaviour
     private TMP_Text[] battleUIEXTexts;
 
     private bool isSelectingFormationMove;
+    private Coroutine battleStartRoutine;
     // 전투 규칙은 UI/씬 참조 없이 별도 객체에 둔다.
     private readonly BattleTargetingRules targetingRules =
         new BattleTargetingRules();
@@ -90,7 +99,7 @@ public class BattleManager : MonoBehaviour
 
     private readonly BattlePositioningService positioning =
         new BattlePositioningService();
-
+    
 
     private void Awake()
     {
@@ -108,6 +117,7 @@ public class BattleManager : MonoBehaviour
         CacheFormationMoveButtons();
 
         HideBattleUIEX();
+        
     }
 
     private void Update()
@@ -308,13 +318,18 @@ public class BattleManager : MonoBehaviour
 
     public void SKillname(string name)
     {
-        Skillnames.text = name;
+        if (Skillnames != null)
+            Skillnames.text = name;
     }
     
     public void StartBattle(Room room)
     {
+        if (room == null || isBattle)
+            return;
+
         SKillname("");
         isBattle = true;
+        IsBattleIntroPlaying = true;
 
         HideBattleUIEX();
 
@@ -326,9 +341,31 @@ public class BattleManager : MonoBehaviour
         SetupBattlePositions(room);
 
         if (battleUI != null)
+            battleUI.SetActive(false);
+
+        // 연출이 끝나기 전에는 턴 등록을 하지 않아 스킬/대상 터치를 완전히 막는다.
+        battleStartRoutine = StartCoroutine(BeginBattleAfterIntro(room));
+    }
+
+    private IEnumerator BeginBattleAfterIntro(Room room)
+    {
+        BattleOpenEvent();
+
+        if (BattleStartEvent != null)
+            yield return new WaitForSecondsRealtime(battleStartEventDuration);
+
+        if (BattleStartEvent != null)
+            BattleStartEvent.SetActive(false);
+
+        if (!isBattle)
+            yield break;
+
+        IsBattleIntroPlaying = false;
+        battleStartRoutine = null;
+
+        if (battleUI != null)
             battleUI.SetActive(true);
 
-        // BGM
         if (AudioManager.instance != null)
         {
             AudioManager.instance.StopBattleBgm();
@@ -336,14 +373,19 @@ public class BattleManager : MonoBehaviour
         }
 
         if (TurnManager.instance != null)
-        {
             TurnManager.instance.RegisterRoom(room);
-        }
 
-        Debug.Log("전투 시작");
+        Debug.Log("전투 시작 - 시작 연출 종료 후 입력 활성화");
     }
 
-
+    public void BattleOpenEvent()
+    {
+        OpenUI openUI = FindAnyObjectByType<OpenUI>();
+        if (openUI != null && BattleStartEvent != null)
+        {
+            openUI.OpenThis(BattleStartEvent);
+        }
+    }
     // =========================================================
     // Battle Position
     // =========================================================
@@ -363,6 +405,9 @@ public class BattleManager : MonoBehaviour
     /// </summary>
     public bool BeginItemTargetSelection(BackpackUIManager selector)
     {
+        if (IsBattleIntroPlaying)
+            return false;
+
         if (selector == null || PartyManager.instance == null || PartyManager.instance.partySlots == null)
             return false;
 
@@ -867,7 +912,8 @@ public class BattleManager : MonoBehaviour
                     cached.button.interactable =
                         CanUseSkillAtCurrentColumn(
                             player,
-                            skill);
+                            skill) &&
+                        !player.IsSkillDisabledByFuse(skill);
                 }
             }
             else
@@ -1079,7 +1125,9 @@ public class BattleManager : MonoBehaviour
 
     public void SelectSkill(int index)
     {
-        
+        if (IsBattleIntroPlaying)
+            return;
+
         if (TurnManager.instance == null)
             return;
 
@@ -1103,9 +1151,16 @@ public class BattleManager : MonoBehaviour
 
         SkillData selectedSkill =
             player.skills[index];
-        SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
         if (selectedSkill == null)
             return;
+
+        if (player.IsSkillDisabledByFuse(selectedSkill))
+        {
+            Debug.LogWarning($"[퓨즈 파손] {selectedSkill.skillName} 스킬은 현재 사용할 수 없습니다.");
+            return;
+        }
+
+        SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
 
         if (!CanUseSkillAtCurrentColumn(
             player,
@@ -1126,25 +1181,26 @@ public class BattleManager : MonoBehaviour
         Debug.Log(
             $"{player.selectedSkill.skillName} 선택");
 
-        if (player.selectedSkill.targetType
-            == TargetType.Ally)
+        if (player.selectedSkill.targetType == TargetType.Ally)
         {
             ClearEnemyTargetAvailability();
-
-            Debug.Log(
-                "[전투] 아군 1명을 선택하세요.");
+            Debug.Log("[전투] 아군 1명을 선택하세요.");
+        }
+        else if (player.selectedSkill.targetType == TargetType.AllAlly)
+        {
+            ClearEnemyTargetAvailability();
+            player.SelectTarget(player);
+        }
+        else if (player.selectedSkill.targetType == TargetType.Self)
+        {
+            ClearEnemyTargetAvailability();
+            player.SelectTarget(player);
         }
         else
         {
             RefreshEnemyTargetAvailability(
                 player,
                 player.selectedSkill);
-        }
-
-        if (player.selectedSkill.targetType
-            == TargetType.Self)
-        {
-            player.SelectTarget(player);
         }
     }
 
@@ -1203,6 +1259,23 @@ public class BattleManager : MonoBehaviour
 
     public void EndBattle(bool win)
     {
+        if (battleStartRoutine != null)
+        {
+            StopCoroutine(battleStartRoutine);
+            battleStartRoutine = null;
+        }
+        IsBattleIntroPlaying = false;
+        if (BattleStartEvent != null)
+            BattleStartEvent.SetActive(false);
+
+        // [포커스 해제] 유닛이 비활성화되기 전에 오브젝트/카메라 포커스를 먼저 즉시 강제 원복
+        FocusManager.RequestForceReset?.Invoke();
+        if (FocusManager.Instance != null)
+            FocusManager.Instance.ForceReset();
+
+        if (CameraFocus.Instance != null && CameraFocus.Instance.IsFocused)
+            CameraFocus.Instance.ForceReset();
+
         CancelFixerTargetSelection();
         isBattle = false;
         CancelItemTargetSelection();
@@ -1215,7 +1288,6 @@ public class BattleManager : MonoBehaviour
             battleUI.SetActive(false);
 
         HidePlayerUI();
-
         if (TurnManager.instance != null)
         {
             TurnManager.instance.waitingForTarget =
@@ -1224,6 +1296,9 @@ public class BattleManager : MonoBehaviour
 
         if (win)
         {
+            AudioManager.instance.StopBattleBgm();
+            AudioManager.instance.PlaySfx(battleWin);
+
             if (RoomManager.instance != null)
             {
                 RoomManager.instance
@@ -1284,5 +1359,15 @@ public class BattleManager : MonoBehaviour
     public void RearrangeEnemies()
     {
         positioning.Rearrange(Enemy);
+    }
+
+    public void RegisterEnemy(Enemy enemy, int column = -1)
+    {
+        positioning.RegisterEnemy(enemy, column);
+    }
+
+    public void UnregisterEnemy(Enemy enemy)
+    {
+        positioning.UnregisterEnemy(enemy);
     }
 }

@@ -1,4 +1,3 @@
-
 using DG.Tweening;
 using UnityEngine;
 
@@ -40,6 +39,12 @@ public class CameraFocus : MonoBehaviour
 
         if (targetCamera == null)
             targetCamera = Camera.main;
+
+        if (targetCamera != null)
+        {
+            originalPosition = targetCamera.transform.position;
+            originalRotation = targetCamera.transform.rotation;
+        }
     }
 
     /// <summary>
@@ -84,7 +89,7 @@ public class CameraFocus : MonoBehaviour
         isFocused = true;
         isTweening = true;
 
-        currentTween?.Kill();
+        currentTween?.Kill(false);
 
         Sequence sequence = DOTween.Sequence();
 
@@ -120,9 +125,10 @@ public class CameraFocus : MonoBehaviour
     /// </summary>
     public void FocusOut()
     {
-        if (!isFocused || isTweening || targetCamera == null)
+        if (!isFocused || targetCamera == null)
             return;
 
+        currentTween?.Kill(false);
         isTweening = true;
 
         Sequence sequence = DOTween.Sequence();
@@ -150,6 +156,7 @@ public class CameraFocus : MonoBehaviour
             })
             .OnKill(() =>
             {
+                isFocused = false;
                 isTweening = false;
                 currentTween = null;
             });
@@ -157,9 +164,26 @@ public class CameraFocus : MonoBehaviour
         currentTween = sequence;
     }
 
+    /// <summary>
+    /// 전투 종료 등 즉각 카메라를 원래 위치와 회전으로 즉시 강제 복귀합니다.
+    /// </summary>
+    public void ForceReset()
+    {
+        currentTween?.Kill(false);
+        currentTween = null;
+        isTweening = false;
+
+        if (isFocused && targetCamera != null)
+        {
+            targetCamera.transform.position = originalPosition;
+            targetCamera.transform.rotation = originalRotation;
+            isFocused = false;
+        }
+    }
+
     private void OnDestroy()
     {
-        currentTween?.Kill();
+        currentTween?.Kill(false);
 
         if (Instance == this)
             Instance = null;

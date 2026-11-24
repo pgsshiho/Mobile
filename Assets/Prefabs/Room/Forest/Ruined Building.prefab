@@ -210,7 +210,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 995ee3dbe51f07946bdc6b9cdd8b6b9f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+  m_EditorClassIdentifier: Assembly-CSharp::Room
   roomType: 10
   zoneType: 0
   roomName: ForestRuinbuilding
@@ -233,6 +233,7 @@ MonoBehaviour:
     zoneType: 0
     roomType: 0
     cleared: 0
+  enterRoomSFX: {fileID: 8300000, guid: 872404aff0eb3554c8bc71b17e29b4ef, type: 3}
 --- !u!1 &6283151008688611938
 GameObject:
   m_ObjectHideFlags: 0

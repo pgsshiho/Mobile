@@ -32,7 +32,10 @@ public enum RoomType
     EliteEnemy,
 
     // 로봇 영입/제작 등 로봇 관련 기능을 담당하는 필수 특수 방
-    RobotFactory
+    RobotFactory,
+
+    // 챕터 최종 보스 방 (클리어 시 다음 챕터로 저장 후 메인화면 퇴장)
+    ChapterBoss
 }
 
 public class RoomManager : MonoBehaviour
@@ -331,9 +334,11 @@ public class RoomManager : MonoBehaviour
         // 셔플
         ShuffleList(middleRooms);
 
-        // Start -> Middle -> Boss (보스 방 정확히 1개)
+        // Start -> Middle -> Boss / ChapterBoss (보스 방 정확히 1개)
         types.AddRange(middleRooms);
-        types.Add(RoomType.Boss);
+        // 해당 챕터의 마지막 맵(예: 3번째 맵)이면 ChapterBoss, 중간 맵이면 Boss
+        bool isFinalZone = ChapterManager.instance != null && ChapterManager.instance.IsFinalZone();
+        types.Add(isFinalZone ? RoomType.ChapterBoss : RoomType.Boss);
 
         return types;
     }
@@ -916,7 +921,7 @@ public class RoomManager : MonoBehaviour
         if (target == null)
             return;
 
-        if (target.roomType == RoomType.Boss)
+        if (target.roomType == RoomType.Boss || target.roomType == RoomType.ChapterBoss)
         {
             ShowBossEntryWarning(
                 target,
@@ -965,7 +970,7 @@ public class RoomManager : MonoBehaviour
 
         enterChoice.onSelected.AddListener(() =>
         {
-            Save.CommitSave();
+            Save.instance.SaveGame();
 
             EnterNode(bossNode);
 
@@ -1046,6 +1051,9 @@ public class RoomManager : MonoBehaviour
                 RoomNavigationUI.instance.Refresh(node);
             }
         }
+
+        // 방 진입 시 미니맵 갱신 알림
+        MinimapUI.instance?.NotifyRoomChanged();
     }
 
     // ============================================================
@@ -1086,39 +1094,124 @@ public class RoomManager : MonoBehaviour
             );
         }
 
-        // 보스방 클리어 시 챕터 다음 지역으로 이동 또는 챕터 클리어 처리
-        if (currentNode != null && currentNode.roomType == RoomType.Boss)
+        // 보스방 클리어 시: 전투 리워드를 모두 수령한 뒤 진행
+        if (currentNode != null && (currentNode.roomType == RoomType.Boss || currentNode.roomType == RoomType.ChapterBoss))
         {
-            OnBossRoomCleared();
+            PrepareBossClearTransition(currentNode.roomType);
         }
     }
 
-    private void OnBossRoomCleared()
+    private bool isWaitingForBossReward = false;
+    private RoomType pendingBossType = RoomType.None;
+
+    private void PrepareBossClearTransition(RoomType bossType)
     {
-        if (ChapterManager.instance != null)
+        isWaitingForBossReward = true;
+        pendingBossType = bossType;
+        Reward.OnRewardClosed -= HandleRewardClosedAfterBoss;
+        Reward.OnRewardClosed += HandleRewardClosedAfterBoss;
+
+        // 보상 창이 열리지 않는 예외 상황에 대비한 폴백
+        StartCoroutine(FallbackBossClearRoutine());
+    }
+
+    private IEnumerator FallbackBossClearRoutine()
+    {
+        yield return new WaitForSeconds(1.0f);
+
+        // 보상 패널이 정상적으로 열려 있다면 플레이어가 보상을 받을 때까지 대기
+        if (Reward.Instance != null && Reward.Instance.Rewardpanel != null && Reward.Instance.Rewardpanel.activeSelf)
         {
-            bool hasNextZone = ChapterManager.instance.AdvanceNextZone();
-            if (hasNextZone)
+            yield break;
+        }
+
+        // 보상 창이 열리지 않았거나 이미 닫힌 상태라면 즉시 진행
+        if (isWaitingForBossReward)
+        {
+            HandleRewardClosedAfterBoss();
+        }
+    }
+
+    private void HandleRewardClosedAfterBoss()
+    {
+        Reward.OnRewardClosed -= HandleRewardClosedAfterBoss;
+
+        if (isWaitingForBossReward)
+        {
+            isWaitingForBossReward = false;
+            RoomType clearedBoss = pendingBossType;
+            pendingBossType = RoomType.None;
+
+            if (clearedBoss == RoomType.ChapterBoss)
             {
-                Debug.Log($"<color=cyan>[RoomManager]</color> 보스 격파! 다음 지역({ChapterManager.instance.GetCurrentZone()})으로 이동합니다.");
-                StartCoroutine(TransitionToNextZoneRoutine());
+                // 챕터 최종 보스: 다음 챕터로 저장하고 메인화면으로 이동!
+                StartCoroutine(ChapterBossClearToMainmenuRoutine());
             }
             else
             {
-                Debug.Log("<color=yellow>★ [RoomManager] 챕터의 모든 지역을 클리어했습니다! ★</color>");
+                // 중간 보스: 메인화면으로 가지 않고 같은 테마의 새로운 맵을 생성하여 바로 이동!
+                StartCoroutine(MidBossClearToNextMapRoutine());
             }
         }
     }
 
-    private System.Collections.IEnumerator TransitionToNextZoneRoutine()
+    private IEnumerator MidBossClearToNextMapRoutine()
     {
-        // 보상 획득 및 연출을 볼 수 있도록 1.5초 대기 후 다음 지역으로 이동
-        yield return new WaitForSeconds(1.5f);
-        StartRun();
-        if (Save.instance != null)
+        // 보상 창 닫히는 연출 대기
+        yield return new WaitForSeconds(0.4f);
+
+        if (ChapterManager.instance != null && !ChapterManager.instance.IsFinalZone())
         {
-            Save.instance.SaveGame();
+            // 중간 맵 보스 클리어: 다음 맵(같은 Zone)으로 이동
+            ChapterManager.instance.currentZoneIndex++;
         }
+
+        // 세이브 데이터에 다음 맵(ZoneIndex) 반영
+        SaveData data = Save.GetSaveData();
+        if (ChapterManager.instance != null)
+        {
+            data.currentZoneIndex = ChapterManager.instance.currentZoneIndex;
+            data.currentZone = (int)ChapterManager.instance.GetCurrentZone();
+        }
+        data.mapZone = data.currentZone;
+        data.mapSeed = Save.CreateMapSeed(); // 새 맵을 위한 시드 생성
+        data.currentNodeId = -1;             // 새 맵의 첫 방(Start)부터 시작
+        if (data.clearedNodeIds != null)
+            data.clearedNodeIds.Clear();
+        data.hasActiveRun = true;
+
+        if (Save.instance != null)
+            Save.instance.SaveGame();
+        else
+            Save.CommitSave();
+
+        Debug.Log($"<color=cyan>[RoomManager]</color> 중간 보스 격파 완료! 메인화면으로 가지 않고 새로운 맵({(ZoneType)data.currentZone}, {data.currentZoneIndex + 1}번째 맵)으로 바로 이동합니다.");
+
+        // 새 맵 생성 및 첫 방 진입
+        StartRun();
+    }
+
+    private IEnumerator ChapterBossClearToMainmenuRoutine()
+    {
+        // 보상 창 닫히는 연출 대기
+        yield return new WaitForSeconds(0.4f);
+
+        int clearedChapter = 1;
+        if (ChapterManager.instance != null)
+        {
+            clearedChapter = ChapterManager.instance.currentChapter;
+        }
+
+        // 다음 챕터로 진행 저장 (현재 챕터 클리어 기록, 다음 챕터 번호 및 씬 저장, hasActiveRun = true)
+        Save.AdvanceToNextChapter(clearedChapter);
+
+        // 메인화면으로 나가기
+        SceneChanger.BG("Mainmenu");
+    }
+
+    private void OnDestroy()
+    {
+        Reward.OnRewardClosed -= HandleRewardClosedAfterBoss;
     }
 
     private void ClearSpawnedRooms()
@@ -1215,6 +1308,17 @@ public class RoomManager : MonoBehaviour
                 return enemyPrefab;
         }
 
+        // ChapterBoss 전용 프리팹이 없을 경우 일반 Boss 프리팹으로 폴백
+        if (type == RoomType.ChapterBoss)
+        {
+            Room bossPrefab = GetRandomRoomPrefab(
+                zone,
+                RoomType.Boss
+            );
+            if (bossPrefab != null)
+                return bossPrefab;
+        }
+
         // 해당 Zone에 프리팹 풀이 아직 없는 경우 Forest 풀로 안전 폴백
         if (zone != ZoneType.Forest)
         {
@@ -1228,21 +1332,9 @@ public class RoomManager : MonoBehaviour
     // 적 스폰
     // ============================================================
 
-    public Enemy[] SpawnEnemiesForRoom(
-        Room room)
+
+    public Enemy[] SpawnEnemiesForRoom(Room room)
     {
-        EnemyPoolData pool =
-            GetEnemyPool(
-                room.zoneType
-            );
-
-        if (pool == null ||
-            pool.enemyPrefabs == null ||
-            pool.enemyPrefabs.Length <= 0)
-        {
-            return new Enemy[0];
-        }
-
         // BattleManager의 Enemy 위치 배열 우선
         Transform[] spawnPoints =
             (
@@ -1253,64 +1345,222 @@ public class RoomManager : MonoBehaviour
             ? BattleManager.instance.Enemy
             : room.enemySpawnPoints;
 
-        if (spawnPoints == null ||
-            spawnPoints.Length == 0)
-        {
+        if (spawnPoints == null || spawnPoints.Length == 0)
             return new Enemy[0];
-        }
 
-        int maxEnemyCount = Mathf.Min(4, spawnPoints.Length);
-        if (maxEnemyCount < 2)
+        // 기존 보스 및 챕터 보스 스폰 유지
+        if (room.enemies != null && room.enemies.Length > 0 &&
+            (room.roomType == RoomType.Boss ||
+             room.roomType == RoomType.ChapterBoss))
         {
-            Debug.LogWarning(
-                "[RoomManager] 전투 적을 2마리 이상 배치할 스폰 위치가 부족합니다."
+            List<Enemy> bossSpawned = new List<Enemy>();
+
+            for (int i = 0; i < room.enemies.Length; i++)
+            {
+                Enemy bossPrefab = room.enemies[i];
+                if (bossPrefab == null) continue;
+
+                Transform point =
+                    (i < spawnPoints.Length && spawnPoints[i] != null)
+                    ? spawnPoints[i]
+                    : spawnPoints[0];
+
+                Enemy spawnedBoss = Instantiate(
+                    bossPrefab,
+                    point.position,
+                    point.rotation,
+                    room.transform
+                );
+
+                bossSpawned.Add(spawnedBoss);
+            }
+
+            Debug.Log(
+                $"[RoomManager] {room.roomName} 고유 보스 생성 완료: {bossSpawned.Count}마리"
             );
-            return new Enemy[0];
+
+            return bossSpawned.ToArray();
         }
 
-        int count = Random.Range(2, maxEnemyCount + 1);
+        // 방에 직접 지정한 적 목록이 있으면 해당 조합 그대로 스폰
+        // enemyPrefabs에 등록한 순서대로 생성한다.
+        Enemy[] fixedComposition = null;
 
-        List<Enemy> spawned =
-            new List<Enemy>();
-
-        for (int i = 0; i < count; i++)
+        if (room.enemyPrefabs != null && room.enemyPrefabs.Length > 0)
         {
-            Enemy prefab =
-                pool.enemyPrefabs[
-                    Random.Range(
-                        0,
-                        pool.enemyPrefabs.Length
-                    )
-                ];
+            fixedComposition = room.enemyPrefabs;
+        }
+        else if (room.enemies != null && room.enemies.Length > 0)
+        {
+            // 기존 프리팹 호환
+            fixedComposition = room.enemies;
+        }
 
-            if (prefab == null)
-                continue;
+        if (fixedComposition != null)
+        {
+            List<Enemy> fixedSpawned = new List<Enemy>();
 
-            Transform spawnPoint =
-                spawnPoints[i];
+            int count = Mathf.Min(fixedComposition.Length, spawnPoints.Length);
 
-            Vector3 pos =
-                spawnPoint != null
-                    ? spawnPoint.position
+            for (int i = 0; i < count; i++)
+            {
+                Enemy prefab = fixedComposition[i];
+
+                if (prefab == null)
+                    continue;
+
+                Transform point = spawnPoints[i];
+
+                Vector3 pos = point != null
+                    ? point.position
                     : Vector3.zero;
 
-            Quaternion rot =
-                spawnPoint != null
-                    ? spawnPoint.rotation
+                Quaternion rot = point != null
+                    ? point.rotation
                     : Quaternion.identity;
 
-            Enemy enemy =
-                Instantiate(
+                Enemy enemy = Instantiate(
                     prefab,
                     pos,
                     rot,
                     room.transform
                 );
 
+                fixedSpawned.Add(enemy);
+            }
+
+            Debug.Log(
+                $"[RoomManager] {room.roomName} 지정 조합 스폰 완료: {fixedSpawned.Count}마리"
+            );
+
+            return fixedSpawned.ToArray();
+        }
+
+        // 직접 지정한 조합이 없으면 기존 Zone 적 풀 방식 사용
+        Enemy[] enemyCandidates = ResolveEnemyCandidates(
+            room,
+            out string sourceName
+        );
+
+        if (enemyCandidates == null || enemyCandidates.Length <= 0)
+        {
+            Debug.LogWarning(
+                $"[RoomManager] {room.roomName}에 사용할 적 프리팹이 없습니다."
+            );
+
+            return new Enemy[0];
+        }
+
+        int availableEnemySlots = Mathf.Min(4, spawnPoints.Length);
+
+        if (availableEnemySlots < 2)
+        {
+            Debug.LogWarning(
+                "[RoomManager] 전투 적을 2마리 이상 배치할 스폰 위치가 부족합니다."
+            );
+
+            return new Enemy[0];
+        }
+
+        int minimumCount = Mathf.Clamp(
+            room.minEnemyCount,
+            2,
+            availableEnemySlots
+        );
+
+        int maximumCount = Mathf.Clamp(
+            room.maxEnemyCount,
+            minimumCount,
+            availableEnemySlots
+        );
+
+        int randomCount = Random.Range(
+            minimumCount,
+            maximumCount + 1
+        );
+
+        List<Enemy> spawned = new List<Enemy>();
+
+        for (int i = 0; i < randomCount; i++)
+        {
+            Enemy prefab = enemyCandidates[
+                Random.Range(0, enemyCandidates.Length)
+            ];
+
+            if (prefab == null)
+                continue;
+
+            Transform point = spawnPoints[i];
+
+            Vector3 pos = point != null
+                ? point.position
+                : Vector3.zero;
+
+            Quaternion rot = point != null
+                ? point.rotation
+                : Quaternion.identity;
+
+            Enemy enemy = Instantiate(
+                prefab,
+                pos,
+                rot,
+                room.transform
+            );
+
             spawned.Add(enemy);
         }
 
+        Debug.Log(
+            $"[RoomManager] {room.roomName} 랜덤 적 생성: {spawned.Count}마리 (풀: {sourceName})"
+        );
+
         return spawned.ToArray();
+    }
+
+
+    /// <summary>
+    /// 적 소스 우선순위: 방 전용 EnemyPoolData SO → 방별 직접 목록 → Zone 공용 SO.
+    /// 따라서 전용 SO에 Parasite만 넣으면 해당 방에서는 Parasite만 생성된다.
+    /// </summary>
+    private Enemy[] ResolveEnemyCandidates(Room room, out string sourceName)
+    {
+        sourceName = "없음";
+
+        if (room == null)
+            return null;
+
+        if (room.enemyPoolOverride != null &&
+            room.enemyPoolOverride.enemyPrefabs != null &&
+            room.enemyPoolOverride.enemyPrefabs.Length > 0)
+        {
+            sourceName = $"방 전용 SO ({room.enemyPoolOverride.name})";
+            return room.enemyPoolOverride.enemyPrefabs;
+        }
+
+        if (room.enemyPrefabs != null && room.enemyPrefabs.Length > 0)
+        {
+            sourceName = "방별 적 목록";
+            return room.enemyPrefabs;
+        }
+
+        // 이전 Room 프리팹은 enemies 필드를 스폰 전 적 프리팹 목록으로 사용했다.
+        // 새 enemyPrefabs 필드로 옮기지 않은 기존 프리팹도 동일하게 동작하도록 호환한다.
+        if (room.enemies != null && room.enemies.Length > 0)
+        {
+            sourceName = "기존 방별 적 목록";
+            return room.enemies;
+        }
+
+        EnemyPoolData zonePool = GetEnemyPool(room.zoneType);
+        if (zonePool != null &&
+            zonePool.enemyPrefabs != null &&
+            zonePool.enemyPrefabs.Length > 0)
+        {
+            sourceName = $"Zone 공용 SO ({zonePool.name})";
+            return zonePool.enemyPrefabs;
+        }
+
+        return null;
     }
 
     private EnemyPoolData GetEnemyPool(

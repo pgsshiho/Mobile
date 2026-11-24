@@ -2,10 +2,12 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 모든 상태이상을 턴 카운터로 관리합니다.
+/// 모든 상태이상을 턴 카운터 및 틱 데미지로 관리합니다.
+/// - 유닛이 직접 지정한 지속 턴 수(turns)와 턴당 고정 데미지(dotDamage)를 반영합니다.
 /// - 양수 N : N턴 후 자동 해제
 /// - -1     : 무한 지속 (아이템/스킬로만 해제)
-/// AddStatus(type, turns) 로 부여, TickTurn() 마다 카운트 감소 및 틱 데미지/효과 처리.
+/// - 상태이상 재부여 시 기존 턴 수가 있다면 덮어쓰지 않고 턴 수가 합산(Stack)되며,
+///   틱당 데미지도 누적 합산되어 더 강력해집니다.
 /// </summary>
 public class UnitStatusHandler
 {
@@ -14,6 +16,10 @@ public class UnitStatusHandler
 
     // 상태이상별 남은 턴 수 (-1 = 무한, 0 이하 = 없음)
     private readonly Dictionary<StatusType, int> statusTurns = new Dictionary<StatusType, int>();
+
+    // 상태이상별 턴당 도트 데미지 (유닛/스킬이 직접 지정한 수치 보관)
+    private readonly Dictionary<StatusType, int> statusDamages = new Dictionary<StatusType, int>();
+
     // 상태이상 틱 처리 중 새로 생긴 상태는 이번 턴에 피해와 턴 감소를 적용하지 않는다.
     private readonly HashSet<StatusType> statusesAppliedThisTurn = new HashSet<StatusType>();
     private bool isRestoringStatuses;
@@ -30,6 +36,52 @@ public class UnitStatusHandler
     public int GetRemainingTurns(StatusType type) =>
         statusTurns.TryGetValue(type, out int t) ? t : 0;
 
+    /// <summary>특정 상태이상에 할당된 턴당 도트 피해량을 반환합니다.</summary>
+    public int GetStatusDamage(StatusType type) =>
+        statusDamages.TryGetValue(type, out int d) ? d : 0;
+
+    /// <summary>현재 유닛이 보유한 모든 상태이상과 턴 수, 데미지 목록을 반환합니다.</summary>
+    public Dictionary<StatusType, (int turns, int dotDamage)> GetAllActiveStatuses()
+    {
+        var result = new Dictionary<StatusType, (int turns, int dotDamage)>();
+        foreach (var pair in statusTurns)
+        {
+            if (pair.Value > 0 || pair.Value == -1)
+            {
+                int dmg = statusDamages.TryGetValue(pair.Key, out int d) ? d : 0;
+                result[pair.Key] = (pair.Value, dmg);
+            }
+        }
+        return result;
+    }
+
+    /// <summary>상태이상 딕셔너리를 일괄 적용합니다 (복제/합체용).</summary>
+    public void CopyStatusesFrom(Dictionary<StatusType, (int turns, int dotDamage)> statuses)
+    {
+        if (statuses == null) return;
+        foreach (var pair in statuses)
+        {
+            AddStatus(pair.Key, pair.Value.turns, pair.Value.dotDamage);
+        }
+    }
+
+    /// <summary>현재 유닛에 적용된 산화(녹)의 턴당 고정 피해량</summary>
+    public int CurrentOxidationDamage => GetStatusDamage(StatusType.OxidationII) > 0 ? GetStatusDamage(StatusType.OxidationII) : GetStatusDamage(StatusType.OxidationI);
+
+    /// <summary>현재 유닛에 적용된 윤활유 누유의 턴당 방어력 무시 고정 피해량</summary>
+    public int CurrentOilLeakDamage
+    {
+        get
+        {
+            int d = GetStatusDamage(StatusType.OilLeak);
+            if (d <= 0) d = GetStatusDamage(StatusType.LubricantLeak);
+            return d;
+        }
+    }
+
+    /// <summary>윤활유 누유 누적 스택 (걸릴 때마다 증가)</summary>
+    public int OilLeakStacks { get; private set; } = 0;
+
     public UnitStatusHandler(Unit owner, UnitUIHandler uiHandler)
     {
         this.owner = owner;
@@ -38,67 +90,140 @@ public class UnitStatusHandler
 
     // ────────────────────────────────────────────
     // 부여
-    // turns : 지속 턴 수, -1 이면 무한
+    // turns     : 지속 턴 수, -1 이면 무한
+    // dotDamage : 유닛이 직접 지정하는 턴당 피해량 (0 이하일 경우 기본 권장값 사용)
     // ────────────────────────────────────────────
-    public void AddStatus(StatusType type, int turns = 3)
+
+    /// <summary>
+    /// 공격자가 지정한 지속 턴수와 턴당 고정 데미지를 반영하여 산화를 부여합니다.
+    /// 중첩 시 턴 수와 데미지가 합산됩니다.
+    /// </summary>
+    public void AddOxidation(int turns, int damagePerTurn)
+    {
+        if (turns <= 0) return;
+        int dmg = damagePerTurn > 0 ? damagePerTurn : (owner.oxidationDamage > 0 ? owner.oxidationDamage : 5);
+
+        if (HasStatus(StatusType.OxidationI))
+        {
+            int prevTurns = GetRemainingTurns(StatusType.OxidationI);
+            int prevDmg = GetStatusDamage(StatusType.OxidationI);
+            RemoveStatus(StatusType.OxidationI);
+            SetStatusWithDamage(StatusType.OxidationII, prevTurns + turns, prevDmg + dmg);
+        }
+        else if (HasStatus(StatusType.OxidationII))
+        {
+            SetStatusWithDamage(StatusType.OxidationII, turns, dmg);
+        }
+        else
+        {
+            SetStatusWithDamage(StatusType.OxidationI, turns, dmg);
+        }
+    }
+
+    /// <summary>
+    /// 지속 턴수와 턴당 고정 데미지를 직접 반영하여 누유를 부여합니다.
+    /// 방어력을 무시하는 고정 데미지이며, 한번 더 걸리면 턴수와 데미지가 모두 누적 합산됩니다.
+    /// </summary>
+    public void AddOilLeak(int turns, int damagePerStack = 5)
+    {
+        if (turns <= 0) return;
+        int dmg = damagePerStack > 0 ? damagePerStack : 5;
+
+        if (!isRestoringStatuses)
+        {
+            OilLeakStacks++;
+        }
+
+        SetStatusWithDamage(StatusType.LubricantLeak, turns, dmg);
+        SetStatusWithDamage(StatusType.OilLeak, turns, dmg);
+        Debug.Log($"<color=orange>[누유 부여]</color> {owner.Unitname} 누유 적용 (스택: {OilLeakStacks}, 턴당 방어무시 피해: {CurrentOilLeakDamage})");
+    }
+
+    /// <summary>
+    /// 유닛이 직접 몇 턴부터 몇 데미지부여까지 정하여 상태이상을 부여합니다.
+    /// </summary>
+    public void AddStatus(StatusType type, int turns = 3, int dotDamage = 0)
     {
         if (turns == 0) return;
 
         switch (type)
         {
-            // 산화 I이 이미 있으면 II로 전이
+            // 산화 I이 이미 있으면 II로 전이 (턴수 및 데미지 합산)
             case StatusType.OxidationI:
+                int oxDmg = dotDamage > 0 ? dotDamage : (owner.oxidationDamage > 0 ? owner.oxidationDamage : 5);
                 if (HasStatus(StatusType.OxidationI))
                 {
+                    int prevTurns = GetRemainingTurns(StatusType.OxidationI);
+                    int prevDmg = GetStatusDamage(StatusType.OxidationI);
                     RemoveStatus(StatusType.OxidationI);
-                    SetStatus(StatusType.OxidationII, turns);
+                    SetStatusWithDamage(StatusType.OxidationII, prevTurns + turns, prevDmg + oxDmg);
                 }
                 else
                 {
-                    SetStatus(StatusType.OxidationI, turns);
+                    SetStatusWithDamage(StatusType.OxidationI, turns, oxDmg);
                 }
                 break;
 
-            // 산화 II는 산화 I을 덮어씀
+            // 산화 II는 산화 I을 흡수하며 턴수 및 데미지 합산
             case StatusType.OxidationII:
+                int oxDmg2 = dotDamage > 0 ? dotDamage : (owner.oxidationDamage > 0 ? owner.oxidationDamage : 5);
                 if (HasStatus(StatusType.OxidationI))
                 {
+                    int prevTurns = GetRemainingTurns(StatusType.OxidationI);
+                    int prevDmg = GetStatusDamage(StatusType.OxidationI);
                     InternalRemove(StatusType.OxidationI);
+                    SetStatusWithDamage(StatusType.OxidationII, prevTurns + turns, prevDmg + oxDmg2);
                 }
-                SetStatus(StatusType.OxidationII, turns);
+                else
+                {
+                    SetStatusWithDamage(StatusType.OxidationII, turns, oxDmg2);
+                }
                 break;
 
-            // 화재는 과열을 흡수
+            // 화재는 과열을 흡수하며 턴수 및 데미지 합산
             case StatusType.Fire:
+                int fireDmg = dotDamage > 0 ? dotDamage : GetDefaultStatusDamage(StatusType.Fire);
                 if (HasStatus(StatusType.Overheat))
                 {
+                    int overheatTurns = GetRemainingTurns(StatusType.Overheat);
+                    int overheatDmg = GetStatusDamage(StatusType.Overheat);
                     InternalRemove(StatusType.Overheat);
+                    SetStatusWithDamage(StatusType.Fire, overheatTurns + turns, overheatDmg + fireDmg);
                 }
-                SetStatus(StatusType.Fire, turns);
+                else
+                {
+                    SetStatusWithDamage(StatusType.Fire, turns, fireDmg);
+                }
                 break;
 
-            // 윤활유 유출 및 고갈
+            // 윤활유 유출 및 누유 (방어력 무시 고정 피해, 중첩 시 데미지 합산)
             case StatusType.LubricantLeak:
             case StatusType.OilLeak:
-                SetStatus(StatusType.LubricantLeak, turns);
-                SetStatus(StatusType.OilLeak, turns);
+                int leakDmg = dotDamage > 0 ? dotDamage : 5;
+                if (!isRestoringStatuses)
+                {
+                    OilLeakStacks++;
+                }
+                SetStatusWithDamage(StatusType.LubricantLeak, turns, leakDmg);
+                SetStatusWithDamage(StatusType.OilLeak, turns, leakDmg);
+                Debug.Log($"<color=orange>[누유 중첩]</color> {owner.Unitname} 누유 적용 (스택: {OilLeakStacks}, 턴당 피해: {CurrentOilLeakDamage})");
                 break;
 
             case StatusType.OilEmpty:
                 InternalRemove(StatusType.LubricantLeak);
                 InternalRemove(StatusType.OilLeak);
-                SetStatus(StatusType.OilEmpty, turns);
+                SetStatusWithDamage(StatusType.OilEmpty, turns, dotDamage);
                 break;
 
             // 회로 단선 및 합선
             case StatusType.CircuitryShort:
             case StatusType.ShortCircuit:
-                SetStatus(StatusType.CircuitryShort, turns);
-                SetStatus(StatusType.ShortCircuit, turns);
+                SetStatusWithDamage(StatusType.CircuitryShort, turns, dotDamage);
+                SetStatusWithDamage(StatusType.ShortCircuit, turns, dotDamage);
                 break;
 
             default:
-                SetStatus(type, turns);
+                SetStatusWithDamage(type, turns, dotDamage);
                 break;
         }
     }
@@ -115,9 +240,10 @@ public class UnitStatusHandler
     private void InternalRemove(StatusType type)
     {
         statusTurns.Remove(type);
+        statusDamages.Remove(type);
         uiHandler?.RemoveStatusIcon(type);
 
-        // 연관 스택 초기화
+        // 연관 스택 및 데미지 초기화
         if (type == StatusType.CircuitryShort || type == StatusType.ShortCircuit)
         {
             owner.circuitShortStacks = 0;
@@ -130,23 +256,68 @@ public class UnitStatusHandler
         {
             owner.ClearFuseBrokenSkillLock();
         }
+        else if (type == StatusType.LubricantLeak || type == StatusType.OilLeak)
+        {
+            if (!HasStatus(StatusType.LubricantLeak) && !HasStatus(StatusType.OilLeak))
+            {
+                OilLeakStacks = 0;
+                statusDamages.Remove(StatusType.LubricantLeak);
+                statusDamages.Remove(StatusType.OilLeak);
+            }
+        }
     }
 
     // ────────────────────────────────────────────
-    // 내부 세터 (기존 값보다 큰 턴 수만 갱신)
+    // 내부 세터 (턴 수 합산 및 유닛 지정 데미지 누적 합산)
     // ────────────────────────────────────────────
-    private void SetStatus(StatusType type, int turns)
+    private void SetStatusWithDamage(StatusType type, int turns, int dotDamage)
     {
-        bool isNew = !statusTurns.ContainsKey(type) || statusTurns[type] == 0;
+        bool isNew = !statusTurns.ContainsKey(type) || statusTurns[type] <= 0;
 
-        if (!isNew && statusTurns[type] == -1 && turns != -1) return;
-        if (!isNew && turns != -1 && statusTurns[type] >= turns) return;
+        if (isRestoringStatuses)
+        {
+            // 저장 데이터 로드 복원 시에는 저장된 턴/데미지 값 그대로 복원
+            statusTurns[type] = turns;
+            if (dotDamage > 0)
+                statusDamages[type] = dotDamage;
+        }
+        else
+        {
+            int appliedDamage = dotDamage > 0 ? dotDamage : GetDefaultStatusDamage(type);
 
-        statusTurns[type] = turns;
+            if (isNew)
+            {
+                statusTurns[type] = turns;
+                if (appliedDamage > 0)
+                    statusDamages[type] = appliedDamage;
+            }
+            else
+            {
+                // 이미 턴 수가 있는 경우: 덮어씌우지 않고 합산!
+                if (statusTurns[type] == -1 || turns == -1)
+                {
+                    statusTurns[type] = -1; // 무한 지속
+                }
+                else
+                {
+                    statusTurns[type] += turns; // 턴 수 합산
+                }
+
+                // 한번 더 걸리면 데미지가 더 높아지도록 누적 합산
+                if (appliedDamage > 0)
+                {
+                    if (statusDamages.ContainsKey(type))
+                        statusDamages[type] += appliedDamage;
+                    else
+                        statusDamages[type] = appliedDamage;
+                }
+            }
+        }
 
         if (isNew && isProcessingTurnTick)
             statusesAppliedThisTurn.Add(type);
 
+        int currentDmg = GetStatusDamage(type);
         if (isNew)
         {
             if (type == StatusType.FuseBroken)
@@ -155,13 +326,26 @@ public class UnitStatusHandler
             uiHandler?.AddStatusIcon(type);
             if (!isRestoringStatuses)
                 uiHandler?.ShowStatusText(GetStatusDisplayName(type), GetStatusTextColor(type));
-            Debug.Log($"{owner.Unitname} [{type}] 부여 (지속: {(turns == -1 ? "무한" : turns + "턴")})");
+            Debug.Log($"{owner.Unitname} [{type}] 부여 완료 (지속: {(turns == -1 ? "무한" : turns + "턴")}, 턴당 피해: {currentDmg})");
         }
         else
         {
-            Debug.Log($"{owner.Unitname} [{type}] 갱신 → {(turns == -1 ? "무한" : turns + "턴")}");
+            Debug.Log($"{owner.Unitname} [{type}] 턴 및 데미지 합산 갱신 → 총 {(statusTurns[type] == -1 ? "무한" : statusTurns[type] + "턴")}, 누적 턴당 피해: {currentDmg}");
         }
     }
+
+    /// <summary>데미지가 지정되지 않았을 때 사용하는 기본 틱당 데미지</summary>
+    private int GetDefaultStatusDamage(StatusType type) => type switch
+    {
+        StatusType.Bleeding => 5,
+        StatusType.OilLeak or StatusType.LubricantLeak => 5,
+        StatusType.Overheat => Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.04f)),
+        StatusType.Fire => Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.10f)),
+        StatusType.OxidationI or StatusType.OxidationII => owner.oxidationDamage > 0 ? owner.oxidationDamage : 5,
+        StatusType.CircuitryShort or StatusType.ShortCircuit => Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.03f)),
+        StatusType.MetalFatigue => Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.02f)),
+        _ => 0
+    };
 
     // ────────────────────────────────────────────
     // 전체 초기화
@@ -169,6 +353,8 @@ public class UnitStatusHandler
     public void ClearStates()
     {
         statusTurns.Clear();
+        statusDamages.Clear();
+        OilLeakStacks = 0;
         owner.ClearFuseBrokenSkillLock();
         uiHandler?.ClearStatusIcons();
     }
@@ -192,7 +378,7 @@ public class UnitStatusHandler
             {
                 if (status == null || status.type == StatusType.None || status.remainingTurns == 0)
                     continue;
-                AddStatus(status.type, status.remainingTurns);
+                AddStatus(status.type, status.remainingTurns, status.dotDamage);
             }
         }
         finally
@@ -211,25 +397,25 @@ public class UnitStatusHandler
 
         try
         {
-        // 상태이상 피해는 한 턴에 모두 계산한 뒤 한 번만 적용한다.
-        // 따라서 여러 상태이상에 걸려도 피해 숫자가 여러 개로 나뉘지 않는다.
-        int totalStatusDamage = 0;
-        totalStatusDamage += OxidationTick();
-        totalStatusDamage += OverheatTick();
-        totalStatusDamage += FireTick();
-        totalStatusDamage += CircuitryShortTick();
-        totalStatusDamage += LubricantLeakTick();
-        totalStatusDamage += OilEmptyTick();
-        totalStatusDamage += MetalFatigueTick();
-        totalStatusDamage += BleedingTick();
+            // 상태이상 피해는 한 턴에 모두 계산한 뒤 한 번만 적용한다.
+            // 따라서 여러 상태이상에 걸려도 피해 숫자가 여러 개로 나뉘지 않는다.
+            int totalStatusDamage = 0;
+            totalStatusDamage += OxidationTick();
+            totalStatusDamage += OverheatTick();
+            totalStatusDamage += FireTick();
+            totalStatusDamage += CircuitryShortTick();
+            totalStatusDamage += LubricantLeakTick();
+            totalStatusDamage += OilEmptyTick();
+            totalStatusDamage += MetalFatigueTick();
+            totalStatusDamage += BleedingTick();
 
-        if (totalStatusDamage > 0)
-        {
-            owner.TakeDamage(totalStatusDamage, Unit.DamageType.Status);
-            Debug.Log($"{owner.Unitname} 상태이상 합산 피해 -{totalStatusDamage}");
-        }
+            if (totalStatusDamage > 0)
+            {
+                owner.TakeDamage(totalStatusDamage, Unit.DamageType.Status);
+                Debug.Log($"{owner.Unitname} 상태이상 합산 피해 -{totalStatusDamage}");
+            }
 
-        TickDownAll();
+            TickDownAll();
         }
         finally
         {
@@ -264,16 +450,16 @@ public class UnitStatusHandler
     // 틱 데미지 & 상태이상 메커니즘
     // ────────────────────────────────────────────
 
-    // 산화 II : maxHp × oxidationDamagePercent% 도트 (특수 장갑으로 경감)
+    // 산화 II : 공격자/유닛이 직접 지정한 턴당 고정 데미지 (방어력 무시)
     private int OxidationTick()
     {
         if (!CanTick(StatusType.OxidationII)) return 0;
 
-        float pct = owner.oxidationDamagePercent / 100f;
-        int baseDmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * pct) + owner.rustDamage);
-        int finalDmg = Mathf.Max(1, baseDmg - owner.specialArmor);
+        int rawDmg = GetStatusDamage(StatusType.OxidationII);
+        if (rawDmg <= 0) rawDmg = owner.oxidationDamage > 0 ? owner.oxidationDamage : 5;
 
-        Debug.Log($"{owner.Unitname} 산화II 틱 -{finalDmg} (특수장갑 방어: {owner.specialArmor})");
+        int finalDmg = Mathf.Max(1, rawDmg);
+        Debug.Log($"{owner.Unitname} 산화II 틱 -{finalDmg} (방어력 무시 고정 피해: {rawDmg})");
         return finalDmg;
     }
 
@@ -282,18 +468,22 @@ public class UnitStatusHandler
     {
         if (!CanTick(StatusType.MetalFatigue)) return 0;
 
-        int wearDmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.02f));
-        Debug.Log($"{owner.Unitname} 금속 피로 마모 피해 -{wearDmg}");
-        return wearDmg;
+        int dmg = GetStatusDamage(StatusType.MetalFatigue);
+        if (dmg <= 0) dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.02f));
+        Debug.Log($"{owner.Unitname} 금속 피로 마모 피해 -{dmg}");
+        return dmg;
     }
 
-    // 과열 : maxHp 4% 도트, 10% 확률 회로단선 / 5% 확률 화재 전이
+    // 과열 : 유닛이 직접 지정한 턴당 데미지 (방어력 무시), 10% 확률 회로단선 / 5% 확률 화재 전이
     private int OverheatTick()
     {
         if (!CanTick(StatusType.Overheat)) return 0;
 
-        int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.04f) - owner.specialArmor);
-        Debug.Log($"{owner.Unitname} 과열 틱 -{dmg}");
+        int rawDmg = GetStatusDamage(StatusType.Overheat);
+        if (rawDmg <= 0) rawDmg = Mathf.RoundToInt(owner.maxHealth * 0.04f);
+
+        int dmg = Mathf.Max(1, rawDmg);
+        Debug.Log($"{owner.Unitname} 과열 틱 -{dmg} (방어력 무시 고정 피해: {rawDmg})");
 
         if (Random.Range(0, 100) < 10 && !HasStatus(StatusType.CircuitryShort))
         {
@@ -303,31 +493,40 @@ public class UnitStatusHandler
 
         if (Random.Range(0, 100) < 5 && !HasStatus(StatusType.Fire))
         {
+            int fireDmg = GetStatusDamage(StatusType.Fire);
+            if (fireDmg <= 0) fireDmg = rawDmg * 2;
             InternalRemove(StatusType.Overheat);
-            AddStatus(StatusType.Fire, 4);
+            AddStatus(StatusType.Fire, 4, fireDmg);
             Debug.Log($"{owner.Unitname} 과열 → 화재 전이!");
         }
 
         return dmg;
     }
 
-    // 화재 : maxHp 10% 도트
+    // 화재 : 유닛이 직접 지정한 턴당 데미지 (방어력 무시)
     private int FireTick()
     {
         if (!CanTick(StatusType.Fire)) return 0;
 
-        int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.10f) - owner.specialArmor);
-        Debug.Log($"{owner.Unitname} 화재 틱 -{dmg}");
+        int rawDmg = GetStatusDamage(StatusType.Fire);
+        if (rawDmg <= 0) rawDmg = Mathf.RoundToInt(owner.maxHealth * 0.10f);
+
+        int dmg = Mathf.Max(1, rawDmg);
+        Debug.Log($"{owner.Unitname} 화재 틱 -{dmg} (방어력 무시 고정 피해: {rawDmg})");
         return dmg;
     }
 
-    // 회로 단선 (합선) : maxHp 3% 도트, 15% 확률 과열 유발
+    // 회로 단선 (합선) : 유닛이 지정한 데미지, 15% 확률 과열 유발
     private int CircuitryShortTick()
     {
         if (!CanTick(StatusType.CircuitryShort) && !CanTick(StatusType.ShortCircuit)) return 0;
 
-        int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.03f) - owner.specialArmor);
-        Debug.Log($"{owner.Unitname} 회로 단선 틱 -{dmg}");
+        int rawDmg = GetStatusDamage(StatusType.CircuitryShort);
+        if (rawDmg <= 0) rawDmg = GetStatusDamage(StatusType.ShortCircuit);
+        if (rawDmg <= 0) rawDmg = Mathf.RoundToInt(owner.maxHealth * 0.03f);
+
+        int dmg = Mathf.Max(1, rawDmg);
+        Debug.Log($"{owner.Unitname} 회로 단선 틱 -{dmg} (방어력 무시 고정 피해)");
 
         if (Random.Range(0, 100) < 15 && !HasStatus(StatusType.Overheat) && !HasStatus(StatusType.Fire))
         {
@@ -338,18 +537,19 @@ public class UnitStatusHandler
         return dmg;
     }
 
-    // 윤활유 유출 : maxHp 3% 도트, 10% 확률 과열 유발
+    // 윤활유 유출 / 누유 : 출혈처럼 방어력 무시의 일정 고정 데미지 (중첩 시 데미지 증가)
     private int LubricantLeakTick()
     {
         if (!CanTick(StatusType.LubricantLeak) && !CanTick(StatusType.OilLeak)) return 0;
 
-        int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.03f) - owner.specialArmor);
-        Debug.Log($"{owner.Unitname} 윤활유 유출 틱 -{dmg}");
+        // % 데미지가 아닌 방어력 무시의 일정 고정 데미지 (한 번 더 걸리면 데미지 누적 증가)
+        int dmg = CurrentOilLeakDamage > 0 ? CurrentOilLeakDamage : 5;
+        Debug.Log($"{owner.Unitname} 누유 틱 피해 -{dmg} (스택: {OilLeakStacks}, 방어력 무시 고정 피해)");
 
         if (Random.Range(0, 100) < 10 && !HasStatus(StatusType.Overheat) && !HasStatus(StatusType.Fire))
         {
             AddStatus(StatusType.Overheat, 3);
-            Debug.Log($"{owner.Unitname} 윤활유 유출 → 마찰 과열 발생!");
+            Debug.Log($"{owner.Unitname} 윤활유 누유 → 마찰 과열 발생!");
         }
 
         return dmg;
@@ -360,11 +560,9 @@ public class UnitStatusHandler
     {
         if (!CanTick(StatusType.OilEmpty)) return 0;
 
-        int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.02f) - owner.specialArmor);
-        Debug.Log($"{owner.Unitname} 윤활유 고갈 틱 -{dmg}");
+        int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.02f));
+        Debug.Log($"{owner.Unitname} 윤활유 고갈 틱 -{dmg} (방어력 무시 피해)");
 
-        // 윤활유가 없는 상태에서는 마찰열이 누적된다.
-        // 화재 중에는 이미 과열보다 강한 상태이므로 중복 부여하지 않는다.
         if (Random.Range(0, 100) < 5 &&
             !HasStatus(StatusType.Overheat) &&
             !HasStatus(StatusType.Fire))
@@ -376,13 +574,15 @@ public class UnitStatusHandler
         return dmg;
     }
 
-    // 출혈 : maxHp 5% 도트
+    // 출혈 : 유닛이 직접 지정한 방어력 무시 고정 도트 데미지 (중첩 시 증가)
     private int BleedingTick()
     {
         if (!CanTick(StatusType.Bleeding)) return 0;
 
-        int dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.05f));
-        Debug.Log($"{owner.Unitname} 출혈 틱 -{dmg}");
+        int dmg = GetStatusDamage(StatusType.Bleeding);
+        if (dmg <= 0) dmg = Mathf.Max(1, Mathf.RoundToInt(owner.maxHealth * 0.05f));
+
+        Debug.Log($"{owner.Unitname} 출혈 틱 -{dmg} (방어력 무시 고정 피해)");
         return dmg;
     }
 

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4148de06aa3f6fc4fb8b87538ee7aabc, type: 3}
+  m_Name: 복수
+  m_EditorClassIdentifier: Assembly-CSharp::SkillData
+  skillName: 복수
+  icon: {fileID: 0}
+  description: 복수s
+  targetType: 0
+  maxTargetDistance: 4
+  allowedUserColumns: 
+  allowedTargetColumns: 
+  power: 10
+  hitBonus: 100
+  soundEffect: {fileID: 0}
+  skillLogic: {fileID: 11400000, guid: 136bf7460a09469da537cf83ded67b04, type: 2}

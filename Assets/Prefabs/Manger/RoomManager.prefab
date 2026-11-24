@@ -48,6 +48,7 @@ MonoBehaviour:
   roomsPerZone: 13
   enemyPools:
   - {fileID: 11400000, guid: 29eb9f343012f9444928d1e2468a7ef5, type: 2}
+  - {fileID: 11400000, guid: cbaa30d259444f95858b21f448f95b06, type: 2}
   currentRoom: {fileID: 0}
   currentZone: 0
   roomPools:
@@ -59,6 +60,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 8d25237e122359543a5b76a5bfc9ef05, type: 2}
   - {fileID: 11400000, guid: d475a6c59f14b914aaca6da5c5cc8368, type: 2}
   - {fileID: 11400000, guid: 5483e460e6b7a5346895dbf356639aee, type: 2}
+  - {fileID: 11400000, guid: 86f0964345abe8549bc8cd064c8ff9e2, type: 2}
+  - {fileID: 11400000, guid: ccface2e2d72de44a96e7b897498ef32, type: 2}
+  - {fileID: 11400000, guid: 107e21d342f84326960bc41424ff7ea5, type: 2}
+  - {fileID: 11400000, guid: 10e3a468b4764396847c8038a4edafd0, type: 2}
+  - {fileID: 11400000, guid: 695ed508e9a143d5bba860ebcb1a5a18, type: 2}
   roomParent: {fileID: 0}
   allNodes: []
   generatedMapOverview: []

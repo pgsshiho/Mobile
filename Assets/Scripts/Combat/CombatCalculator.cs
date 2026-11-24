@@ -19,6 +19,17 @@ public static class CombatCalculator
             }
         }
 
+        if (unit.debuffs != null)
+        {
+            foreach (DebuffRuntime debuff in unit.debuffs)
+            {
+                if (debuff?.data != null)
+                {
+                    finalSpeed -= debuff.data.speedPenalty;
+                }
+            }
+        }
+
         if (unit.isOxidationI)
             finalSpeed -= 2;
         if (unit.isOxidationII)
@@ -187,6 +198,54 @@ public static class CombatCalculator
         return Mathf.Clamp(finalAccuracy, 0, 100);
     }
 
+    /// <summary>
+    /// 버프/디버프/상태이상을 모두 반영한 최종 회피율을 계산합니다.
+    ///  - dodgeBonus: 고정 수치 추가
+    ///  - dodgeMultiplier: 배율 적용 (곱연산)
+    ///  - 오일 누출/윤활유 누출 상태이면 0으로 강제 처리
+    /// </summary>
+    public static float GetDodgeChance(Unit unit)
+    {
+        if (unit == null) return 0f;
+
+        // 오일 누출 / 윤활유 누출: 회피 불가
+        if (unit.isLubricantLeak || unit.isOilLeak)
+            return 0f;
+
+        float baseDodge = unit.dodgeChance;
+        float bonusAdd  = 0f;
+        float multiplier = 1f;
+
+        // 버프: 고정 추가 & 배율
+        if (unit.buffs != null)
+        {
+            foreach (BuffRuntime buff in unit.buffs)
+            {
+                if (buff?.data != null)
+                {
+                    bonusAdd  += buff.data.dodgeBonus;
+                    multiplier *= buff.data.dodgeMultiplier;
+                }
+            }
+        }
+
+        // 디버프: 고정 감소 & 배율 패널티
+        if (unit.debuffs != null)
+        {
+            foreach (DebuffRuntime debuff in unit.debuffs)
+            {
+                if (debuff?.data != null)
+                {
+                    bonusAdd  -= debuff.data.dodgePenalty;
+                    multiplier *= debuff.data.dodgeMultiplierPenalty;
+                }
+            }
+        }
+
+        // 고정 수치를 먼저 더한 뒤 배율 적용, 0~1 사이로 클램프
+        return Mathf.Clamp01((baseDodge + bonusAdd) * multiplier);
+    }
+
     public static int CalculateDamage(Unit attacker, Unit target, SkillData skill)
     {
         if (attacker == null || skill == null) return 0;
@@ -243,17 +302,16 @@ public static class CombatCalculator
             Debug.Log($"[금속 피로] {target.Unitname} 구조적 결함으로 피해 증폭 ({damage})");
         }
 
-        // 공격자의 녹 확률 판정
+        // 공격자의 녹 확률 판정 (공식: 상태이상 확률 = 유닛 확률 - special ammo / specialArmor)
         if (target != null && attacker.rustChance > 0)
         {
-            if (Random.Range(0, 100) < attacker.rustChance)
+            int finalRustChance = CalculateStatusChance(attacker.rustChance, target);
+            if (Random.Range(0, 100) < finalRustChance)
             {
-                // 상대 산화 저항력 체크
-                if (Random.Range(0, 100) >= target.oxidationResist)
-                {
-                    target.AddStatus(StatusType.OxidationI, 3);
-                    Debug.Log($"[녹 부여] {attacker.Unitname}의 공격으로 {target.Unitname} 산화 I 발생!");
-                }
+                int turns = attacker.oxidationTurns > 0 ? attacker.oxidationTurns : 3;
+                int dotDmg = attacker.oxidationDamage > 0 ? attacker.oxidationDamage : attacker.rustDamage;
+                target.AddOxidation(turns, dotDmg);
+                Debug.Log($"[녹 부여] {attacker.Unitname}의 공격으로 {target.Unitname} 산화 부여! (최종확률: {finalRustChance}%, 지속: {turns}턴, 턴당 피해: {dotDmg})");
             }
         }
 
@@ -265,15 +323,10 @@ public static class CombatCalculator
         if (attacker == null || skill == null)
             return false;
 
-        // 1. 대상 회피율 체크
+        // 1. 대상 회피율 체크 (버프/디버프/상태이상 모두 반영)
         if (target != null)
         {
-            float targetDodge = target.dodgeChance;
-
-            if (target.isLubricantLeak || target.isOilLeak)
-            {
-                targetDodge = 0f;
-            }
+            float targetDodge = GetDodgeChance(target);
 
             if (targetDodge > 0f && Random.value < targetDodge)
             {
@@ -315,4 +368,24 @@ public static class CombatCalculator
 
         return true;
     }
-}   
+    /// <summary>
+    /// 대상의 특수장갑(specialArmor / special ammo)을 감안한 최종 상태이상 부여 확률을 계산합니다.
+    /// 공식: 최종 상태이상 확률 = 유닛(스킬) 확률 - 대상의 specialArmor
+    /// </summary>
+    public static int CalculateStatusChance(int baseChance, Unit target)
+    {
+        if (target == null) return Mathf.Clamp(baseChance, 0, 100);
+        int resist = target.specialArmor;
+        return Mathf.Clamp(baseChance - resist, 0, 100);
+    }
+
+    /// <summary>
+    /// 상태이상 확률 판정을 수행합니다. (특수장갑 감쇄 반영)
+    /// </summary>
+    public static bool CheckStatusChance(int baseChance, Unit target)
+    {
+        int finalChance = CalculateStatusChance(baseChance, target);
+        return Random.Range(0, 100) < finalChance;
+    }
+
+}

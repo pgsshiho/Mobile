@@ -2231,13 +2231,15 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 995ee3dbe51f07946bdc6b9cdd8b6b9f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
-  roomType: 16
+  m_EditorClassIdentifier: Assembly-CSharp::Room
+  roomType: 12
   zoneType: 0
   roomName: ForestFactory
   enemySpawnPoints: []
   enemies:
   - {fileID: 1669151837191854026, guid: a40a920696447354284c6286375d1e76, type: 3}
+  minEnemyCount: 2
+  maxEnemyCount: 4
   rewardData: {fileID: 11400000, guid: e9893c2a1f019324a954cd17fe12ca71, type: 2}
   minMoney: 50
   maxMoney: 150
@@ -2251,6 +2253,7 @@ MonoBehaviour:
     zoneType: 0
     roomType: 0
     cleared: 0
+  enterRoomSFX: {fileID: 8300000, guid: 552c41072a931b542be39ce25a8d3709, type: 3}
 --- !u!1 &8892956542009269986
 GameObject:
   m_ObjectHideFlags: 0

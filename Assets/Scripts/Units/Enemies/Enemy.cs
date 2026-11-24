@@ -9,7 +9,8 @@ public enum EnemyTargetMode
     LowestHp,
     HighestHp,
     Fastest,
-    WeakestDefense
+    WeakestDefense,
+    LowestEnergy
 }
 
 public class Enemy :
@@ -20,9 +21,20 @@ public class Enemy :
     public EnemyTargetMode targetMode =
         EnemyTargetMode.Random;
 
+    [Header("Initial Status Effect")]
+    public StatusType initialStatus = StatusType.None;
+    public int initialStatusTurns = 3;
+    public int initialStatusDamage = 0;
+
+    [Header("Pupa Metamorphosis Gimmick")]
+    public bool isMetamorphosisPupa = false;
+    public int pupaTurnCount = 0;
+    public int turnsToMetamorphosis = 4;
+    public GameObject butterflyPrefab;
+
     [Header("AI Delay")]
-    public float attackDelay = 1.5f;
-    public float endTurnDelay = 1.5f;
+    public float attackDelay = 2.5f;
+    public float endTurnDelay = 2.0f;
     private SpriteRenderer spriteRenderer;
     private Color defaultColor = Color.white;
     private readonly List<Unit> alivePlayersBuffer = new List<Unit>(4);
@@ -62,6 +74,15 @@ public class Enemy :
             defaultColor = spriteRenderer.color;
         }
         EnsurePointerClickSupport();
+    }
+
+    protected virtual void Start()
+    {
+        if (initialStatus != StatusType.None && health > 0)
+        {
+            AddStatus(initialStatus, initialStatusTurns, initialStatusDamage);
+            Debug.Log($"[적 초기 상태] {Unitname}에게 {initialStatus} ({initialStatusTurns}턴) 부여됨");
+        }
     }
 
     public void SetTargetSelectable(bool selectable)
@@ -152,52 +173,60 @@ public class Enemy :
 
         selectedSkill = ChooseSkill();
 
-        Unit target = GetTarget();
-
-        if (target != null &&
-            selectedSkill != null)
+        if (selectedSkill != null && selectedSkill.skillLogic != null)
         {
+            // 적 스킬 발동 시 상단에 스킬 이름 표시
+            if (BattleManager.instance != null)
+            {
+                BattleManager.instance.SKillname(
+                    LocalizationManager.GetLocalizedString(selectedSkill.skillName));
+            }
             PlaySkillSound();
             OnSkillUsed(selectedSkill);
 
             switch (selectedSkill.targetType)
             {
-                case TargetType.SingleEnemy:
-
-                    selectedSkill.skillLogic.Use(
-                        this,
-                        target,
-                        selectedSkill
-                    );
-
+                case TargetType.Self:
+                    selectedSkill.skillLogic.Use(this, this, selectedSkill);
                     break;
 
-                case TargetType.AllEnemy:
+                case TargetType.Ally:
+                    // 적이 Ally 스킬(버프/힐 등)을 사용할 때는 적 진영 아군만 대상
+                    Unit allyTarget = GetAllyTarget();
+                    selectedSkill.skillLogic.Use(this, allyTarget ?? this, selectedSkill);
+                    break;
 
-                    AttackAllPlayers();
+                case TargetType.AllAlly:
+                    // 적이 AllAlly 스킬을 사용할 때는 오직 적들(Enemy 진영 전체)에게만 적용
+                    ApplyToAllAllies();
+                    break;
 
+                case TargetType.DeadAlly:
+                    Unit deadAlly = GetDeadEnemyAlly();
+                    if (deadAlly != null)
+                    {
+                        selectedSkill.skillLogic.Use(this, deadAlly, selectedSkill);
+                    }
+                    break;
+
+                case TargetType.SingleEnemy:
+                    Unit playerTarget = GetTarget();
+                    if (playerTarget != null)
+                    {
+                        selectedSkill.skillLogic.Use(this, playerTarget, selectedSkill);
+                    }
                     break;
 
                 case TargetType.TwoEnemy:
-
                     AttackMultiplePlayers(2);
-
                     break;
 
                 case TargetType.ThreeEnemy:
-
                     AttackMultiplePlayers(3);
-
                     break;
 
-                case TargetType.Self:
-
-                    selectedSkill.skillLogic.Use(
-                        this,
-                        this,
-                        selectedSkill
-                    );
-
+                case TargetType.AllEnemy:
+                    AttackAllPlayers();
                     break;
             }
         }
@@ -219,7 +248,7 @@ public class Enemy :
         }
     }
 
-    SkillData ChooseSkill()
+    protected virtual SkillData ChooseSkill()
     {
         if (health <= maxHealth * 0.3f)
         {
@@ -242,9 +271,12 @@ public class Enemy :
                 return allSkill;
         }
 
-        return skills[
-            Random.Range(0, skills.Count)
-        ];
+        List<SkillData> usableSkills = skills.FindAll(skill =>
+            skill != null && !IsSkillDisabledByFuse(skill));
+
+        return usableSkills.Count > 0
+            ? usableSkills[Random.Range(0, usableSkills.Count)]
+            : null;
     }
 
     SkillData FindSkill(TargetType type)
@@ -252,7 +284,8 @@ public class Enemy :
         foreach (SkillData skill in skills)
         {
             if (skill != null &&
-                skill.targetType == type)
+                skill.targetType == type &&
+                !IsSkillDisabledByFuse(skill))
             {
                 return skill;
             }
@@ -276,6 +309,9 @@ public class Enemy :
 
             case EnemyTargetMode.WeakestDefense:
                 return GetWeakestDefensePlayer();
+
+            case EnemyTargetMode.LowestEnergy:
+                return GetLowestEnergyPlayer();
 
             default:
                 return GetRandomPlayer();
@@ -381,6 +417,27 @@ public class Enemy :
         return result;
     }
 
+    Unit GetLowestEnergyPlayer()
+    {
+        Unit result = null;
+
+        if (PartyManager.instance != null && PartyManager.instance.partySlots != null)
+        {
+            foreach (Unit party in PartyManager.instance.partySlots)
+            {
+                if (party == null || party.health <= 0)
+                    continue;
+
+                if (result == null || party.energyCurrent < result.energyCurrent)
+                {
+                    result = party;
+                }
+            }
+        }
+
+        return result ?? GetLowestHpPlayer();
+    }
+
     List<Unit> GetAlivePlayers()
     {
         alivePlayersBuffer.Clear();
@@ -413,6 +470,114 @@ public class Enemy :
         }
 
         return count;
+    }
+
+    // =========================================================
+    // 적 진영(아군) 전용 타겟팅 및 버프/회복 적용 (플레이어 배제)
+    // =========================================================
+
+    public static bool IsEnemyUnit(Unit u)
+    {
+        if (u == null) return false;
+        int enemyLayer = LayerMask.NameToLayer("Enemy");
+        return u is Enemy ||
+               u.CompareTag("Enemy") ||
+               (enemyLayer != -1 && u.gameObject.layer == enemyLayer);
+    }
+
+    public List<Unit> GetAliveAllies()
+    {
+        List<Unit> allies = new List<Unit>();
+
+        if (TurnManager.instance != null && TurnManager.instance.turnList != null)
+        {
+            foreach (Unit u in TurnManager.instance.turnList)
+            {
+                if (u != null && u.health > 0 && IsEnemyUnit(u))
+                {
+                    allies.Add(u);
+                }
+            }
+        }
+
+        if (allies.Count == 0)
+        {
+            Enemy[] sceneEnemies = Object.FindObjectsByType<Enemy>();
+            foreach (Enemy e in sceneEnemies)
+            {
+                if (e != null && e.health > 0 && e.gameObject.activeInHierarchy)
+                {
+                    allies.Add(e);
+                }
+            }
+        }
+
+        if (!allies.Contains(this) && health > 0)
+        {
+            allies.Add(this);
+        }
+
+        return allies;
+    }
+
+    public Unit GetAllyTarget()
+    {
+        List<Unit> allies = GetAliveAllies();
+        if (allies.Count == 0) return this;
+
+        // 체력 비율이 가장 낮은 아군 적 우선 선택 (자신 포함)
+        Unit lowest = null;
+        float lowestRatio = 2f;
+        foreach (Unit a in allies)
+        {
+            if (a == null) continue;
+            float ratio = a.maxHealth > 0 ? (float)a.health / a.maxHealth : 1f;
+            if (ratio < lowestRatio)
+            {
+                lowestRatio = ratio;
+                lowest = a;
+            }
+        }
+        return lowest ?? this;
+    }
+
+    public Unit GetDeadEnemyAlly()
+    {
+        if (TurnManager.instance != null && TurnManager.instance.turnList != null)
+        {
+            foreach (Unit u in TurnManager.instance.turnList)
+            {
+                if (u != null && u.health <= 0 && IsEnemyUnit(u))
+                {
+                    return u;
+                }
+            }
+        }
+
+        Enemy[] sceneEnemies = Object.FindObjectsByType<Enemy>();
+        foreach (Enemy e in sceneEnemies)
+        {
+            if (e != null && e.health <= 0)
+            {
+                return e;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 적이 AllAlly 스킬 사용 시 오직 적들(Enemy 진영 전체)에게만 적용합니다.
+    /// </summary>
+    void ApplyToAllAllies()
+    {
+        List<Unit> allies = GetAliveAllies();
+        foreach (Unit ally in allies)
+        {
+            if (ally != null && ally.health > 0 && selectedSkill != null && selectedSkill.skillLogic != null)
+            {
+                selectedSkill.skillLogic.Use(this, ally, selectedSkill);
+            }
+        }
     }
 
     void AttackAllPlayers()
@@ -476,6 +641,9 @@ public class Enemy :
         PointerEventData eventData
     )
     {
+        if (BattleManager.instance != null && BattleManager.instance.IsBattleIntroPlaying)
+            return;
+
         if (TurnManager.instance == null ||
             !TurnManager.instance.waitingForTarget)
             return;
@@ -524,3 +692,4 @@ public class Enemy :
         }
     }
 }
+

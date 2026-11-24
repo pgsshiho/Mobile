@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc2e20629b4c4950a084c48b8bfbb820, type: 3}
+  m_Name: WildBoar
+  m_EditorClassIdentifier: Assembly-CSharp::UnitStatData
+  unitName: 멧돼지
+  maxHealth: 30
+  emergencyPower: 0
+  communication: 0
+  attackPower: 15
+  defensePower: 0
+  specialArmor: 0
+  criticalChance: 5
+  accuracy: 90
+  dodgeChance: 0.2
+  speed: 3
+  energyMax: 10
+  rustChance: 0
+  oxidationResist: 0
+  oxidationTurns: 3
+  oxidationDamage: 5
+  bleedInflictTurns: 3
+  bleedInflictDamage: 5
+  oilLeakInflictTurns: 3
+  oilLeakInflictDamage: 5
+  overheatInflictTurns: 2
+  overheatInflictDamage: 4
+  fireInflictTurns: 3
+  fireInflictDamage: 8
+  stunInflictTurns: 1
+  markInflictTurns: 3
+  maxAttackLevel: 3
+  maxDefenseLevel: 3
+  maxAccurancyLevel: 3
+  maxMaxHPLevel: 3

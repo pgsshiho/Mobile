@@ -35,7 +35,16 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 43611436949667840
-    m_Localized: "1~2\uC5F4\uC758 \uC801\uC744 30\uB370\uBBF8\uC9C0\uB85C \uACF5\uACA9\uD55C\uB2E4\n"
+    m_Localized: 'Attacks an enemy with a saw.
+
+      Targetable ranks: 1, 2
+
+      Range:
+      1, 2
+
+      Damage: 20
+
+      Accuracy bonus: 20'
     m_Metadata:
       m_Items: []
   - m_Id: 43906713262718976
@@ -478,6 +487,117 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 61663645310353408
     m_Localized: Chritical!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61949635870556160
+    m_Localized: Enemy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63064183545495552
+    m_Localized: Appearance!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63160710125289472
+    m_Localized: 'Slash forward with a saw
+
+      Attack Zone: 2, 3, 4
+
+      Range:
+      3, 4
+
+      Damage: 15
+
+      Accuracy Bonus: 20'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63200408008884224
+    m_Localized: 'Rub the saw against the target to inflict overheating.
+
+      Attackable
+      zones: 1, 2
+
+      Range: 1
+
+      Duration (turns): 3
+
+      Accuracy bonus:
+      20'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63200428779077632
+    m_Localized: 'Surpass your own limits.
+
+      Attack bonus: 2x
+
+      Overheat
+      chance: 30%
+
+      Duration: 3 turns'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63200510890967040
+    m_Localized: "Switches to Enemy Elimination Mode.\r\nSpeed \u200B\u200BBonus:
+      3\r\nCritical Bonus: 30\r\nDuration: 3 turns"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63200544067911680
+    m_Localized: 'Attacks the enemy''s weak point.
+
+      Deals 1.5x damage to enemies
+      suffering from a status ailment.
+
+      Attackable zones: 1, 2
+
+      Range:
+      1, 2, 3
+
+      Damage: 15'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63469832301412352
+    m_Localized: 'Slash the opponent with a dagger
+
+      Attackable Area: 1, 2
+
+      Range:
+      1
+
+      Damage: 20
+
+      Accuracy Bonus: 20'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63470228872855552
+    m_Localized: 'Strengthen allies to hold the front line.
+
+      Select one target.
+
+      Defense
+      increase multiplier: 15%'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63470285936361472
+    m_Localized: 'Fire a handgun at the target.
+
+      Attackable zones: 3, 4
+
+      Range:
+      3, 4
+
+      Damage: 30
+
+      Accuracy bonus: 30'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63470299215527936
+    m_Localized: 'Rejuvenates the target.
+
+      Healing amount increased: 1.5x
+
+      Duration:
+      3 turns
+
+      Removes debuffs'
     m_Metadata:
       m_Items: []
   references:

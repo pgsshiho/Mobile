@@ -406,7 +406,7 @@ public class BlackMarket : MonoBehaviour
         RestoreInteractionUI();
         FocusOut();
         RecallRepairParty();
-        Save.CommitSave();
+        Save.instance.SaveGame();
 
         Debug.Log($"[BlackMarket] {current.Unitname} 강화 완료");
         return true;

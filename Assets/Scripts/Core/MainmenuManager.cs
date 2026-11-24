@@ -1,4 +1,3 @@
-
 using TMPro;
 using UnityEngine;
 using UnityEngine.Localization.Settings;
@@ -9,6 +8,7 @@ public class MainmenuManager : MonoBehaviour
     public TextMeshProUGUI Savefile2Chapter;
     public TextMeshProUGUI Savefile3Chapter;
     public AudioClip StartSFX;
+
     void Start()
     {
         RefreshSavefileChapters();
@@ -26,10 +26,10 @@ public class MainmenuManager : MonoBehaviour
         if (chapterText == null)
             return;
 
-        // 해당 슬롯에 저장 데이터가 있는지 확인
+        // 해당 슬롯에 저장 데이터가 있고 진행 중인 활성 런이 있는지 확인
         SaveData data = Save.GetSaveSlotData(slotIndex);
 
-        if (data == null)
+        if (data == null || !data.hasActiveRun)
         {
             chapterText.text = "New Game";
             return;
@@ -38,7 +38,6 @@ public class MainmenuManager : MonoBehaviour
         // 저장된 현재 챕터 표시
         chapterText.text = "Chapter: " + data.currentChapter;
     }
-
 
     public void LoadGame(int savefile)
     {
@@ -50,15 +49,17 @@ public class MainmenuManager : MonoBehaviour
 
         SaveData data = Save.GetSaveSlotData(savefile);
 
-        if (data == null)
+        if (data == null || !data.hasActiveRun)
         {
-            // 빈 슬롯은 기존 런을 이어받지 않고 새 시드를 발급해 새 로그라이크 런을 시작한다.
+            // 빈 슬롯이거나 활성 런이 없으면 1챕터부터 새 런 시작
             Save.SelectSlot(savefile);
             Save.StartNewRun(1);
 
             AudioManager.instance?.StopMainBgm();
             AudioManager.instance?.PlaySfx(StartSFX);
-            SceneChanger.BG("Forest");
+
+            string startScene = Save.GetSaveData().savedScene;
+            SceneChanger.BG(string.IsNullOrEmpty(startScene) ? "Forest" : startScene);
             return;
         }
 
@@ -72,20 +73,17 @@ public class MainmenuManager : MonoBehaviour
         Save.SelectSlot(savefile);
         AudioManager.instance?.StopMainBgm();
         AudioManager.instance?.PlaySfx(StartSFX);
-        // 저장된 씬으로 이동
-        UnityEngine.SceneManagement.SceneManager.LoadScene(data.savedScene);
+
+        // 저장된 씬(해당 챕터에 맞는 Scene)으로 이동
+        SceneChanger.BG(data.savedScene);
     }
+
     public void DeleteSaveFile(int SaveFile)
     {
-        SaveData data = Save.GetSaveSlotData(SaveFile);
-        if (data == null)
-        {
-            Debug.LogWarning("저장 데이터가 없습니다. 슬롯: " + SaveFile);
-            return;
-        }
         Save.DeleteSaveSlot(SaveFile);
         RefreshSavefileChapters();
     }
+
     public void CloseDelSaveFile(GameObject these)
     {
         these.SetActive(false);

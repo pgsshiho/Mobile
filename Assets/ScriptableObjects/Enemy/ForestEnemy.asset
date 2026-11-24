@@ -15,3 +15,10 @@ MonoBehaviour:
   zoneType: 0
   enemyPrefabs:
   - {fileID: 1669151837191854026, guid: a40a920696447354284c6286375d1e76, type: 3}
+  - {fileID: 1669151837191854026, guid: dbe9cb5adabc5b1459b529f0d9731e53, type: 3}
+  - {fileID: 1669151837191854026, guid: 0ad5bfee1994a35409e6ca388a72d127, type: 3}
+  - {fileID: 1669151837191854026, guid: c2b00b19531643eea04acdda4847cfcd, type: 3}
+  - {fileID: 1669151837191854026, guid: 6ba48ef44a024089b891c5a9eace2c31, type: 3}
+  - {fileID: 1669151837191854026, guid: b3718af529ea4be382daf9b7bb38c73b, type: 3}
+  - {fileID: 1669151837191854026, guid: b81e4ee0f2794cb9a53bc675fb28ea8c, type: 3}
+  - {fileID: 1669151837191854026, guid: 61a4f823f7e74f109e7bced086876a86, type: 3}

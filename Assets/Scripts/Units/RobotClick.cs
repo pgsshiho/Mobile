@@ -49,6 +49,9 @@ public class RobotClick : MonoBehaviour, IPointerClickHandler
     public void OnPointerClick(PointerEventData eventData)
     {
         Debug.Log($"[RobotClick] 터치됨: {Self?.Unitname ?? "Self가 null"}");
+        if (BattleManager.instance != null && BattleManager.instance.IsBattleIntroPlaying)
+            return;
+
         if (BattleManager.instance != null)
         {
             // 1. 분수대 대상 선택
@@ -115,7 +118,7 @@ public class RobotClick : MonoBehaviour, IPointerClickHandler
         specialArmor.text = Self.specialArmor.ToString();
         criticalChance.text = Self.criticalChance.ToString();
         accuracy.text = Self.accuracy.ToString();
-        dodgeChance.text = Self.dodgeChance.ToString();
+        dodgeChance.text = (Self.GetDodgeChance() * 100f).ToString("F0") + "%";
         speed.text = Self.speed.ToString();
         energyMax.text = Self.energyMax.ToString();
         energyCurrent.text = Self.energyCurrent.ToString();

@@ -657,7 +657,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: b78094454bdf2b445b836d1dd945160a, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1339,7 +1339,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 396b83ecd555a0d4fbf0344d03bd57cb, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1750,7 +1750,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: befd3af0d60c65348a3a7aee48fcc4b1, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2645,7 +2645,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: cccb6f2d7c182814c95d5951b822375d, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3036,7 +3036,7 @@ GameObject:
   - component: {fileID: 2911882932156388278}
   m_Layer: 6
   m_Name: Meteor
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3129,6 +3129,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a15364bfa04ba429a2875bab2bab56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerUnit
+  statData: {fileID: 11400000, guid: b2a3265c86ec47b3bfb0f8cbf63b2942, type: 2}
   maxHealth: 60
   health: 60
   emergencyPower: 0.7
@@ -3148,6 +3149,8 @@ MonoBehaviour:
   rustChance: 20
   rustDamage: 5
   oxidationResist: 0
+  oxidationTurns: 3
+  oxidationDamage: 5
   oxidationDamagePercent: 3
   circuitShortStacks: 0
   ghostingMissPenalty: 0
@@ -3165,6 +3168,7 @@ MonoBehaviour:
   damageTextPrefab: {fileID: 3432776059765830471, guid: 7d3631656ebbd604aa80f9e945222ebc, type: 3}
   damageTextSpawnPoint: {fileID: 846971750688396973}
   HPBar: {fileID: 930294583516433268}
+  myHPtext: {fileID: 0}
   deathSFX: {fileID: 8300000, guid: a9639567cdf970f43b238cc4dce4c292, type: 3}
   attackLevel: 0
   defenseLevel: 0
@@ -4328,7 +4332,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 10, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6709057481307478147
 CanvasRenderer:
@@ -4963,7 +4967,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 01ec526790060cd48a65e65fda3a49a2, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -8732,7 +8736,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 74af5fda7e754cc42b272c53151c4cca, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -10455,8 +10459,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.25}
   m_AnchorMax: {x: 1, y: 0.75}
-  m_AnchoredPosition: {x: -0.44999695, y: 0}
-  m_SizeDelta: {x: -10.89, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &8782731183607822537
 GameObject:

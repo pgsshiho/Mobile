@@ -76,7 +76,17 @@ public class PlayerUnit :
             return;
         }
 
-        selectedSkill = skills[Random.Range(0, skills.Count)];
+        List<SkillData> usableSkills = skills.FindAll(skill =>
+            skill != null && !IsSkillDisabledByFuse(skill));
+
+        if (usableSkills.Count == 0)
+        {
+            Debug.LogWarning($"[퓨즈 파손] {Unitname}은(는) 사용할 수 있는 스킬이 없습니다.");
+            TurnManager.instance?.EndTurn();
+            return;
+        }
+
+        selectedSkill = usableSkills[Random.Range(0, usableSkills.Count)];
         Unit autoTarget = GetRandomAliveEnemy();
 
         Debug.LogWarning($"<color=orange>[독자 행동 발동]</color> {Unitname}이(가) 통신 통제를 벗어나 [{selectedSkill.skillName}]을(를) 즉시 시전합니다!");
@@ -122,6 +132,12 @@ public class PlayerUnit :
         if (index < 0 || index >= skills.Count)
             return;
 
+        if (IsSkillDisabledByFuse(skills[index]))
+        {
+            Debug.LogWarning($"[퓨즈 파손] {skills[index].skillName} 스킬은 현재 사용할 수 없습니다.");
+            return;
+        }
+
         selectedSkill = skills[index];
         Debug.Log($"{selectedSkill.skillName} 선택");
     }
@@ -131,6 +147,13 @@ public class PlayerUnit :
     {
         if (selectedSkill == null)
             return;
+
+        if (IsSkillDisabledByFuse(selectedSkill))
+        {
+            Debug.LogWarning($"[퓨즈 파손] {selectedSkill.skillName} 스킬은 현재 사용할 수 없습니다.");
+            selectedSkill = null;
+            return;
+        }
 
         if (BattleManager.instance != null &&
             !BattleManager.instance.CanUseSkillAtCurrentColumn(this, selectedSkill))
@@ -179,71 +202,47 @@ public class PlayerUnit :
 
         OnSkillUsed(selectedSkill);
 
+        // 사운드 및 스킬 이름 UI 1회 호출
+        if (AudioManager.instance != null && selectedSkill.soundEffect != null)
+        {
+            AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
+        }
+        if (BattleManager.instance != null)
+        {
+            BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
+        }
+
         switch (selectedSkill.targetType)
         {
             case TargetType.SingleEnemy:
             case TargetType.Ally:
-
-                AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
-                BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
                 selectedSkill.skillLogic.Use(this, target, selectedSkill);
                 break;
 
             case TargetType.TwoEnemy:
-
-                AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
-                BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
-                AttackMultipleEnemies(2);
+                AttackMultipleEnemies(2, target);
                 break;
 
             case TargetType.ThreeEnemy:
-
-                AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
-                BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
-                AttackMultipleEnemies(3);
+                AttackMultipleEnemies(3, target);
                 break;
 
             case TargetType.AllEnemy:
-
-                AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
-                BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
                 AttackAllEnemies();
                 break;
 
             case TargetType.Self:
-
-                AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
-                BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
                 selectedSkill.skillLogic.Use(this, this, selectedSkill);
                 break;
 
             case TargetType.AllAlly:
-
-                foreach (Unit unit in TurnManager.instance.turnList)
-                {
-                    if (unit != null &&
-                        unit.health > 0 &&
-                        unit.gameObject.layer == LayerMask.NameToLayer("Player"))
-                    {
-                        AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
-                        BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
-                        selectedSkill.skillLogic.Use(this, unit, selectedSkill);
-                    }
-                }
+                ApplyToAllPartyAllies();
                 break;
 
             case TargetType.DeadAlly:
-
-                foreach (Unit unit in TurnManager.instance.turnList)
+                if (target != null && target.health <= 0)
                 {
-                    if (unit != null &&
-                        unit.health <= 0 &&
-                        unit.gameObject.layer == LayerMask.NameToLayer("Player"))
-                    {
-                        AudioManager.instance.PlaySfx(selectedSkill.soundEffect);
-                        BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
-                        selectedSkill.skillLogic.Use(this, unit, selectedSkill);
-                    }
+                    selectedSkill.skillLogic.Use(this, target, selectedSkill);
                 }
                 break;
         }
@@ -274,37 +273,120 @@ public class PlayerUnit :
             sp.sprite = normal;
     }
 
-    // 다인 공격
-    void AttackMultipleEnemies(int count)
+    public static bool IsPlayerUnit(Unit u)
     {
-        int attacked = 0;
-        foreach (Unit unit in TurnManager.instance.turnList)
+        if (u == null) return false;
+        int playerLayer = LayerMask.NameToLayer("Player");
+        return u is PlayerUnit ||
+               u.CompareTag("Player") ||
+               (playerLayer != -1 && u.gameObject.layer == playerLayer);
+    }
+
+    public static bool IsEnemyTarget(Unit u)
+    {
+        if (u == null) return false;
+        int enemyLayer = LayerMask.NameToLayer("Enemy");
+        return u is Enemy ||
+               u.CompareTag("Enemy") ||
+               (enemyLayer != -1 && u.gameObject.layer == enemyLayer);
+    }
+
+    // 플레이어 AllAlly 버프/회복: 오직 살아있는 플레이어 아군들에게만 적용 (적 배제)
+    void ApplyToAllPartyAllies()
+    {
+        List<Unit> partyAllies = new List<Unit>();
+
+        if (PartyManager.instance != null && PartyManager.instance.partySlots != null)
         {
-            if (unit != null && unit.health > 0 && unit.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+            foreach (Unit p in PartyManager.instance.partySlots)
             {
-                selectedSkill.skillLogic.Use(this, unit, selectedSkill);
-                attacked++;
-                BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
-                if (attacked >= count)
-                    break;
+                if (p != null && p.health > 0 && !partyAllies.Contains(p))
+                {
+                    partyAllies.Add(p);
+                }
+            }
+        }
+
+        if (TurnManager.instance != null && TurnManager.instance.turnList != null)
+        {
+            foreach (Unit u in TurnManager.instance.turnList)
+            {
+                if (u != null && u.health > 0 && IsPlayerUnit(u) && !partyAllies.Contains(u))
+                {
+                    partyAllies.Add(u);
+                }
+            }
+        }
+
+        if (!partyAllies.Contains(this) && health > 0)
+        {
+            partyAllies.Add(this);
+        }
+
+        foreach (Unit ally in partyAllies)
+        {
+            if (ally != null && ally.health > 0 && selectedSkill != null && selectedSkill.skillLogic != null)
+            {
+                selectedSkill.skillLogic.Use(this, ally, selectedSkill);
             }
         }
     }
 
-    // 전체 공격
+    // 다인 공격: 선택한 대상(primaryTarget)을 1순위로 포함하고 나머지 인원수를 살아있는 적들 중에서 타격
+    void AttackMultipleEnemies(int count, Unit primaryTarget = null)
+    {
+        List<Unit> validEnemies = new List<Unit>();
+
+        if (TurnManager.instance != null && TurnManager.instance.turnList != null)
+        {
+            foreach (Unit unit in TurnManager.instance.turnList)
+            {
+                if (unit != null && unit.health > 0 && IsEnemyTarget(unit))
+                {
+                    validEnemies.Add(unit);
+                }
+            }
+        }
+
+        int attacked = 0;
+
+        // 1. 플레이어가 직접 클릭한 적이 유효하면 먼저 타격
+        if (primaryTarget != null && primaryTarget.health > 0 && IsEnemyTarget(primaryTarget))
+        {
+            selectedSkill.skillLogic.Use(this, primaryTarget, selectedSkill);
+            validEnemies.Remove(primaryTarget);
+            attacked++;
+        }
+
+        // 2. 남은 인원수만큼 다른 살아있는 적 타격
+        while (validEnemies.Count > 0 && attacked < count)
+        {
+            Unit nextEnemy = validEnemies[0];
+            validEnemies.RemoveAt(0);
+
+            selectedSkill.skillLogic.Use(this, nextEnemy, selectedSkill);
+            attacked++;
+        }
+    }
+
+    // 전체 공격: 살아있는 모든 적에게 스킬 적용
     void AttackAllEnemies()
     {
+        if (TurnManager.instance == null || TurnManager.instance.turnList == null) return;
+
         foreach (Unit unit in TurnManager.instance.turnList)
         {
-            if (unit != null && unit.health > 0 && unit.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+            if (unit != null && unit.health > 0 && IsEnemyTarget(unit))
             {
-                BattleManager.instance.SKillname(LocalizationManager.GetLocalizedString(selectedSkill.skillName));
                 selectedSkill.skillLogic.Use(this, unit, selectedSkill);
             }
         }
     }
     public void OnPointerClick(PointerEventData eventData)
     {
+        if (BattleManager.instance != null && BattleManager.instance.IsBattleIntroPlaying)
+            return;
+
         if (BattleManager.instance != null)
         {
             // 1. 분수대 로봇 선택

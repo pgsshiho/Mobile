@@ -37,6 +37,7 @@ public class SavedStatusEntry
 {
     public StatusType type;
     public int remainingTurns;
+    public int dotDamage;
 }
 
 [Serializable]
@@ -191,13 +192,19 @@ public class Save : MonoBehaviour
         EnsureGlobalDataLoaded();
         activeSlot = Mathf.Clamp(globalData.activeSlot, 0, SaveSlotCount - 1);
 
-        // 이전 단일 세이브를 첫 번째 슬롯으로 한 번만 옮긴다.
-        if (!PlayerPrefs.HasKey(GetSlotKey(0)) && PlayerPrefs.HasKey(KEY_SAVE_DATA))
+        // 이전 단일 세이브를 첫 번째 슬롯으로 한 번만 옮기고 레거시 키를 즉시 삭제한다.
+        if (PlayerPrefs.HasKey(KEY_SAVE_DATA))
         {
-            PlayerPrefs.SetString(GetSlotKey(0), PlayerPrefs.GetString(KEY_SAVE_DATA));
+            if (!PlayerPrefs.HasKey(GetSlotKey(0)) && !File.Exists(GetSlotPath(0)))
+            {
+                string legacyJson = PlayerPrefs.GetString(KEY_SAVE_DATA);
+                if (!string.IsNullOrEmpty(legacyJson))
+                {
+                    WriteSlotJson(0, legacyJson);
+                }
+            }
+            PlayerPrefs.DeleteKey(KEY_SAVE_DATA);
             PlayerPrefs.Save();
-
-            // 단일 저장 데이터를 슬롯으로 이관한 직후 전역 슬롯 목록도 함께 갱신한다.
             RefreshAllSlotMetadata();
             CommitGlobalSave();
         }
@@ -305,7 +312,18 @@ public class Save : MonoBehaviour
 
     public static bool HasSaveSlot(int slotIndex)
     {
-        return slotIndex >= 0 && slotIndex < SaveSlotCount && !string.IsNullOrEmpty(ReadSlotJson(slotIndex));
+        if (slotIndex < 0 || slotIndex >= SaveSlotCount) return false;
+        string json = ReadSlotJson(slotIndex);
+        if (string.IsNullOrEmpty(json)) return false;
+        try
+        {
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+            return data != null && data.hasActiveRun;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>메인 메뉴의 슬롯 목록 표시에 쓰는 전역 메타데이터입니다.</summary>
@@ -337,14 +355,26 @@ public class Save : MonoBehaviour
     {
         if (slotIndex < 0 || slotIndex >= SaveSlotCount) return;
         PlayerPrefs.DeleteKey(GetSlotKey(slotIndex));
+        if (slotIndex == 0)
+        {
+            PlayerPrefs.DeleteKey(KEY_SAVE_DATA);
+        }
         DeleteSlotFiles(slotIndex);
         if (GetActiveSlotIndex() == slotIndex)
         {
-            cachedData = new SaveData();
+            cachedData = new SaveData { hasActiveRun = false };
             EnsurePartySlotsCapacity(cachedData);
         }
         EnsureGlobalDataLoaded();
-        globalData.slots[slotIndex] = new SaveSlotMetadata();
+        EnsureGlobalSlotCapacity(globalData);
+        globalData.slots[slotIndex] = new SaveSlotMetadata
+        {
+            exists = false,
+            hasActiveRun = false,
+            chapter = 1,
+            sceneName = "Forest",
+            lastSavedUtcTicks = 0
+        };
         CommitGlobalSave();
         PlayerPrefs.Save();
     }
@@ -420,8 +450,8 @@ public class Save : MonoBehaviour
     {
         if (globalData == null || slotIndex < 0 || slotIndex >= SaveSlotCount) return;
         EnsureGlobalSlotCapacity(globalData);
-        globalData.slots[slotIndex] = data == null
-            ? new SaveSlotMetadata()
+        globalData.slots[slotIndex] = (data == null || !data.hasActiveRun)
+            ? new SaveSlotMetadata { exists = false, hasActiveRun = false, chapter = 1, sceneName = "Forest", lastSavedUtcTicks = 0 }
             : new SaveSlotMetadata
             {
                 exists = true,
@@ -450,8 +480,19 @@ public class Save : MonoBehaviour
         {
             if (File.Exists(path)) return File.ReadAllText(path);
             if (File.Exists(backupPath)) return File.ReadAllText(backupPath);
-            // 최초 1회만 구 버전 PlayerPrefs 데이터를 마이그레이션한다.
-            return PlayerPrefs.HasKey(GetSlotKey(slotIndex)) ? PlayerPrefs.GetString(GetSlotKey(slotIndex)) : null;
+            // 최초 1회만 구 버전 PlayerPrefs 데이터를 마이그레이션하고 레거시 키를 삭제한다.
+            if (PlayerPrefs.HasKey(GetSlotKey(slotIndex)))
+            {
+                string legacyJson = PlayerPrefs.GetString(GetSlotKey(slotIndex));
+                PlayerPrefs.DeleteKey(GetSlotKey(slotIndex));
+                PlayerPrefs.Save();
+                if (!string.IsNullOrEmpty(legacyJson))
+                {
+                    WriteSlotJson(slotIndex, legacyJson);
+                    return legacyJson;
+                }
+            }
+            return null;
         }
         catch (Exception e)
         {
@@ -566,17 +607,16 @@ public class Save : MonoBehaviour
         data.currentChapter = Mathf.Clamp(chapter, 1, 5);
         data.currentZoneIndex = 0;
         data.currentNodeId = -1;
-        // 새 런의 시작 맵은 Forest다. 메뉴의 새 게임 진입 씬과 저장 씬을 일치시킨다.
-        data.savedScene = "Forest";
-
         if (ChapterManager.instance != null)
         {
             ChapterManager.instance.StartChapter(data.currentChapter);
             data.currentZone = (int)ChapterManager.instance.GetCurrentZone();
+            data.savedScene = ChapterManager.instance.GetSceneForChapter(data.currentChapter);
         }
         else
         {
             data.currentZone = (int)ZoneType.Forest;
+            data.savedScene = "Forest";
         }
 
         data.mapZone = data.currentZone;
@@ -600,10 +640,62 @@ public class Save : MonoBehaviour
         return data.mapSeed;
     }
 
-    private static int CreateMapSeed()
+    public static int CreateMapSeed()
     {
         int seed = UnityEngine.Random.Range(int.MinValue + 1, int.MaxValue);
         return seed == 0 ? 1 : seed;
+    }
+
+    /// <summary>
+    /// 보스 클리어 후 다음 챕터로 진행 상태를 저장합니다.
+    /// - 현재 챕터 클리어 기록
+    /// - 다음 챕터 번호 및 해당 챕터에 맞는 Scene 이름 설정
+    /// - 활성 런(hasActiveRun) 상태 유지하여 메인메뉴에서 해당 챕터로 시작할 수 있도록 설정
+    /// </summary>
+    public static void AdvanceToNextChapter(int clearedChapter)
+    {
+        SaveData data = GetSaveData();
+
+        // 1. 현재 챕터 클리어 완료 기록
+        SaveChapterClear(clearedChapter);
+
+        // 2. 다음 챕터 계산
+        int maxChapter = ChapterManager.instance != null ? ChapterManager.instance.GetMaximumChapter() : 5;
+        int nextChapter = clearedChapter + 1;
+
+        if (nextChapter > maxChapter)
+        {
+            // 모든 챕터를 클리어한 경우 엔딩 및 런 종료
+            EndCurrentRun();
+            Debug.Log("<color=gold>[Save]</color> 모든 챕터를 클리어했습니다!");
+            return;
+        }
+
+        // 3. 다음 챕터 진행 상태 저장
+        data.hasActiveRun = true;
+        data.currentChapter = nextChapter;
+        data.currentZoneIndex = 0;
+        data.currentNodeId = -1;
+        if (data.clearedNodeIds != null)
+            data.clearedNodeIds.Clear();
+
+        if (ChapterManager.instance != null)
+        {
+            ChapterManager.instance.StartChapter(nextChapter);
+            data.currentZone = (int)ChapterManager.instance.GetCurrentZone();
+            data.savedScene = ChapterManager.instance.GetSceneForChapter(nextChapter);
+        }
+        else
+        {
+            data.currentZone = (int)ZoneType.Forest;
+            data.savedScene = "Forest";
+        }
+
+        data.mapZone = data.currentZone;
+        data.mapSeed = CreateMapSeed();
+
+        CommitSave();
+        Debug.Log($"<color=cyan>[Save]</color> 제 {clearedChapter}챕터 클리어 -> 제 {nextChapter}챕터(씬: {data.savedScene})로 저장 완료");
     }
 
     public static void SaveChapterClear(int chapter)
@@ -806,7 +898,7 @@ public class Save : MonoBehaviour
         };
 
         foreach (KeyValuePair<StatusType, int> status in unit.StatusHandler.GetActiveStatuses())
-            entry.statuses.Add(new SavedStatusEntry { type = status.Key, remainingTurns = status.Value });
+            entry.statuses.Add(new SavedStatusEntry { type = status.Key, remainingTurns = status.Value, dotDamage = unit.StatusHandler != null ? unit.StatusHandler.GetStatusDamage(status.Key) : 0 });
         return entry;
     }
 
@@ -832,6 +924,7 @@ public class Save : MonoBehaviour
             unit.MaxHPLevel = entry.MaxHpLevel;
             unit.defenseLevel = entry.defenseLevel;
             unit.AccurancyLevel = entry.accuracyUpgrade;
+            unit.RecalculateStatsFromUpgrade();
             unit.circuitShortStacks = entry.circuitShortStacks;
             unit.ghostingMissPenalty = entry.ghostingMissPenalty;
             unit.StatusHandler.RestoreStatuses(entry.statuses);

@@ -209,4 +209,36 @@ public class PartyManager : MonoBehaviour
             }
         }
     }
+
+    /// <summary>
+    /// 지정된 유닛의 파티 슬롯 인덱스를 반환합니다. 없으면 -1을 반환합니다.
+    /// </summary>
+    public int GetPlayerIndex(Unit unit)
+    {
+        if (partySlots == null || unit == null) return -1;
+        for (int i = 0; i < partySlots.Length; i++)
+        {
+            if (partySlots[i] == unit) return i;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// 두 슬롯의 유닛 위치를 교환하고 필드 Transform 배치를 갱신합니다.
+    /// </summary>
+    public void SwapPartySlots(int indexA, int indexB)
+    {
+        if (partySlots == null) return;
+        if (indexA < 0 || indexA >= partySlots.Length || indexB < 0 || indexB >= partySlots.Length) return;
+        if (indexA == indexB) return;
+
+        Unit temp = partySlots[indexA];
+        partySlots[indexA] = partySlots[indexB];
+        partySlots[indexB] = temp;
+
+        if (BattleManager.instance != null && BattleManager.instance.Party != null)
+        {
+            PlacePartyAtPositions(BattleManager.instance.Party);
+        }
+    }
 }

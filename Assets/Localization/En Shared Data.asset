@@ -28,7 +28,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 43611436949667840
-    m_Key: Cut
+    m_Key: Cuts
     m_Metadata:
       m_Items: []
   - m_Id: 43906713262718976
@@ -374,7 +374,55 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 61949635870556160
-    m_Key: New Entry 1
+    m_Key: Enemy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63064183545495552
+    m_Key: Appearance
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63160710125289472
+    m_Key: Divides
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63200408008884224
+    m_Key: Frictions
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63200428779077632
+    m_Key: Overcharges
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63200510890967040
+    m_Key: ReadyToEleminates
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63200544067911680
+    m_Key: WeakAttacks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63469832301412352
+    m_Key: Dagger Slashs
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63470228872855552
+    m_Key: Maintaining the Front Lines
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63470285936361472
+    m_Key: Pistol shootings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63470299215527936
+    m_Key: Reorganizations
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63470308715626496
+    m_Key: Situation Commands
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63470311353843712
+    m_Key: Targetings
     m_Metadata:
       m_Items: []
   m_Metadata:

@@ -519,7 +519,7 @@ public class BlackSmith : MonoBehaviour
         
         FocusOut();
         RecallRepairParty();
-        Save.CommitSave();
+        Save.instance.SaveGame();
 
         Debug.Log($"[BlackSmith] {current.Unitname} 강화 완료");
 

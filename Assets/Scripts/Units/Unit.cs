@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -46,7 +47,13 @@ public class Unit : MonoBehaviour
         Electric,   // 전기 / 단선 폭발
         Status      // 여러 상태이상 지속 피해를 합산한 피해
     }
-    protected bool turnEndedBySystem = false;
+protected bool turnEndedBySystem = false;
+
+    [Header("=== 0. 스탯 데이터 (ScriptableObject) ===")]
+    [Tooltip("기본 스탯을 정의하는 ScriptableObject 에셋 (메모리 절약 및 공통 스탯 관리)")]
+    public UnitStatData statData;
+    protected bool isStatsInitialized = false;
+
     [Header("=== 1. 체력 & 생존 (Health & Survival) ===")]
     [Tooltip("최대 체력")]
     public float maxHealth = 100f;              // MaxHp: 최대 체력
@@ -56,7 +63,7 @@ public class Unit : MonoBehaviour
 
     [Tooltip("비상전력: 죽음의 문턱(HP 0)에서 1HP로 살아날 확률 (0.0 ~ 1.0)")]
     [Range(0f, 1f)]
-    public float emergencyPower = 0.2f;         // 비상전력: 죽음의 문턱 생존율
+    public float emergencyPower = 0.7f;         // 비상전력: 죽음의 문턱 생존율
 
     [Header("=== 2. 통신 & 스트레스 (Communication) ===")]
     [Tooltip("통신도 (-100 ~ 100): 0 이하 도달 시 전력다운 발동, -100 도달 시 자폭 후 비상전력 상태 전환")]
@@ -79,8 +86,15 @@ public class Unit : MonoBehaviour
     [Tooltip("장갑 (물리 방어력)")]
     public int defensePower = 5;                // 장갑: 물리 피해 감소
 
-    [Tooltip("특수 장갑 (녹/산화, 도트 등 특수 피해 방어력)")]
-    public int specialArmor = 0;                // 특수 장갑: 특수 데미지 경감
+    [Tooltip("특수 장갑 / 상태이상 저항 수치 (상태이상 부여 확률을 이 수치만큼 낮춤)")]
+    public int specialArmor = 0;                // 특수 장갑 / 상태이상 저항 (special ammo)
+
+    /// <summary>special ammo 별칭 (상태이상 저항 수치, specialArmor와 동일값 참조)</summary>
+    public int specialAmmo
+    {
+        get => specialArmor;
+        set => specialArmor = value;
+    }
 
     [Tooltip("크리티컬 확률 (%): 발동 시 데미지 2배")]
     [Range(0f, 100f)]
@@ -113,10 +127,43 @@ public class Unit : MonoBehaviour
     [Tooltip("산화 저항력 (%)")]
     public int oxidationResist = 0;             // 녹 방어 확률
 
-    [Tooltip("산화 II 지속 데미지 %")]
-    public int oxidationDamagePercent = 3;      // 산화II 지속 데미지 (%)
+    [Tooltip("공격 시 상대에게 부여할 산화 지속 턴 수")]
+    public int oxidationTurns = 3;              // 산화 부여 지속 턴 수
 
-    [Header("=== 6. 상태이상 내부 누적 스택 (Runtime Status Stacks) ===")]
+    [Tooltip("공격 시 상대에게 부여할 산화 턴당 고정 데미지 (체력% 대신 직접 설정)")]
+    public int oxidationDamage = 5;             // 산화 턴당 고정 데미지
+
+    [HideInInspector]
+    public int oxidationDamagePercent = 3;      // (레거시 호환용)
+
+    [Header("=== 6. 유닛 고유 상태이상 부여 설정 (Inflict Status Settings) ===")]
+    [Tooltip("출혈 부여 시 지속 턴 수")]
+    public int bleedInflictTurns = 3;
+    [Tooltip("출혈 부여 시 턴당 방어무시 고정 피해량")]
+    public int bleedInflictDamage = 5;
+
+    [Tooltip("누유 부여 시 지속 턴 수")]
+    public int oilLeakInflictTurns = 3;
+    [Tooltip("누유 부여 시 턴당 방어무시 고정 피해량")]
+    public int oilLeakInflictDamage = 5;
+
+    [Tooltip("과열 부여 시 지속 턴 수")]
+    public int overheatInflictTurns = 2;
+    [Tooltip("과열 부여 시 턴당 피해량")]
+    public int overheatInflictDamage = 4;
+
+    [Tooltip("화재 부여 시 지속 턴 수")]
+    public int fireInflictTurns = 3;
+    [Tooltip("화재 부여 시 턴당 피해량")]
+    public int fireInflictDamage = 8;
+
+    [Tooltip("기절 부여 시 지속 턴 수")]
+    public int stunInflictTurns = 1;
+
+    [Tooltip("표식 부여 시 지속 턴 수")]
+    public int markInflictTurns = 3;
+
+    [Header("=== 7. 상태이상 내부 누적 스택 (Runtime Status Stacks) ===")]
     [Tooltip("회로 단선 스택 (3스택 이상 누적 시 폭발)")]
     public int circuitShortStacks = 0;
 
@@ -132,11 +179,16 @@ public class Unit : MonoBehaviour
     public List<BuffRuntime> buffs = new List<BuffRuntime>();
     public List<DebuffRuntime> debuffs = new List<DebuffRuntime>();
 
+    [Header("무적 상태 (Invulnerability)")]
+    public bool isInvulnerable = false;
+    public int invulnerableTurns = 0;
+
     [Header("UI")]
     public GameObject myturnUI;
     public GameObject damageTextPrefab;
     public Transform damageTextSpawnPoint;
     public GameObject HPBar;
+    public TextMeshProUGUI myHPtext;
 
     [Header("SFX")]
     [Tooltip("사망 시 재생할 SFX")]
@@ -218,9 +270,59 @@ public class Unit : MonoBehaviour
     public bool isBleeding          => StatusHandler.HasStatus(StatusType.Bleeding);
     public int markedTurn           => StatusHandler.GetRemainingTurns(StatusType.Marked);
 
+    /// <summary>
+    /// statData가 할당되어 있다면 기본 스탯을 초기화합니다.
+    /// </summary>
+    public virtual void InitializeStats(bool forceReset = false)
+    {
+        if (isStatsInitialized && !forceReset)
+            return;
+
+        if (statData != null)
+        {
+            statData.ApplyTo(this, resetHealthAndEnergy: forceReset);
+        }
+
+        isStatsInitialized = true;
+    }
+
+    /// <summary>
+    /// 새로운 UnitStatData를 적용합니다.
+    /// </summary>
+    public void ApplyStatData(UnitStatData newStatData, bool resetHealthAndEnergy = true)
+    {
+        statData = newStatData;
+        InitializeStats(forceReset: resetHealthAndEnergy);
+    }
+
+    /// <summary>
+    /// statData의 기본 스탯에 현재 업그레이드 레벨(대장간 강화)을 반영하여 스탯을 재계산합니다.
+    /// </summary>
+    public void RecalculateStatsFromUpgrade()
+    {
+        if (statData != null)
+        {
+            attackPower = statData.attackPower + (attackLevel * 5);
+            defensePower = statData.defensePower + (defenseLevel * 5);
+            accuracy = statData.accuracy + (AccurancyLevel * 5);
+            maxHealth = statData.maxHealth + (MaxHPLevel * 5);
+        }
+    }
+
+#if UNITY_EDITOR
+    protected virtual void OnValidate()
+    {
+        if (!Application.isPlaying && statData != null)
+        {
+            statData.ApplyTo(this, resetHealthAndEnergy: false);
+        }
+    }
+#endif
+
     protected virtual void Awake()
     {
         sp = GetComponent<SpriteRenderer>();
+        InitializeStats();
         EnsureInitialized();
         CacheHealthBar();
         UpdateHealthBar();
@@ -257,33 +359,45 @@ public class Unit : MonoBehaviour
         {
             HPBar = healthSlider.gameObject;
         }
+
+        if (myHPtext == null && HPBar != null)
+        {
+            myHPtext = HPBar.GetComponentInChildren<TextMeshProUGUI>(true);
+        }
     }
 
     public void UpdateHealthBar()
     {
-        if (healthSlider == null && !healthBarSearched)
+        if (!healthBarSearched)
         {
             CacheHealthBar();
             displayedHealth = float.NaN;
             displayedMaxHealth = float.NaN;
         }
 
-        if (healthSlider == null)
-            return;
-
         float sliderMax = Mathf.Max(1f, maxHealth);
-        float sliderValue = Mathf.Clamp(health, 0f, sliderMax);
+        float currentHp = Mathf.Clamp(health, 0f, sliderMax);
 
-        if (Mathf.Approximately(displayedHealth, sliderValue) &&
-            Mathf.Approximately(displayedMaxHealth, sliderMax))
-            return;
+        // 1. HP 텍스트 즉시 갱신 (데미지/회복 시 즉각 반영)
+        if (myHPtext != null)
+        {
+            myHPtext.text = $"{Mathf.RoundToInt(currentHp)}/{Mathf.RoundToInt(sliderMax)}";
+        }
 
-        healthSlider.minValue = 0f;
-        healthSlider.maxValue = sliderMax;
-        healthSlider.SetValueWithoutNotify(sliderValue);
+        // 2. HP 슬라이더 갱신
+        if (healthSlider != null)
+        {
+            if (!Mathf.Approximately(displayedHealth, currentHp) ||
+                !Mathf.Approximately(displayedMaxHealth, sliderMax))
+            {
+                healthSlider.minValue = 0f;
+                healthSlider.maxValue = sliderMax;
+                healthSlider.SetValueWithoutNotify(currentHp);
 
-        displayedHealth = sliderValue;
-        displayedMaxHealth = sliderMax;
+                displayedHealth = currentHp;
+                displayedMaxHealth = sliderMax;
+            }
+        }
     }
 
     public void EnsureInitialized()
@@ -320,6 +434,16 @@ public class Unit : MonoBehaviour
         turnEndedBySystem = false;
 
         UIHandler.SetTurnUI(true);
+
+        if (invulnerableTurns > 0)
+        {
+            invulnerableTurns--;
+            if (invulnerableTurns <= 0)
+            {
+                isInvulnerable = false;
+                Debug.Log($"[무적 해제] {Unitname}의 무적 상태가 종료되었습니다.");
+            }
+        }
 
         BuffHandler.BuffTurn();
         BuffHandler.DebuffTurn();
@@ -450,8 +574,14 @@ public class Unit : MonoBehaviour
     }
     public virtual void TakeDamage(int damage, DamageType type = DamageType.Normal)
     {
-        UIHandler.ShowDamageText(damage, type);
+        if (isInvulnerable)
+        {
+            Debug.Log($"<color=yellow>[무적]</color> {Unitname}은(는) 무적 상태여서 공격이 무효화되었습니다!");
+            UIHandler?.ShowCombatText("무적", Color.yellow);
+            return;
+        }
 
+        UIHandler.ShowDamageText(damage, type);
         health -= damage;
 
         if (health <= 0)
@@ -470,6 +600,11 @@ public class Unit : MonoBehaviour
                 health = 0;
                 Die();
             }
+            if (isPlayer && isEmergencyMode)
+            {
+                emergencyPower -= 0.05f;
+
+            }
         }
 
         if (health > maxHealth)
@@ -482,6 +617,8 @@ public class Unit : MonoBehaviour
             isEmergencyMode = false;
             Debug.Log($"<color=yellow>[비상전력 해제]</color> {Unitname} 체력 회복으로 비상전력 모드 종료!");
         }
+
+        UpdateHealthBar();
     }
 
     /// <summary>
@@ -588,12 +725,14 @@ public class Unit : MonoBehaviour
 
         UIHandler.ShowDamageText(finalHealAmount, DamageType.Heal);
         Debug.Log($"{Unitname} 회복 {finalHealAmount}");
+        UpdateHealthBar();
     }
 
     private bool isDying = false;
 
     public virtual void Die()
     {
+
         if (!gameObject.activeInHierarchy || isDying)
             return;
 
@@ -614,7 +753,6 @@ public class Unit : MonoBehaviour
 
         StartCoroutine(DieRoutine());
     }
-
     private IEnumerator DieRoutine()
     {
         // 빨간 빛으로 깜빡임 후 페이드 아웃
@@ -675,7 +813,73 @@ public class Unit : MonoBehaviour
     // Status Delegation
     // ==========================
 
-    public void AddStatus(StatusType type, int turns = 3) => StatusHandler.AddStatus(type, turns);
+    public void AddStatus(StatusType type, int turns = 3) => StatusHandler.AddStatus(type, turns, 0);
+    public void AddStatus(StatusType type, int turns, int dotDamage) => StatusHandler.AddStatus(type, turns, dotDamage);
+    public void AddOxidation(int turns, int dotDamage) => StatusHandler.AddOxidation(turns, dotDamage);
+    public void AddOilLeak(int turns, int damagePerStack = 5) => StatusHandler.AddOilLeak(turns, damagePerStack);
+
+    public Dictionary<StatusType, (int turns, int dotDamage)> GetAllActiveStatuses() =>
+        StatusHandler != null ? StatusHandler.GetAllActiveStatuses() : new Dictionary<StatusType, (int, int)>();
+
+    public void CopyStatusesFrom(Dictionary<StatusType, (int turns, int dotDamage)> statuses) =>
+        StatusHandler?.CopyStatusesFrom(statuses);
+
+    /// <summary>
+    /// 공격자(시전자) 유닛의 설정값(지속 턴수, 부여 데미지)을 반영하여 대상에게 상태이상을 부여합니다.
+    /// 턴수 및 데미지를 생략하거나 -1로 두면 유닛에 설정된 고유값을 사용합니다.
+    /// </summary>
+    public void InflictStatus(Unit target, StatusType type, int customTurns = -1, int customDamage = -1)
+    {
+        if (target == null) return;
+
+        int turns = customTurns > 0 ? customTurns : GetDefaultInflictTurns(type);
+        int dmg = customDamage >= 0 ? customDamage : GetDefaultInflictDamage(type);
+
+        target.AddStatus(type, turns, dmg);
+    }
+
+    /// <summary>
+    /// 대상의 special ammo (specialArmor)를 감안한 확률 판정 후 상태이상을 부여합니다.
+    /// 공식: 최종 상태이상 확률 = (유닛이 상태이상을 걸 숫자 - special ammo)%
+    /// </summary>
+    /// <returns>상태이상 부여 성공 여부</returns>
+    public bool InflictStatusWithChance(Unit target, StatusType type, int baseChance, int customTurns = -1, int customDamage = -1)
+    {
+        if (target == null) return false;
+
+        // 공식: 상태이상 확률 = (유닛이 상태이상을 걸 숫자 - special ammo)%
+        int finalChance = Mathf.Clamp(baseChance - target.specialArmor, 0, 100);
+        if (UnityEngine.Random.Range(0, 100) < finalChance)
+        {
+            InflictStatus(target, type, customTurns, customDamage);
+            return true;
+        }
+
+        Debug.Log($"{target.Unitname}이(가) [{type}] 저항 성공! (기본확률 {baseChance}% - special ammo {target.specialArmor}% = {finalChance}%)");
+        return false;
+    }
+
+    public int GetDefaultInflictTurns(StatusType type) => type switch
+    {
+        StatusType.Bleeding => bleedInflictTurns,
+        StatusType.OilLeak or StatusType.LubricantLeak => oilLeakInflictTurns,
+        StatusType.Overheat => overheatInflictTurns,
+        StatusType.Fire => fireInflictTurns,
+        StatusType.OxidationI or StatusType.OxidationII => oxidationTurns,
+        StatusType.Stun => stunInflictTurns,
+        StatusType.Marked => markInflictTurns,
+        _ => 3
+    };
+
+    public int GetDefaultInflictDamage(StatusType type) => type switch
+    {
+        StatusType.Bleeding => bleedInflictDamage,
+        StatusType.OilLeak or StatusType.LubricantLeak => oilLeakInflictDamage,
+        StatusType.Overheat => overheatInflictDamage,
+        StatusType.Fire => fireInflictDamage,
+        StatusType.OxidationI or StatusType.OxidationII => oxidationDamage,
+        _ => 0
+    };
     public void RemoveStatus(StatusType type) => StatusHandler.RemoveStatus(type);
     public void ClearStates()
     {
@@ -754,6 +958,7 @@ public class Unit : MonoBehaviour
     public float GetCriticalChance() => CombatCalculator.GetCriticalChance(this);
     public float GetHealMultiplier() => CombatCalculator.GetHealMultiplier(this);
     public int GetAccuracy() => CombatCalculator.GetAccuracy(this);
+    public float GetDodgeChance() => CombatCalculator.GetDodgeChance(this);
 
     public int CalculateDamage(Unit target, SkillData skill) => CombatCalculator.CalculateDamage(this, target, skill);
     public bool CheckHit(Unit target, SkillData skill) => CombatCalculator.CheckHit(this, target, skill);

@@ -31,6 +31,13 @@ public sealed class BattleTargetingRules
             !enemyColumns.TryGetValue(target, out int enemyColumn))
             return false;
 
+        // 1. 공격 가능한 대상 열(allowedTargetColumns)이 설정되어 있는 경우
+        if (skill.allowedTargetColumns != null && skill.allowedTargetColumns.Length > 0)
+        {
+            return skill.IsAllowedAtTargetColumn(enemyColumn);
+        }
+
+        // 2. 대상 열이 따로 지정되지 않은 경우 기존 최대 거리(maxTargetDistance) 규칙 적용
         int distance = partyColumn + enemyColumn + 1;
         return distance <= Math.Max(1, skill.maxTargetDistance);
     }
@@ -47,8 +54,7 @@ public sealed class BattleTargetingRules
         if (partyColumn < 0)
             return false;
 
-        int minColumn = Math.Min(skill.minUserColumn, skill.maxUserColumn);
-        int maxColumn = Math.Max(skill.minUserColumn, skill.maxUserColumn);
-        return partyColumn >= minColumn && partyColumn <= maxColumn;
+        // allowedUserColumns 배열 기반 판정
+        return skill.IsAllowedAtColumn(partyColumn);
     }
 }

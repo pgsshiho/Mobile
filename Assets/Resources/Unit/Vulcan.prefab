@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!1 &110758491564503105
 GameObject:
@@ -487,7 +487,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 10, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7721126212193268223
 CanvasRenderer:
@@ -857,7 +857,7 @@ GameObject:
   - component: {fileID: -7222058995056947656}
   m_Layer: 6
   m_Name: Vulcan
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -950,6 +950,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a15364bfa04ba429a2875bab2bab56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerUnit
+  statData: {fileID: 11400000, guid: 1309d4684ea84105a6ff77dd95700863, type: 2}
   maxHealth: 75
   health: 75
   emergencyPower: 0.7
@@ -986,6 +987,7 @@ MonoBehaviour:
   damageTextPrefab: {fileID: 3432776059765830471, guid: 7d3631656ebbd604aa80f9e945222ebc, type: 3}
   damageTextSpawnPoint: {fileID: 5424976560504548547}
   HPBar: {fileID: 6435523629423092115}
+  myHPtext: {fileID: 0}
   deathSFX: {fileID: 8300000, guid: a9639567cdf970f43b238cc4dce4c292, type: 3}
   attackLevel: 0
   defenseLevel: 0
@@ -1062,8 +1064,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RobotClick
   Self: {fileID: 6373275724900144376}
-  myUI: {fileID: 3010918807363845538}
-  maxHealth: {fileID: 7268944141980287404}
+  myUI: {fileID: 3010918807363845538}  maxHealth: {fileID: 7268944141980287404}
   health: {fileID: 4603075699500939357}
   emergencyPower: {fileID: 8346859658734682133}
   attackPower: {fileID: 7161390043257806503}
@@ -6598,8 +6599,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.25}
   m_AnchorMax: {x: 1, y: 0.75}
-  m_AnchoredPosition: {x: -0.44999695, y: 0}
-  m_SizeDelta: {x: -10.89, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &5450540228014106798
 GameObject:

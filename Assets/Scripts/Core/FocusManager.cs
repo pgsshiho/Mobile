@@ -3,8 +3,10 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class FocusManager : MonoBehaviour,IPointerClickHandler
+public class FocusManager : MonoBehaviour, IPointerClickHandler
 {
+    public static FocusManager Instance { get; private set; }
+
     [Header("기본 연출 설정")]
     public float duration = 1.0f;
     public float targetScaleMultiplier = 2.5f;
@@ -18,13 +20,28 @@ public class FocusManager : MonoBehaviour,IPointerClickHandler
     // =========================================================
     public static Action<GameObject> RequestFocusIn;
     public static Action RequestFocusOut;
+    public static Action RequestForceReset;
     public static Action<GameObject> RequestToggleFocus;
+
     private Camera mainCamera;
     private FocusableObject currentFocusedTarget;
+    private Sequence currentSequence;
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
         mainCamera = Camera.main;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
     }
 
     // 오브젝트가 활성화될 때 이벤트 연결
@@ -32,6 +49,7 @@ public class FocusManager : MonoBehaviour,IPointerClickHandler
     {
         RequestFocusIn += FocusIn;
         RequestFocusOut += FocusOut;
+        RequestForceReset += ForceReset;
         RequestToggleFocus += ToggleFocus;
     }
 
@@ -40,8 +58,10 @@ public class FocusManager : MonoBehaviour,IPointerClickHandler
     {
         RequestFocusIn -= FocusIn;
         RequestFocusOut -= FocusOut;
+        RequestForceReset -= ForceReset;
         RequestToggleFocus -= ToggleFocus;
     }
+
     public void OnPointerClick(PointerEventData eventData)
     {
         GameObject clickedObject = eventData.pointerPress;
@@ -50,9 +70,10 @@ public class FocusManager : MonoBehaviour,IPointerClickHandler
             ToggleFocus(clickedObject);
         }
     }
+
     private void FocusIn(GameObject target)
     {
-        if (IsTweening || target == null) return;
+        if (target == null) return;
 
         FocusableObject focusable = target.GetComponent<FocusableObject>();
         if (focusable == null)
@@ -64,9 +85,10 @@ public class FocusManager : MonoBehaviour,IPointerClickHandler
 
         if (currentFocusedTarget != null && currentFocusedTarget != focusable)
         {
-            FocusOut();
+            ForceReset();
         }
 
+        currentSequence?.Kill(false);
         currentFocusedTarget = focusable;
         focusable.IsFocused = true;
         IsTweening = true;
@@ -90,18 +112,42 @@ public class FocusManager : MonoBehaviour,IPointerClickHandler
         }
 
         seq.SetEase(Ease.OutCubic)
-           .OnComplete(() => IsTweening = false);
+           .OnComplete(() =>
+           {
+               IsTweening = false;
+               currentSequence = null;
+           })
+           .OnKill(() =>
+           {
+               IsTweening = false;
+               currentSequence = null;
+           });
+
+        currentSequence = seq;
     }
 
-    private void FocusOut()
+    public void FocusOut()
     {
-        if (IsTweening || currentFocusedTarget == null) return;
+        if (currentFocusedTarget == null)
+        {
+            IsTweening = false;
+            return;
+        }
 
+        currentSequence?.Kill(false);
         IsTweening = true;
+
         FocusableObject focusable = currentFocusedTarget;
         GameObject target = focusable.gameObject;
-        RectTransform rectTransform = target.GetComponent<RectTransform>();
 
+        if (!target.activeInHierarchy)
+        {
+            // 대상이 이미 비활성화된 경우 DOTween을 재생하지 않고 즉시 원복
+            ForceReset();
+            return;
+        }
+
+        RectTransform rectTransform = target.GetComponent<RectTransform>();
         Sequence seq = DOTween.Sequence();
 
         if (rectTransform != null)
@@ -113,8 +159,15 @@ public class FocusManager : MonoBehaviour,IPointerClickHandler
                {
                    rectTransform.SetSiblingIndex(focusable.OriginalSiblingIndex);
                    focusable.IsFocused = false;
-                   currentFocusedTarget = null;
+                   if (currentFocusedTarget == focusable)
+                       currentFocusedTarget = null;
                    IsTweening = false;
+                   currentSequence = null;
+               })
+               .OnKill(() =>
+               {
+                   IsTweening = false;
+                   currentSequence = null;
                });
         }
         else
@@ -126,10 +179,19 @@ public class FocusManager : MonoBehaviour,IPointerClickHandler
                .OnComplete(() =>
                {
                    focusable.IsFocused = false;
-                   currentFocusedTarget = null;
+                   if (currentFocusedTarget == focusable)
+                       currentFocusedTarget = null;
                    IsTweening = false;
+                   currentSequence = null;
+               })
+               .OnKill(() =>
+               {
+                   IsTweening = false;
+                   currentSequence = null;
                });
         }
+
+        currentSequence = seq;
     }
 
     private void ToggleFocus(GameObject target)
@@ -143,5 +205,44 @@ public class FocusManager : MonoBehaviour,IPointerClickHandler
         {
             FocusIn(target);
         }
+    }
+
+    /// <summary>
+    /// 전투 종료 등 즉각 포커스 해제가 필요한 경우 DOTween 없이 강제 초기화.
+    /// 대상 오브젝트가 비활성화되기 전에 호출해야 함.
+    /// </summary>
+    public void ForceReset()
+    {
+        currentSequence?.Kill(false);
+        currentSequence = null;
+
+        if (currentFocusedTarget != null)
+        {
+            GameObject target = currentFocusedTarget.gameObject;
+            if (target != null)
+            {
+                DOTween.Kill(target.transform, false);
+
+                RectTransform rectTransform = target.GetComponent<RectTransform>();
+                if (rectTransform != null)
+                {
+                    DOTween.Kill(rectTransform, false);
+                    rectTransform.anchoredPosition = currentFocusedTarget.OriginalPosition;
+                    rectTransform.localScale = currentFocusedTarget.OriginalScale;
+                    rectTransform.SetSiblingIndex(currentFocusedTarget.OriginalSiblingIndex);
+                }
+                else
+                {
+                    target.transform.position = currentFocusedTarget.OriginalPosition;
+                    target.transform.localScale = currentFocusedTarget.OriginalScale;
+                    target.transform.rotation = currentFocusedTarget.OriginalRotation;
+                }
+            }
+
+            currentFocusedTarget.IsFocused = false;
+            currentFocusedTarget = null;
+        }
+
+        IsTweening = false;
     }
 }

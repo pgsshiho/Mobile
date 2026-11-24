@@ -194,7 +194,7 @@ public class Hardwarestore : MonoBehaviour
         ItemManager.Instance.AddItem(item);
         ItemsLeft[KindOfItem] -= 1;
         Setting();
-        Save.CommitSave();
+        Save.instance.SaveGame();
     }
     private void FocusIn(GameObject target)
     {

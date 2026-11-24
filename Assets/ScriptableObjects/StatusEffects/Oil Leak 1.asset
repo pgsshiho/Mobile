@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Oil Leak 1
   m_EditorClassIdentifier: Assembly-CSharp::StatusIconData
   statusType: 12
-  icon: {fileID: -6748384255609890082, guid: b43eb04321f41c445860c639cc05231b, type: 3}
+  icon: {fileID: 21300000, guid: b43eb04321f41c445860c639cc05231b, type: 3}

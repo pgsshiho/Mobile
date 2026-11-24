@@ -1,6 +1,7 @@
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class fountain : MonoBehaviour
 {
@@ -22,12 +23,21 @@ public class fountain : MonoBehaviour
     public bool isFind = false;
     public Unit current;
 
+    [Header("Sprite")]
+    public Image image;
+    public Sprite First;
+    public Sprite Seceond;
+
     private bool isSelecting = false;
     public GameObject HideUI;
     /// <summary>
     /// 대화창이 닫히더라도 로봇 선택 중에는
     /// 기존 포커스 해제 요청을 무시한다.
     /// </summary>
+    public void Awake()
+    {
+        image.sprite = isFind ? Seceond : First;
+    }
     private void OnRequestFocusOut()
     {
         if (BattleManager.instance != null &&
@@ -36,9 +46,6 @@ public class fountain : MonoBehaviour
             return;
         }
     }
-
-  
-
     /// <summary>
     /// 로봇 선택을 취소한다.
     /// 분수대는 아직 사용하지 않은 상태로 유지한다.
@@ -197,7 +204,8 @@ public class fountain : MonoBehaviour
 
             case 2:
                 target.maxHealth += 10;
-
+                target.health += 10;
+                target.UpdateHealthBar();
                 resultText =
                     LocalizationManager.GetLocalizedString("MaxHp");
                 resultstat = 10;
@@ -218,12 +226,12 @@ public class fountain : MonoBehaviour
             );
         }
 
-        // 강화가 적용된 뒤에만 사용 완료 처리
+        image.sprite = Seceond;
         isFind = true;
         isSelecting = false;
         HideUI.SetActive(false);
         RecallRepairParty();
-        Save.CommitSave();
+        Save.instance.SaveGame();
         Debug.Log("[Fountain] 분수대 사용 완료");
         return true;
     }

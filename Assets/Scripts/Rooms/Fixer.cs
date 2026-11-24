@@ -286,7 +286,7 @@ public class Fixer : MonoBehaviour, IPointerClickHandler
 
         // Inspector 이벤트 실행
         onRobotSelected?.Invoke(current);
-        Save.CommitSave();
+        Save.instance.SaveGame();
         return true;
     }
     private void FocusIn(GameObject target)

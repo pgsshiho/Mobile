@@ -12,6 +12,8 @@ public class ChapterManager : MonoBehaviour
     public class ChapterRoute
     {
         [Min(1)] public int chapter = 1;
+        [Tooltip("해당 챕터에서 실행할 Scene 이름 (기본값: Forest)")]
+        public string sceneName = "Forest";
         public List<ZoneType> zones = new List<ZoneType>();
     }
 
@@ -86,6 +88,16 @@ public class ChapterManager : MonoBehaviour
         return currentZoneIndex >= GetCurrentZoneCount() - 1;
     }
 
+    /// <summary>해당 챕터에 대응하는 Scene 이름을 반환합니다.</summary>
+    public string GetSceneForChapter(int chapter)
+    {
+        ChapterRoute route = GetRoute(chapter);
+        if (route != null && !string.IsNullOrEmpty(route.sceneName))
+            return route.sceneName;
+
+        return "Forest";
+    }
+
     /// <summary>메뉴나 씬 로드 후 저장된 진행 값을 런타임에 반영합니다.</summary>
     public void LoadProgressFromSave()
     {
@@ -105,7 +117,7 @@ public class ChapterManager : MonoBehaviour
         data.currentZoneIndex = currentZoneIndex;
         data.currentZone = (int)GetCurrentZone();
         data.hasActiveRun = true;
-        Save.CommitSave();
+        Save.instance.SaveGame();
     }
 
     private void NormalizeProgress()
@@ -115,7 +127,7 @@ public class ChapterManager : MonoBehaviour
         currentZoneIndex = Mathf.Clamp(currentZoneIndex, 0, route.zones.Count - 1);
     }
 
-    private int GetMaximumChapter()
+    public int GetMaximumChapter()
     {
         int max = 1;
         foreach (ChapterRoute route in chapterRoutes)
@@ -155,19 +167,21 @@ public class ChapterManager : MonoBehaviour
 
         chapterRoutes = new List<ChapterRoute>
         {
-            CreateRoute(1, ZoneType.Forest, ZoneType.Coast),
-            CreateRoute(2, ZoneType.Cave, ZoneType.Basement),
-            CreateRoute(3, ZoneType.Lab, ZoneType.City),
-            CreateRoute(4, ZoneType.Forest, ZoneType.Cave, ZoneType.Lab),
-            CreateRoute(5, ZoneType.Coast, ZoneType.Basement, ZoneType.City)
+            // 각 챕터당 3번씩 맵 진행 (맵1: 보스, 맵2: 보스, 맵3: 챕터 최종 보스)
+            CreateRoute(1, "Forest", ZoneType.Forest, ZoneType.Forest, ZoneType.Forest),
+            CreateRoute(2, "Forest", ZoneType.Coast, ZoneType.Coast, ZoneType.Coast),
+            CreateRoute(3, "Forest", ZoneType.Cave, ZoneType.Cave, ZoneType.Cave),
+            CreateRoute(4, "Forest", ZoneType.Basement, ZoneType.Basement, ZoneType.Basement),
+            CreateRoute(5, "Forest", ZoneType.Lab, ZoneType.Lab, ZoneType.Lab)
         };
     }
 
-    private static ChapterRoute CreateRoute(int chapter, params ZoneType[] zones)
+    private static ChapterRoute CreateRoute(int chapter, string sceneName, params ZoneType[] zones)
     {
         return new ChapterRoute
         {
             chapter = chapter,
+            sceneName = string.IsNullOrEmpty(sceneName) ? "Forest" : sceneName,
             zones = new List<ZoneType>(zones)
         };
     }

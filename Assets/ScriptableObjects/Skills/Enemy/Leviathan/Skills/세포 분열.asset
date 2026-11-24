@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4148de06aa3f6fc4fb8b87538ee7aabc, type: 3}
+  m_Name: 세포 분열
+  m_EditorClassIdentifier: Assembly-CSharp::SkillData
+  skillName: 세포 분열
+  icon: {fileID: 0}
+  description: 세포 분열s
+  targetType: 4
+  maxTargetDistance: 4
+  allowedUserColumns: 
+  allowedTargetColumns: 
+  power: 0
+  hitBonus: 0
+  soundEffect: {fileID: 0}
+  skillLogic: {fileID: 11400000, guid: 66327a4c8f5541ce997b8331c7b092c0, type: 2}

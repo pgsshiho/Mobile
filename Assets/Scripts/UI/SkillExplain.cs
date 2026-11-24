@@ -9,10 +9,15 @@ public class SkillExplain : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
     public SkillData myskill;
 
     [Header("Long Press Settings")]
-    [SerializeField] private float durationThreshold = 0.5f;
+    [Tooltip("모바일 터치 환경에 맞춰 롱프레스 시간을 0.3초로 단축")]
+    [SerializeField] private float durationThreshold = 0.3f;
+
+    [Tooltip("손을 떼었을 때 설명창을 자동으로 닫을지 여부 (기본: false)")]
+    [SerializeField] private bool closeOnPointerUp = false;
 
     private bool isPointerDown = false;
     private float pointerDownTime = 0f;
+    private bool hasTriggeredThisPress = false;
 
     [Header("UI References")]
     public GameObject skillExplainUI;
@@ -44,12 +49,12 @@ public class SkillExplain : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
 
     private void Update()
     {
-        if (!isPointerDown)
+        if (!isPointerDown || hasTriggeredThisPress)
             return;
 
         if (Time.time - pointerDownTime >= durationThreshold)
         {
-            isPointerDown = false;
+            hasTriggeredThisPress = true;
 
             if (skillExplainUI != null)
             {
@@ -62,11 +67,24 @@ public class SkillExplain : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
     public void OnPointerDown(PointerEventData eventData)
     {
         isPointerDown = true;
+        hasTriggeredThisPress = false;
         pointerDownTime = Time.time;
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
         isPointerDown = false;
+
+        if (closeOnPointerUp && skillExplainUI != null && skillExplainUI.activeSelf)
+        {
+            skillExplainUI.SetActive(false);
+        }
+    }
+
+    /// <summary>모바일에서 설명창을 탭하여 직접 닫을 수 있는 편의 함수</summary>
+    public void CloseExplainUI()
+    {
+        if (skillExplainUI != null)
+            skillExplainUI.SetActive(false);
     }
 }
